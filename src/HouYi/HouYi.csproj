@@ -8,7 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\HouYi.Application\HouYi.Application.csproj" />
     <ProjectReference Include="..\HouYi.Client\HouYi.Client.csproj" />
+    <ProjectReference Include="..\HouYi.Domain.Services\HouYi.Domain.Services.csproj" />
+    <ProjectReference Include="..\HouYi.Domain\HouYi.Domain.csproj" />
+    <ProjectReference Include="..\HouYi.Infrastructure\HouYi.Infrastructure.csproj" />
+    <ProjectReference Include="..\HouYi.Persistence\HouYi.Persistence.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.2" />

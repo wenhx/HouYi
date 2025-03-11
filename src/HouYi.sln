@@ -1,11 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi", "HouYi\HouYi.csproj", "{E88063D4-913A-4380-B1F9-6EB15DD0FCE5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Client", "HouYi.Client\HouYi.Client.csproj", "{36DF9F7C-8039-4AA6-8196-131DBB92E931}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Domain", "HouYi.Domain\HouYi.Domain.csproj", "{D6E9E9FD-B7FB-473F-9343-D5B0F4431AE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Domain.Services", "HouYi.Domain.Services\HouYi.Domain.Services.csproj", "{3B1EB1D0-4B53-415E-A650-4E2C4013D5D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Infrastructure", "HouYi.Infrastructure\HouYi.Infrastructure.csproj", "{6D56D29E-4BAC-47EE-AB8C-43AD529B87D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Persistence", "HouYi.Persistence\HouYi.Persistence.csproj", "{40160DFF-DF92-45AE-970C-C1FE626FDDDD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Application", "HouYi.Application\HouYi.Application.csproj", "{B8EF05A7-89D4-43DD-B42B-499E19047DBB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +31,26 @@ Global
 		{36DF9F7C-8039-4AA6-8196-131DBB92E931}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36DF9F7C-8039-4AA6-8196-131DBB92E931}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36DF9F7C-8039-4AA6-8196-131DBB92E931}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6E9E9FD-B7FB-473F-9343-D5B0F4431AE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6E9E9FD-B7FB-473F-9343-D5B0F4431AE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6E9E9FD-B7FB-473F-9343-D5B0F4431AE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6E9E9FD-B7FB-473F-9343-D5B0F4431AE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B1EB1D0-4B53-415E-A650-4E2C4013D5D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B1EB1D0-4B53-415E-A650-4E2C4013D5D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B1EB1D0-4B53-415E-A650-4E2C4013D5D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B1EB1D0-4B53-415E-A650-4E2C4013D5D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D56D29E-4BAC-47EE-AB8C-43AD529B87D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D56D29E-4BAC-47EE-AB8C-43AD529B87D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D56D29E-4BAC-47EE-AB8C-43AD529B87D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D56D29E-4BAC-47EE-AB8C-43AD529B87D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40160DFF-DF92-45AE-970C-C1FE626FDDDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40160DFF-DF92-45AE-970C-C1FE626FDDDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40160DFF-DF92-45AE-970C-C1FE626FDDDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40160DFF-DF92-45AE-970C-C1FE626FDDDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8EF05A7-89D4-43DD-B42B-499E19047DBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8EF05A7-89D4-43DD-B42B-499E19047DBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8EF05A7-89D4-43DD-B42B-499E19047DBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8EF05A7-89D4-43DD-B42B-499E19047DBB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
