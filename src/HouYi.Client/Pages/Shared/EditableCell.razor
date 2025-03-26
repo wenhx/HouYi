@@ -1,0 +1,77 @@
+@using Microsoft.AspNetCore.Components.Web
+@typeparam T
+@inject IJSRuntime JS
+
+@if (IsEditing)
+{
+    @if (typeof(T) == typeof(string))
+    {
+        @if (IsMultiline)
+        {
+            <textarea @ref="inputElement" @bind="EditValue" @bind:event="oninput"
+            @onblur="async () => await SaveValue()"
+            class="form-control form-control-sm"
+            style="width: @Width; min-height: 100px; resize: vertical;">
+            </textarea>
+        }
+        else
+        {
+            <input @ref="inputElement" type="text" @bind="EditValue" @bind:event="oninput"
+                   @onblur="async () => await SaveValue()" @onkeydown="SaveAfterEnter"
+            class="form-control form-control-sm" style="width: @Width" />
+        }
+    }
+    else if (typeof(T).IsNumeric())
+    {
+        <input @ref="inputElement" type="text" @bind="EditValue" @bind:event="oninput"
+               @onblur="async () => await SaveValue()" @onkeydown="SaveAfterEnter"
+        class="form-control form-control-sm" style="width: @Width" />
+    }
+}
+else
+{
+    <div @onclick="StartEdit"
+    style="cursor: pointer; width: @Width; @(IsMultiline ? "white-space: pre-wrap;" : "overflow: hidden; text-overflow: ellipsis;")">
+        @Value
+    </div>
+}
+
+@code {
+
+    [Parameter] public T Value { get; set; } = default!;
+    [Parameter] public EventCallback<T> OnValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public bool IsMultiline { get; set; }
+
+    private bool IsEditing = false;
+    private T EditValue = default!;
+    private ElementReference inputElement;
+
+    private async Task StartEdit()
+    {
+        if (Disabled) return;
+        EditValue = Value;
+        IsEditing = true;
+        await Task.Yield(); // Wait for component to render
+        await JS.InvokeVoidAsync("focusElement", inputElement);
+    }
+
+    private async Task SaveValue()
+    {
+        if (!EqualityComparer<T>.Default.Equals(Value, EditValue))
+        {
+            await OnValueChanged.InvokeAsync(EditValue);
+        }
+        IsEditing = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveAfterEnter(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveValue();
+        }
+    }
+}

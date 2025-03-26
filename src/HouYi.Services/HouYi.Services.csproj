@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\HouYi.Data\HouYi.Data.csproj" />
+    <ProjectReference Include="..\HouYi.Models\HouYi.Models.csproj" />
+  </ItemGroup>
+
 </Project>
