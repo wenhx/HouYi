@@ -55,6 +55,12 @@ public class SampleAppInitializer
             var position = Positions[random.Next(Positions.Length)];
             var isComplete = random.NextDouble() <= 0.75;
 
+            var createdAt = GenerateDateTime(random);
+            var updatedAt = createdAt.AddMinutes(random.Next(1, 24 * 60));
+            if (updatedAt > DateTime.Now)
+            {
+                updatedAt = DateTime.Now;
+            }
             var resume = new Resume
             {
                 Id = Guid.NewGuid().ToString(),
@@ -74,8 +80,8 @@ public class SampleAppInitializer
                         EvaluationTemplates[random.Next(EvaluationTemplates.Length)], 
                         position)
                     : string.Empty,
-                CreatedAt = DateTime.Now.AddDays(-random.Next(1, 365)),
-                UpdatedAt = DateTime.Now
+                CreatedAt = createdAt,
+                UpdatedAt = updatedAt
             };
 
             resumes.Add(resume);
@@ -92,5 +98,14 @@ public class SampleAppInitializer
             sb.Append(random.Next(0, 10));
         }
         return sb.ToString();
+    }
+
+    private static DateTime GenerateDateTime(Random random)
+    {
+        var rangeDays = 365;
+        var randomDays = random.Next(rangeDays) * -1;
+        var randomTime = random.Next(24 * 60 * 60) * -1; // seconds in a day
+
+        return DateTime.Now.AddDays(randomDays).AddSeconds(randomTime);
     }
 }

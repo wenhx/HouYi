@@ -1,28 +1,28 @@
-@page "/talent-pool"
+ï»¿@page "/talent-pool"
 @rendermode InteractiveAuto
 @using HouYi.Models.Resumes
 @using HouYi.Services
 @inject IResumeService ResumeService
 
-<h3>ÈË²Å¿â</h3>
+<h3>äººæ‰åº“</h3>
 <div class="table-responsive">
     <table class="table table-striped table-hover">
         <thead>
             <tr>
-                <th>ĞÕÃû</th>
-                <th>ĞÔ±ğ</th>
-                <th>ÄêÁä</th>
-                <th>µç»°</th>
-                <th>ÓÊÏä</th>
-                <th>µ±Ç°×´Ì¬</th>
-                <th>Ö°Î»</th>
-                <th>Ñ§Àú</th>
-                <th>ÄêĞ½(K)</th>
-                <th>³ÇÊĞ´úÂë</th>
-                <th>À´Ô´</th>
-                <th>±¸×¢</th>
-                <th>¸üĞÂÊ±¼ä</th>
-                <th>²Ù×÷</th>
+                <th>å§“å</th>
+                <th>æ€§åˆ«</th>
+                <th>å¹´é¾„</th>
+                <th>ç”µè¯</th>
+                <th>é‚®ç®±</th>
+                <th>å½“å‰çŠ¶æ€</th>
+                <th>èŒä½</th>
+                <th>å­¦å†</th>
+                <th>å¹´è–ª(K)</th>
+                <th>åŸå¸‚ä»£ç </th>
+                <th>æ¥æº</th>
+                <th>å¤‡æ³¨</th>
+                <th>æ›´æ–°æ—¶é—´</th>
+                <th>æ“ä½œ</th>
             </tr>
         </thead>
         <tbody>
@@ -53,14 +53,17 @@
                         OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Note), v))" /></td>
                     <td>
                         <div class="tooltip-container">
-                            @resume.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
-                            <span class="custom-tooltip">´´½¨ÓÚ: @resume.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                            @resume.UpdatedAt.ToRelativeTimeString()
+                            <span class="custom-tooltip">
+                                æ›´æ–°äº: @resume.UpdatedAt.ToString("yyyy-MM-dd HH:mm")<br />
+                                åˆ›å»ºäº: @resume.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                            </span>
                         </div>
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-primary" @onclick="() => OnCommunicate(resume)">¹µÍ¨</button>
-                        <button class="btn btn-sm btn-info" @onclick="() => OnViewHistory(resume)">¹µÍ¨¼ÇÂ¼</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteResume(resume.Id)">É¾³ı</button>
+                        <button class="btn btn-sm btn-primary" @onclick="() => OnCommunicate(resume)">æ²Ÿé€š</button>
+                        <button class="btn btn-sm btn-info" @onclick="() => OnViewHistory(resume)">æ²Ÿé€šè®°å½•</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteResume(resume.Id)">åˆ é™¤</button>
                     </td>
                 </tr>
             }
@@ -71,21 +74,21 @@
 <div class="d-flex justify-content-between align-items-center">
     <div>
         <select class="form-select" @bind="PageSize" @bind:event="onchange">
-            <option value="10">10Ìõ/Ò³</option>
-            <option value="20">20Ìõ/Ò³</option>
-            <option value="50">50Ìõ/Ò³</option>
+            <option value="10">10æ¡/é¡µ</option>
+            <option value="20">20æ¡/é¡µ</option>
+            <option value="50">50æ¡/é¡µ</option>
         </select>
     </div>
     <nav>
         <ul class="pagination">
             <li class="page-item @(CurrentPage == 0 ? "disabled" : "")">
                 <button class="page-link" @onclick="async () => await NavigateToPage(0)" disabled="@(CurrentPage == 0)">
-                    Ê×Ò³
+                    é¦–é¡µ
                 </button>
             </li>
             <li class="page-item @(CurrentPage == 0 ? "disabled" : "")">
                 <button class="page-link" @onclick="async () => await NavigateToPage(CurrentPage - 1)" disabled="@(CurrentPage == 0)">
-                    ÉÏÒ»Ò³
+                    ä¸Šä¸€é¡µ
                 </button>
             </li>
 
@@ -113,13 +116,13 @@
             <li class="page-item @(CurrentPage >= TotalPages - 1 ? "disabled" : "")">
                 <button class="page-link" @onclick="async () => await NavigateToPage(CurrentPage + 1)" 
                 disabled="@(CurrentPage >= TotalPages - 1)">
-                    ÏÂÒ»Ò³
+                    ä¸‹ä¸€é¡µ
                 </button>
             </li>
             <li class="page-item @(CurrentPage >= TotalPages - 1 ? "disabled" : "")">
                 <button class="page-link" @onclick="async () => await NavigateToPage(TotalPages - 1)" 
                 disabled="@(CurrentPage >= TotalPages - 1)">
-                    Ä©Ò³
+                    æœ«é¡µ
                 </button>
             </li>
         </ul>
