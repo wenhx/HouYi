@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace HouYi.Infrastructure.Extensions;
+﻿namespace HouYi.Infrastructure.Extensions;
 
 public static class TypeExtensions
 {

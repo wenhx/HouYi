@@ -1,7 +1,8 @@
 ﻿@page "/talent-pool"
 @rendermode InteractiveAuto
+@* @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false)) *@
 @using HouYi.Models.Resumes
-@using HouYi.Services
+@using System.Reflection
 @inject IResumeService ResumeService
 
 <h3>人才库</h3>
@@ -26,31 +27,30 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var resume in Resumes)
+            @foreach (var resume in _resumes)
             {
                 <tr>
                     <td><EditableCell T="string" Value="@resume.Name" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Name), v))" /></td>
                     <td>
-                        <EnumDropdown TEnum="Gender" Value="@resume.Gender" ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Gender), v))" />
+                        <EnumDropdown TEnum="Gender" Value="@resume.Gender" ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Gender), new CellValue<Gender>(v, false)))" />
                     </td>
                     <td><EditableCell T="int" Value="@resume.Age" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Age), v))" /></td>
                     <td><EditableCell T="string" Value="@resume.Phone" Width="120px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Phone), v))" /></td>
                     <td><EditableCell T="string" Value="@resume.Email" Width="160px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Email), v))" /></td>
                     <td>
                         <EnumDropdown TEnum="CurrentStatus" Value="@resume.CurrentStatus"
-                        ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.CurrentStatus), v))" />
+                        ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.CurrentStatus), new CellValue<CurrentStatus>(v, false)))" />
                     </td>
                     <td><EditableCell T="string" Value="@resume.Position" Width="150px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Position), v))" /></td>
                     <td>
-                        <EnumDropdown TEnum="Degree" Value="@resume.Degree" 
-                        ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Degree), v))" />
+                        <EnumDropdown TEnum="Degree" Value="@resume.Degree"
+                        ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Degree), new CellValue<Degree>(v, false)))" />
                     </td>
                     <td><EditableCell T="int" Value="@resume.AnnualSalary" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.AnnualSalary), v))" /></td>
                     <td><EditableCell T="short" Value="@resume.City" Width="80px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.City), v))" /></td>
                     <td><EditableCell T="byte" Value="@resume.Source" Width="60px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Source), v))" /></td>
-                    <td><EditableCell T="string" Value="@resume.Note" Width="240px" 
-                        IsMultiline="true"
-                        OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Note), v))" /></td>
+                    <td>
+                        <EditableCell T="string" Value="@resume.Note" Width="240px" IsMultiline="true" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Note), v))" /></td>
                     <td>
                         <div class="tooltip-container">
                             @resume.UpdatedAt.ToRelativeTimeString()
@@ -81,20 +81,20 @@
     </div>
     <nav>
         <ul class="pagination">
-            <li class="page-item @(CurrentPage == 0 ? "disabled" : "")">
-                <button class="page-link" @onclick="async () => await NavigateToPage(0)" disabled="@(CurrentPage == 0)">
+            <li class="page-item @(_currentPage == 0 ? "disabled" : "")">
+                <button class="page-link" @onclick="async () => await NavigateToPage(0)" disabled="@(_currentPage == 0)">
                     首页
                 </button>
             </li>
-            <li class="page-item @(CurrentPage == 0 ? "disabled" : "")">
-                <button class="page-link" @onclick="async () => await NavigateToPage(CurrentPage - 1)" disabled="@(CurrentPage == 0)">
+            <li class="page-item @(_currentPage == 0 ? "disabled" : "")">
+                <button class="page-link" @onclick="async () => await NavigateToPage(_currentPage - 1)" disabled="@(_currentPage == 0)">
                     上一页
                 </button>
             </li>
 
             @{
                 const int maxVisiblePages = 5;
-                int startPage = Math.Max(0, CurrentPage - maxVisiblePages / 2);
+                int startPage = Math.Max(0, _currentPage - maxVisiblePages / 2);
                 int endPage = Math.Min(TotalPages - 1, startPage + maxVisiblePages - 1);
 
                 if (endPage - startPage + 1 < maxVisiblePages)
@@ -105,7 +105,7 @@
                 for (int i = startPage; i <= endPage; i++)
                 {
                     var pageNumber = i;
-                    <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                    <li class="page-item @(pageNumber == _currentPage ? "active" : "")">
                         <button class="page-link" @onclick="async () => await NavigateToPage(pageNumber)">
                             @(pageNumber + 1)
                         </button>
@@ -113,15 +113,15 @@
                 }
             }
 
-            <li class="page-item @(CurrentPage >= TotalPages - 1 ? "disabled" : "")">
-                <button class="page-link" @onclick="async () => await NavigateToPage(CurrentPage + 1)" 
-                disabled="@(CurrentPage >= TotalPages - 1)">
+            <li class="page-item @(_currentPage >= TotalPages - 1 ? "disabled" : "")">
+                <button class="page-link" @onclick="async () => await NavigateToPage(_currentPage + 1)" 
+                disabled="@(_currentPage >= TotalPages - 1)">
                     下一页
                 </button>
             </li>
-            <li class="page-item @(CurrentPage >= TotalPages - 1 ? "disabled" : "")">
+            <li class="page-item @(_currentPage >= TotalPages - 1 ? "disabled" : "")">
                 <button class="page-link" @onclick="async () => await NavigateToPage(TotalPages - 1)" 
-                disabled="@(CurrentPage >= TotalPages - 1)">
+                disabled="@(_currentPage >= TotalPages - 1)">
                     末页
                 </button>
             </li>
@@ -131,19 +131,20 @@
 
 @code {
 
-    private List<Resume> Resumes = new();
-    private int TotalCount;
-    private int CurrentPage;
-    private int pageSize = 10;
+    private List<Resume> _resumes = new();
+    private int _totalCount;
+    private int _currentPage;
+    private int _pageSize = 10;
+    private Type _modelType = typeof(Resume);
 
     private int PageSize
     {
-        get => pageSize;
+        get => _pageSize;
         set
         {
-            if (pageSize != value)
+            if (_pageSize != value)
             {
-                pageSize = value;
+                _pageSize = value;
                 InvokeAsync(async () =>
                 {
                     await NavigateToPage(0);
@@ -153,7 +154,7 @@
         }
     }
 
-    private int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    private int TotalPages => (int)Math.Ceiling(_totalCount / (double)PageSize);
 
     protected override async Task OnInitializedAsync()
     {
@@ -162,17 +163,17 @@
 
     private async Task LoadData()
     {
-        try 
+        try
         {
-            var result = await ResumeService.GetResumesAsync(CurrentPage, PageSize);
-            Resumes = new List<Resume>(result.Items);
-            TotalCount = result.TotalCount;
+            var result = await ResumeService.GetResumesAsync(_currentPage, PageSize);
+            _resumes = new List<Resume>(result.Items);
+            _totalCount = result.TotalCount;
             StateHasChanged();
         }
         catch
         {
-            Resumes = new List<Resume>();
-            TotalCount = 0;
+            _resumes = new List<Resume>();
+            _totalCount = 0;
             StateHasChanged();
         }
     }
@@ -184,26 +185,49 @@
         if (page < 0 || page >= TotalPages)
             return;
 
-        CurrentPage = page;
+        _currentPage = page;
         await LoadData();
         StateHasChanged();
     }
 
-    private async Task UpdateProperty<T>(string id, string propertyName, T value)
+    private async Task UpdateProperty<T>(string id, string propertyName, CellValue<T> cell)
     {
-        var success = await ResumeService.UpdateResumePropertyAsync(id, propertyName, value);
-        if (success)
+        var property = _modelType.GetProperty(propertyName)!;
+        if (cell.ClientValidationEnabled)
         {
-            var resume = Resumes.First(r => r.Id == id);
-            var property = typeof(Resume).GetProperty(propertyName);
-            if (property != null)
-            {
-                var targetType = property.PropertyType;
-                var convertedValue = Convert.ChangeType(value, targetType);
-                property.SetValue(resume, convertedValue);
-            }
+            Validate(property, cell);
+        }
+        if (!cell.IsValid)
+            return;
+
+        var result = await ResumeService.UpdateResumePropertyAsync(id, propertyName, cell.Value);
+        if (result.IsValid)
+        {
+            var resume = _resumes.First(r => r.Id == id);
+            var convertedValue = Convert.ChangeType(cell.Value, property.PropertyType);
+            property.SetValue(resume, convertedValue);
             resume.UpdatedAt = DateTime.Now;
+            cell.IsValid = true;
             StateHasChanged();
+        }
+        else
+        {
+            cell.IsValid = false;
+            cell.ErrorMessage = result.ErrorMessage;
+        }
+    }
+
+    private void Validate<T>(PropertyInfo property, CellValue<T> cell)
+    {
+        var result = ValidationHelper.ValidateProperty<Resume, T>(property, cell.Value);
+        if (!result.IsValid)
+        {
+            cell.IsValid = false;
+            cell.ErrorMessage = result.ErrorMessage;
+        }
+        else
+        {
+            cell.IsValid = true;
         }
     }
 
@@ -211,11 +235,11 @@
     {
         if (await ResumeService.DeleteResumeAsync(id))
         {
-            Resumes.RemoveAll(r => r.Id == id);
-            TotalCount--;
-            if (Resumes.Count == 0 && CurrentPage > 0)
+            _resumes.RemoveAll(r => r.Id == id);
+            _totalCount--;
+            if (_resumes.Count == 0 && _currentPage > 0)
             {
-                await NavigateToPage(CurrentPage - 1);
+                await NavigateToPage(_currentPage - 1);
             }
             else
             {

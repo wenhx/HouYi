@@ -4,7 +4,6 @@ namespace HouYi.Models.Resumes;
 
 public class Resume
 {
-    #region Props
     [StringLength(Constants.StringLengths.GUID)]
     public required string Id { get; init; }
 
@@ -13,10 +12,10 @@ public class Resume
 
     public Gender Gender { get; init; } = Gender.PreferNotToSay;
 
-    [Range(Constants.Integers.MinimumAge, Constants.Integers.MaximumAge)]
+    [Range(Constants.Integers.MinimumAge, Constants.Integers.MaximumAge, ErrorMessage = "年龄必须大于{1}岁，小于{2}岁。")]
     public byte Age { get; init; }
 
-    [StringLength(Constants.StringLengths.PhoneNumber)]
+    [StringLength(Constants.StringLengths.PhoneNumber, ErrorMessage = "手机号码的长度必须是{1}位。")]
     [RegularExpression(@"^(13)\d{9}$", ErrorMessage = "手机号码不正确。")]
     public required string Phone { get; init; }
 
@@ -52,5 +51,4 @@ public class Resume
 
     public required DateTime CreatedAt { get; init; } = DateTime.Now;
     public required DateTime UpdatedAt { get; set; } = DateTime.Now;
-    #endregion
 }

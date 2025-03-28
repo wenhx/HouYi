@@ -1,77 +1,171 @@
 @using Microsoft.AspNetCore.Components.Web
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@using HouYi.Services
 @typeparam T
 @inject IJSRuntime JS
+@inject IResumeService ResumeService
 
-@if (IsEditing)
+@if (_showValidationError)
+{
+    <div class="validation-modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2000;">
+        <div class="validation-error-container" style="position: relative; background-color: white; padding: 20px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); min-width: 300px; max-width: 80%;">
+            <button type="button" class="close" style="position: absolute; top: 5px; right: 5px; border: none; background: none; font-size: 24px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; z-index: 2001;" @onclick="CloseValidationMessage">&times;</button>
+            <div class="alert alert-danger" role="alert" style="margin-bottom: 0; padding: 15px; margin-top: 10px;">
+                @_validationMessage
+            </div>
+        </div>
+    </div>
+}
+
+@if (_isEditing)
 {
     @if (typeof(T) == typeof(string))
     {
         @if (IsMultiline)
         {
-            <textarea @ref="inputElement" @bind="EditValue" @bind:event="oninput"
+            <textarea @ref="_inputElement" @bind="_editValue" @bind:event="oninput"
             @onblur="async () => await SaveValue()"
-            class="form-control form-control-sm"
+            @onkeydown="HandleKeyPress"
+            class="form-control form-control-sm @(_hasValidationError ? "is-invalid" : "")"
             style="width: @Width; min-height: 100px; resize: vertical;">
             </textarea>
         }
         else
         {
-            <input @ref="inputElement" type="text" @bind="EditValue" @bind:event="oninput"
-                   @onblur="async () => await SaveValue()" @onkeydown="SaveAfterEnter"
-            class="form-control form-control-sm" style="width: @Width" />
+            <input @ref="_inputElement" type="text" @bind="_editValue" @bind:event="oninput"
+            @onblur="async () => await SaveValue()" @onkeydown="HandleKeyPress"
+            class="form-control form-control-sm @(_hasValidationError ? "is-invalid" : "")" style="width: @Width" />
         }
     }
     else if (typeof(T).IsNumeric())
     {
-        <input @ref="inputElement" type="text" @bind="EditValue" @bind:event="oninput"
-               @onblur="async () => await SaveValue()" @onkeydown="SaveAfterEnter"
-        class="form-control form-control-sm" style="width: @Width" />
+        <input @ref="_inputElement" type="text" @bind="_editValue" @bind:event="oninput"
+        @onblur="async () => await SaveValue()" @onkeydown="HandleKeyPress"
+        class="form-control form-control-sm @(_hasValidationError ? "is-invalid" : "")" style="width: @Width" />
     }
 }
 else
 {
-    <div @onclick="StartEdit"
+    <div @onclick="ClickCell"
     style="cursor: pointer; width: @Width; @(IsMultiline ? "white-space: pre-wrap;" : "overflow: hidden; text-overflow: ellipsis;")">
         @Value
     </div>
 }
 
 @code {
-
     [Parameter] public T Value { get; set; } = default!;
-    [Parameter] public EventCallback<T> OnValueChanged { get; set; }
+    [Parameter] public EventCallback<CellValue<T>> OnValueChanged { get; set; }
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public string Width { get; set; } = "100%";
     [Parameter] public bool IsMultiline { get; set; }
 
-    private bool IsEditing = false;
-    private T EditValue = default!;
-    private ElementReference inputElement;
+    private bool _isEditing = false;
+    private T _editValue = default!;
+    private ElementReference _inputElement;
+    private bool _hasValidationError = false;
+    private bool _showValidationError = false;
+    private string _validationMessage = "";
+    private System.Threading.Timer? _validationTimer;
+    private bool _isSaving = false;
 
-    private async Task StartEdit()
+    private async Task ClickCell()
     {
-        if (Disabled) return;
-        EditValue = Value;
-        IsEditing = true;
+        if (Value == null) 
+            return;
+        if (Disabled) 
+            return;
+
+        _editValue = Value;
+        _isEditing = true;
+        _hasValidationError = false;
+        _showValidationError = false;
         await Task.Yield(); // Wait for component to render
-        await JS.InvokeVoidAsync("focusElement", inputElement);
+        await JS.InvokeVoidAsync("focusElement", _inputElement);
     }
 
     private async Task SaveValue()
     {
-        if (!EqualityComparer<T>.Default.Equals(Value, EditValue))
+        if (_isSaving)
+            return;
+
+        _isSaving = true;
+        if (EqualityComparer<T>.Default.Equals(Value, _editValue)) //点了编辑但是没有改变内容。
         {
-            await OnValueChanged.InvokeAsync(EditValue);
+            FinishEditing();
+            return;
         }
-        IsEditing = false;
+
+        var editingCellValue = new CellValue<T>(_editValue);
+        await OnValueChanged.InvokeAsync(editingCellValue);
+        if (editingCellValue.IsValid)
+        {
+            FinishEditing();
+            return;
+        }
+            
+        _isEditing = true;
+        _hasValidationError = true;
+        ShowValidationMessage(editingCellValue.ErrorMessage ?? "校验时发生了未知错误。");
         StateHasChanged();
+        _isSaving = false;
+
+        void FinishEditing()
+        {
+            _isEditing = false;
+            _hasValidationError = false;
+            _isSaving = false;
+        }
     }
 
-    private async Task SaveAfterEnter(KeyboardEventArgs e)
+    private async Task HandleKeyPress(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
+        if (e.Key == "Escape")
+        {
+            CancelEdit();
+            StateHasChanged();
+        }
+        else if (e.Key == "Enter" && !IsMultiline)
         {
             await SaveValue();
         }
+    }
+
+    private void CancelEdit()
+    {
+        _editValue = Value;
+        _isEditing = false;
+        _hasValidationError = false;
+        _showValidationError = false;
+        _validationTimer?.Dispose();
+    }
+
+    private void ShowValidationMessage(string message)
+    {
+        _validationMessage = message;
+        _showValidationError = true;
+
+        // 设置定时器，5秒后自动隐藏错误消息
+        _validationTimer?.Dispose();
+        _validationTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                _showValidationError = false;
+                StateHasChanged();
+            });
+        }, null, 5000, Timeout.Infinite);
+    }
+
+    private void CloseValidationMessage()
+    {
+        _showValidationError = false;
+        _validationTimer?.Dispose();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _validationTimer?.Dispose();
     }
 }

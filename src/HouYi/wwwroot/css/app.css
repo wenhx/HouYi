@@ -1,4 +1,4 @@
-html, body {
+﻿html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -97,3 +97,19 @@ h1:focus {
     border-style: solid;
     border-color: #333 transparent transparent transparent;
 }
+
+/* 移除Bootstrap is-invalid类的红色感叹号图标 */
+.form-control.is-invalid,
+.was-validated .form-control:invalid {
+    background-image: none !important;
+    padding-right: 0.75rem !important;
+}
+
+/* 保留下拉框的箭头图标 */
+.form-select.is-invalid,
+.was-validated .form-select:invalid {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    padding-right: 2.25rem !important;
+    background-position: right 0.75rem center !important;
+    background-size: 16px 12px !important;
+} 

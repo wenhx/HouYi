@@ -14,5 +14,7 @@ public sealed class Constants
     {
         public const int MinimumAge = 18;
         public const int MaximumAge = 100;
+        public const int MaximumPageIndex = 50;
+        public const int MaximumPageSize = 50;
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace HouYi.Services;
+namespace HouYi.Infrastructure;
 
 public record NameValueRecord<T>([Required]string Name, [Required]T Value);

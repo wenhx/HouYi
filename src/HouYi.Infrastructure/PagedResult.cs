@@ -1,4 +1,4 @@
-﻿namespace HouYi.Services;
+﻿namespace HouYi.Infrastructure;
 
 public class PagedResult<T>
 {
