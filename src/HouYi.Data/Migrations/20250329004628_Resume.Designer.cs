@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HouYi.Migrations
 {
     [DbContext(typeof(HouYiDbContext))]
-    [Migration("20250324012711_Resuem")]
-    partial class Resuem
+    [Migration("20250329004628_Resume")]
+    partial class Resume
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

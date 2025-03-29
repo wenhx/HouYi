@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HouYi.Migrations
 {
     /// <inheritdoc />
-    public partial class Resuem : Migration
+    public partial class Resume : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
