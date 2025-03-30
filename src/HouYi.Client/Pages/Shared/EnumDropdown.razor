@@ -1,4 +1,4 @@
-@typeparam TEnum where TEnum : struct, Enum
+﻿@typeparam TEnum where TEnum : struct, Enum
 @implements IAsyncDisposable
 
 <div class="enum-dropdown" @onclick="OnContainerClick" @ref="containerElement">
@@ -72,25 +72,35 @@
         {
             Gender gender => gender switch
             {
-                Gender.Male => "��",
-                Gender.Female => "Ů",
-                _ => "����"
+                Gender.Male => "男",
+                Gender.Female => "女",
+                _ => "保密"
             },
             CurrentStatus status => status switch
             {
-                CurrentStatus.Unemployed => "��ҵ��",
-                CurrentStatus.EmployedAndNotConsideringOpportunities => "��ְ-�ݲ����ǻ���",
-                CurrentStatus.EmployedAndOpenToOpportunities => "��ְ-�����»���",
-                _ => "δ֪"
+                CurrentStatus.Unemployed => "待业中",
+                CurrentStatus.EmployedAndNotConsideringOpportunities => "在职-暂不考虑机会",
+                CurrentStatus.EmployedAndOpenToOpportunities => "在职-考虑新机会",
+                _ => "未知"
             },
             Degree degree => degree switch
             {
-                Degree.PhD => "��ʿ",
-                Degree.Master => "˶ʿ",
-                Degree.Bachelor => "ѧʿ",
-                Degree.Associate => "ר��",
-                Degree.Other => "����",
-                _ => "δ֪"
+                Degree.PhD => "博士",
+                Degree.Master => "硕士",
+                Degree.Bachelor => "学士",
+                Degree.Associate => "专科",
+                Degree.Other => "其他",
+                _ => "未知"
+            },
+            ResumeSource source => source switch
+            {
+                ResumeSource.TalentPool => "人才库",
+                ResumeSource.Consultant => "猎头搜集",
+                ResumeSource.Company => "企业推荐",
+                ResumeSource.Candidate => "本人投递",
+                ResumeSource.Partner => "合作伙伴",
+                ResumeSource.Others => "其他",
+                _ => "未知"
             },
             _ => value.ToString()
         };

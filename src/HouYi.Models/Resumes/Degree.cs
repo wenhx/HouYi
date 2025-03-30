@@ -1,6 +1,6 @@
 ﻿namespace HouYi.Models.Resumes;
 
-public enum Degree
+public enum Degree : byte
 {
     Unknown = 0,
     PhD = 1,

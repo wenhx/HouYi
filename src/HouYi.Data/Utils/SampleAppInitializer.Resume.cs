@@ -48,7 +48,7 @@ partial class SampleAppInitializer
                 Degree = (Degree)random.Next(0, 6),
                 AnnualSalary = (short)random.Next(50, 200),
                 City = (short)cities[random.Next(0, cities.Count)].Id,
-                Source = (byte)random.Next(1, 10),
+                Source = (ResumeSource)random.Next(1, 4),
                 Note = isComplete
                     ? string.Format(
                         EvaluationTemplates[random.Next(EvaluationTemplates.Length)],

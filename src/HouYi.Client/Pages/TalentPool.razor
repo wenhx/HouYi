@@ -3,10 +3,16 @@
 @* @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false)) *@
 @using HouYi.Models.Resumes
 @using System.Reflection
+@using Microsoft.JSInterop
 @inject IResumeService ResumeService
 @inject IAreaService AreaService
+@inject IJSRuntime JSRuntime
 
-<h3>人才库</h3>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">人才库</h3>
+    <button class="btn btn-primary px-3" style="min-width: 100px;" @onclick="ShowComingSoonMessage">简历录入</button>
+</div>
+
 <div class="table-responsive">
     <table class="table table-striped table-hover">
         <thead>
@@ -20,7 +26,7 @@
                 <th>职位</th>
                 <th>学历</th>
                 <th>年薪(K)</th>
-                <th>城市代码</th>
+                <th>城市</th>
                 <th>来源</th>
                 <th>备注</th>
                 <th>更新时间</th>
@@ -49,7 +55,10 @@
                     </td>
                     <td><EditableCell T="int" Value="@resume.AnnualSalary" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.AnnualSalary), v))" /></td>
                     <td><EditableCell T="string" Value="@(AreaService.GetAreaName(resume.City))" Width="80px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.City), v))" /></td>
-                    <td><EditableCell T="byte" Value="@resume.Source" Width="60px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Source), v))" /></td>
+                    <td>
+                        <EnumDropdown TEnum="ResumeSource" Value="@resume.Source" 
+                        ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Source), new CellValue<ResumeSource>(v, false)))" />
+                    </td>
                     <td>
                         <EditableCell T="string" Value="@resume.Note" Width="240px" IsMultiline="true" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Note), v))" /></td>
                     <td>
@@ -73,12 +82,13 @@
 </div>
 
 <div class="d-flex justify-content-between align-items-center">
-    <div>
+    <div class="d-flex gap-2 align-items-center">
         <select class="form-select" @bind="PageSize" @bind:event="onchange">
             <option value="10">10条/页</option>
             <option value="20">20条/页</option>
             <option value="50">50条/页</option>
         </select>
+        <button class="btn btn-primary px-3" style="min-width: 100px;" @onclick="ShowComingSoonMessage">简历录入</button>
     </div>
     <nav>
         <ul class="pagination">
@@ -197,9 +207,9 @@
         if (cell.ClientValidationEnabled)
         {
             Validate(property, cell);
+            if (!cell.IsValid)
+                return;
         }
-        if (!cell.IsValid)
-            return;
 
         var result = await ResumeService.UpdateResumePropertyAsync(id, propertyName, cell.Value);
         if (result.IsValid)
@@ -258,5 +268,10 @@
     private void OnViewHistory(Resume resume)
     {
         // To be implemented
+    }
+
+    private async Task ShowComingSoonMessage()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "此功能即将上线");
     }
 }

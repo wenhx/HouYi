@@ -1,6 +1,6 @@
 ﻿namespace HouYi.Models;
 
-public enum Gender
+public enum Gender : byte
 {
     PreferNotToSay = 0,
     Male = 1,

@@ -40,7 +40,7 @@ public class Resume
     /// <summary>
     /// A code represents the source of this resume, and this code is predefined by the system.
     /// </summary>
-    public required byte Source { get; init; }
+    public required ResumeSource Source { get; init; }
 
     /// <summary>
     /// The note for the resume.
