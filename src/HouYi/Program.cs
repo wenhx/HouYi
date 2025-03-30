@@ -1,13 +1,10 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using HouYi.Client.Pages;
 using HouYi.Components;
 using HouYi.Components.Account;
 using HouYi.Data;
 using HouYi.Data.Utils;
 using HouYi.Services;
-using HouYi.Models.Resumes;
-using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace HouYi;
 
@@ -50,6 +47,7 @@ public class Program
         #endregion
         #region HouYi services.
         builder.Services.AddScoped<IResumeService, ResumeService>();
+        builder.Services.AddScoped<IAreaService, AreaService>();
         #endregion
 
         // Add services for controllers
@@ -62,8 +60,8 @@ public class Program
         {
             app.UseWebAssemblyDebugging();
             app.UseMigrationsEndPoint();
-            using var scope = app.Services.CreateScope();
-            SampleAppInitializer.Seed(scope.ServiceProvider.GetRequiredService<HouYiDbContext>());
+            using var devScope = app.Services.CreateScope();
+            SampleAppInitializer.Seed(devScope.ServiceProvider.GetRequiredService<HouYiDbContext>());
         }
         else
         {
@@ -73,9 +71,7 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-
         app.UseAntiforgery();
-
         app.MapStaticAssets();
         app.MapRazorComponents<App>()
             .AddInteractiveWebAssemblyRenderMode()
@@ -87,6 +83,12 @@ public class Program
 
         // Map controllers
         app.MapControllers();
+
+        #region HouYi
+        using var scope = app.Services.CreateScope();
+        var areaService = scope.ServiceProvider.GetRequiredService<IAreaService>();
+        areaService.RefreshCacheAsync();
+        #endregion
 
         app.Run();
     }

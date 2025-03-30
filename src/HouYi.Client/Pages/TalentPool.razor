@@ -4,6 +4,7 @@
 @using HouYi.Models.Resumes
 @using System.Reflection
 @inject IResumeService ResumeService
+@inject IAreaService AreaService
 
 <h3>人才库</h3>
 <div class="table-responsive">
@@ -47,7 +48,7 @@
                         ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Degree), new CellValue<Degree>(v, false)))" />
                     </td>
                     <td><EditableCell T="int" Value="@resume.AnnualSalary" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.AnnualSalary), v))" /></td>
-                    <td><EditableCell T="short" Value="@resume.City" Width="80px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.City), v))" /></td>
+                    <td><EditableCell T="string" Value="@(AreaService.GetAreaName(resume.City))" Width="80px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.City), v))" /></td>
                     <td><EditableCell T="byte" Value="@resume.Source" Width="60px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Source), v))" /></td>
                     <td>
                         <EditableCell T="string" Value="@resume.Note" Width="240px" IsMultiline="true" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Note), v))" /></td>

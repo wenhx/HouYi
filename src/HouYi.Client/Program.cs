@@ -21,8 +21,11 @@ class Program
 
         #region HouYi Services
         builder.Services.AddScoped<IResumeService, ClientResumeService>();
+        builder.Services.AddSingleton<IAreaService, ClientAreaService>();
         #endregion
 
-        await builder.Build().RunAsync();
+        var app = builder.Build();
+        app.Services.GetRequiredService<IAreaService>().RefreshCacheAsync();
+        await app.RunAsync();
     }
 }

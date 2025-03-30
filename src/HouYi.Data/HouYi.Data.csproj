@@ -19,4 +19,10 @@
     <ProjectReference Include="..\HouYi.Models\HouYi.Models.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Utils\Area.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
