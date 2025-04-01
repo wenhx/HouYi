@@ -38,6 +38,7 @@
 .action-cell {
     width: 80px;
     text-align: center;
+    position: relative; /* Ensure relative positioning for absolute children */
 }
 
 .action-dropdown {
@@ -47,12 +48,44 @@
     text-align: center;
 }
 
-    .action-dropdown .dropdown-menu {
-        min-width: 100px;
-    }
+.action-dropdown .dropdown-menu {
+    min-width: 100px;
+    right: 0;  /* Align to the right of the button */
+    left: auto !important; /* Override Bootstrap's left positioning */
+}
 
 /* 确保模态层覆盖整个页面 */
 .modal-backdrop.show {
     opacity: 0.5;
     z-index: 1040;
+}
+
+/* Add/modify these styles to fix dropdown overflow issues */
+.table-responsive {
+    overflow-x: visible !important; /* Override Bootstrap's default overflow-x: auto */
+    min-height: 0.01%; /* Prevent collapsing margins */
+}
+
+/* Ensure dropdowns can appear outside table boundaries */
+.dropdown-menu {
+    position: absolute !important;
+    z-index: 1050 !important; /* Match or exceed the z-index specified in markup */
+}
+
+/* Ensure proper stacking context for nested elements */
+.table {
+    position: relative;
+    z-index: 1;
+}
+
+/* Handle table header dropdowns */
+thead .dropdown-menu {
+    margin-top: 0; /* Remove default margin to prevent gaps */
+}
+
+/* Ensure buttons don't cause overflow */
+.btn-sm {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

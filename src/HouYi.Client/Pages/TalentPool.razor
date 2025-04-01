@@ -1,6 +1,6 @@
 ﻿@page "/talent-pool"
-@rendermode InteractiveAuto
-@* @rendermode InteractiveServer *@
+@* @rendermode InteractiveAuto *@
+@rendermode InteractiveServer
 @* @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false)) *@
 @using HouYi.Models
 @using HouYi.Models.Resumes
@@ -46,7 +46,7 @@
     }
 </div>
 
-<div class="table-responsive">
+<div class="table-responsive" style="overflow-x: visible !important;">
     <table class="table table-striped table-hover">
         <thead>
             <tr>
@@ -126,7 +126,7 @@
                     <td>
                         <EnumDropdown TEnum="Gender" Value="@resume.Gender" ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Gender), new CellValue<Gender>(v, false)))" />
                     </td>
-                    <td><EditableCell T="int" Value="@resume.Age" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Age), v))" /></td>
+                    <td><EditableCell T="byte" Value="@resume.Age" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Age), v))" /></td>
                     <td><EditableCell T="string" Value="@resume.Phone" Width="120px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Phone), v))" /></td>
                     <td><EditableCell T="string" Value="@resume.Email" Width="160px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Email), v))" /></td>
                     <td>
@@ -137,8 +137,8 @@
                     <td>
                         <EnumDropdown TEnum="Degree" Value="@resume.Degree" ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Degree), new CellValue<Degree>(v, false)))" />
                     </td>
-                    <td><EditableCell T="int" Value="@resume.AnnualSalary" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.AnnualSalary), v))" /></td>
-                    <td><EditableCell T="string" Value="@(AreaService.GetAreaName(resume.City))" Width="80px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.City), v))" /></td>
+                    <td><EditableCell T="short" Value="@resume.AnnualSalary" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.AnnualSalary), v))" /></td>
+                    <td><EditableCell T="string" Disabled="true" Value="@(AreaService.GetAreaName(resume.City))" Width="80px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.City), v))" /></td>
                     <td>
                         <EnumDropdown TEnum="ResumeSource" Value="@resume.Source" Width="80px"
                                       ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Source), new CellValue<ResumeSource>(v, false)))" />
