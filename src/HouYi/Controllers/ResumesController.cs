@@ -1,5 +1,6 @@
 ﻿using HouYi.Infrastructure;
 using HouYi.Infrastructure.Extensions;
+using HouYi.Models;
 using HouYi.Models.Resumes;
 using HouYi.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +14,25 @@ public class ResumesController(IResumeService _resumeService) : ControllerBase
 {
     // GET: api/Resumes
     [HttpGet]
-    public async Task<ActionResult<PagedResult<Resume>>> GetResumesAsync(int pageIndex, int pageSize)
+    public async Task<ActionResult<PagedResult<Resume>>> GetResumesAsync(
+        int pageIndex,
+        int pageSize,
+        string? searchField = null,
+        string? searchTerm = null,
+        Gender? gender = null,
+        CurrentStatus? currentStatus = null,
+        Degree? degree = null,
+        ResumeSource? source = null)
     {
-        var result = await _resumeService.GetResumesAsync(pageIndex, pageSize);
+        var result = await _resumeService.GetResumesAsync(
+            pageIndex,
+            pageSize,
+            searchField,
+            searchTerm,
+            gender,
+            currentStatus,
+            degree,
+            source);
         return result;
     }
 

@@ -1,4 +1,4 @@
-.tooltip-container {
+﻿.tooltip-container {
     position: relative;
     display: inline-block;
 }
@@ -32,4 +32,27 @@
     border-width: 5px;
     border-style: solid;
     border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* 为"更多"按钮添加固定宽度，防止抖动 */
+.action-cell {
+    width: 80px;
+    text-align: center;
+}
+
+.action-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+}
+
+    .action-dropdown .dropdown-menu {
+        min-width: 100px;
+    }
+
+/* 确保模态层覆盖整个页面 */
+.modal-backdrop.show {
+    opacity: 0.5;
+    z-index: 1040;
 }

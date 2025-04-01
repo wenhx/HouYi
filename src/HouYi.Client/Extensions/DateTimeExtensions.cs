@@ -1,4 +1,4 @@
-namespace HouYi.Client.Extensions;
+﻿namespace HouYi.Client.Extensions;
 
 public static class DateTimeExtensions
 {
@@ -7,20 +7,23 @@ public static class DateTimeExtensions
         var timeSpan = DateTime.Now - dateTime;
 
         if (timeSpan.TotalMinutes < 10)
-            return "�ո�";
+            return "刚刚";
 
         if (timeSpan.TotalHours < 1)
-            return $"{(int)timeSpan.TotalMinutes}����֮ǰ";
+            return $"{(int)timeSpan.TotalMinutes}分钟前";
 
         if (timeSpan.TotalDays < 1)
-            return $"{(int)timeSpan.TotalHours}Сʱ֮ǰ";
+            return $"{(int)timeSpan.TotalHours}小时前";
 
         if (timeSpan.TotalDays < 7)
-            return $"{(int)timeSpan.TotalDays}��֮ǰ";
+            return $"{(int)timeSpan.TotalDays}天前";
 
         if (timeSpan.TotalDays < 30)
-            return $"{(int)(timeSpan.TotalDays / 7)}��֮ǰ";
+            return $"{(int)(timeSpan.TotalDays / 7)}周前";
 
-        return dateTime.ToString("yyyy-MM-dd HH:mm");
+        if (timeSpan.TotalDays < 365)
+            return dateTime.ToString("MM月dd日");
+
+        return dateTime.ToString("yyyy-MM-dd");
     }
 }

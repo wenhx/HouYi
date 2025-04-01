@@ -1,4 +1,5 @@
 ﻿using HouYi.Infrastructure;
+using HouYi.Models;
 using HouYi.Models.Resumes;
 using HouYi.Services;
 using System.Net.Http.Json;
@@ -15,10 +16,53 @@ public class ClientResumeService(HttpClient httpClient) : IResumeService
         return httpClient.DeleteFromJsonAsync<bool>($"/api/Resumes/{id}");
     }
 
-    public async Task<PagedResult<Resume>> GetResumesAsync(int pageIndex, int pageSize)
+    public async Task<PagedResult<Resume>> GetResumesAsync(
+        int pageIndex,
+        int pageSize,
+        string? searchField = null,
+        string? searchTerm = null,
+        Gender? gender = null,
+        CurrentStatus? currentStatus = null,
+        Degree? degree = null,
+        ResumeSource? source = null)
     {
-        var result = await httpClient.GetFromJsonAsync<PagedResult<Resume>>($"/api/Resumes?pageIndex={pageIndex}&pageSize={pageSize}");
-        return result ?? new PagedResult<Resume> { Items = new List<Resume>(), TotalCount = 0 };
+        var url = $"/api/Resumes?pageIndex={pageIndex}&pageSize={pageSize}";
+
+        if (!string.IsNullOrWhiteSpace(searchField) && !string.IsNullOrWhiteSpace(searchTerm))
+        {
+            url += $"&searchField={searchField}&searchTerm={Uri.EscapeDataString(searchTerm)}";
+        }
+
+        if (gender.HasValue)
+        {
+            url += $"&gender={gender.Value}";
+        }
+
+        if (currentStatus.HasValue)
+        {
+            url += $"&currentStatus={currentStatus.Value}";
+        }
+
+        if (degree.HasValue)
+        {
+            url += $"&degree={degree.Value}";
+        }
+
+        if (source.HasValue)
+        {
+            url += $"&source={source.Value}";
+        }
+
+        try
+        {
+            var result = await httpClient.GetFromJsonAsync<PagedResult<Resume>>(url);
+            return result ?? new PagedResult<Resume> { Items = new List<Resume>(), TotalCount = 0 };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"搜索失败: {ex.Message}");
+            return new PagedResult<Resume> { Items = new List<Resume>(), TotalCount = 0 };
+        }
     }
 
     public async Task<InvokedResult> UpdateResumePropertyAsync<T>(string id, string propertyName, T value)

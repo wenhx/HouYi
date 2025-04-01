@@ -1,6 +1,8 @@
 ﻿@page "/talent-pool"
 @rendermode InteractiveAuto
+@* @rendermode InteractiveServer *@
 @* @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false)) *@
+@using HouYi.Models
 @using HouYi.Models.Resumes
 @using System.Reflection
 @using Microsoft.JSInterop
@@ -13,24 +15,107 @@
     <button class="btn btn-primary px-3" style="min-width: 100px;" @onclick="ShowComingSoonMessage">简历录入</button>
 </div>
 
+<!-- 搜索框 -->
+<div class="row mb-3">
+    <div class="col-md-8">
+        <div class="input-group">
+            <select class="form-select" style="max-width: 100px; margin-right: 12px;" @bind="SearchField">
+                <option value="">请选择</option>
+                <option value="name">姓名</option>
+                <option value="phone">电话</option>
+                <option value="email">邮箱</option>
+                <option value="position">职位</option>
+            </select>
+            <input type="text" class="form-control" style="margin-right: 12px;" placeholder="输入搜索内容..." @bind="SearchTerm" @bind:event="oninput" @onkeydown="@SearchOnEnter" />
+            <button class="btn btn-primary" style="margin-right: 12px;" @onclick="DoSearch">
+                <i class="bi bi-search"></i> 搜索
+            </button>
+            <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                <i class="bi bi-x-circle"></i> 清除
+            </button>
+        </div>
+    </div>
+
+    @if (HasActiveFilters)
+    {
+        <div class="col-md-4 text-end">
+            <button class="btn btn-outline-danger" @onclick="ClearAllFilters">
+                <i class="bi bi-x-circle"></i> 清除所有筛选
+            </button>
+        </div>
+    }
+</div>
+
 <div class="table-responsive">
     <table class="table table-striped table-hover">
         <thead>
             <tr>
                 <th>姓名</th>
-                <th>性别</th>
+                <th>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle @(SelectedGender.HasValue ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 100%;">
+                            @(SelectedGender.HasValue ? GetGenderName(SelectedGender.Value) : "性别")
+                        </button>
+                        <ul class="dropdown-menu" style="z-index: 1050; cursor: pointer;">
+                            <li><button class="dropdown-item" @onclick="() => FilterByGender(null)">全部</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByGender(Gender.Male)">男</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByGender(Gender.Female)">女</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByGender(Gender.PreferNotToSay)">保密</button></li>
+                        </ul>
+                    </div>
+                </th>
                 <th>年龄</th>
                 <th>电话</th>
                 <th>邮箱</th>
-                <th>当前状态</th>
+                <th>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle @(SelectedStatus.HasValue ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 100%;">
+                            @(SelectedStatus.HasValue ? GetStatusName(SelectedStatus.Value) : "当前状态")
+                        </button>
+                        <ul class="dropdown-menu" style="z-index: 1050; cursor: pointer;">
+                            <li><button class="dropdown-item" @onclick="() => FilterByStatus(null)">全部</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByStatus(CurrentStatus.Unemployed)">待业中</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByStatus(CurrentStatus.EmployedAndNotConsideringOpportunities)">在职-暂不考虑机会</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByStatus(CurrentStatus.EmployedAndOpenToOpportunities)">在职-考虑新机会</button></li>
+                        </ul>
+                    </div>
+                </th>
                 <th>职位</th>
-                <th>学历</th>
+                <th>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle @(SelectedDegree.HasValue ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 100%;">
+                            @(SelectedDegree.HasValue ? GetDegreeName(SelectedDegree.Value) : "学历")
+                        </button>
+                        <ul class="dropdown-menu" style="z-index: 1050; cursor: pointer;">
+                            <li><button class="dropdown-item" @onclick="() => FilterByDegree(null)">全部</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByDegree(Degree.PhD)">博士</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByDegree(Degree.Master)">硕士</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByDegree(Degree.Bachelor)">学士</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByDegree(Degree.Associate)">专科</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterByDegree(Degree.Other)">其他</button></li>
+                        </ul>
+                    </div>
+                </th>
                 <th>年薪(K)</th>
                 <th>城市</th>
-                <th>来源</th>
-                <th>备注</th>
+                <th>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle @(SelectedSource.HasValue ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 100%;">
+                            @(SelectedSource.HasValue ? GetSourceName(SelectedSource.Value) : "来源")
+                        </button>
+                        <ul class="dropdown-menu" style="z-index: 1050; cursor: pointer;">
+                            <li><button class="dropdown-item" @onclick="() => FilterBySource(null)">全部</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterBySource(ResumeSource.TalentPool)">人才库</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterBySource(ResumeSource.Consultant)">猎头搜集</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterBySource(ResumeSource.Company)">企业推荐</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterBySource(ResumeSource.Candidate)">本人投递</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterBySource(ResumeSource.Partner)">合作伙伴</button></li>
+                            <li><button class="dropdown-item" @onclick="() => FilterBySource(ResumeSource.Others)">其他</button></li>
+                        </ul>
+                    </div>
+                </th>
                 <th>更新时间</th>
-                <th>操作</th>
+                <th class="action-cell">更多</th>
             </tr>
         </thead>
         <tbody>
@@ -45,22 +130,19 @@
                     <td><EditableCell T="string" Value="@resume.Phone" Width="120px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Phone), v))" /></td>
                     <td><EditableCell T="string" Value="@resume.Email" Width="160px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Email), v))" /></td>
                     <td>
-                        <EnumDropdown TEnum="CurrentStatus" Value="@resume.CurrentStatus"
-                        ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.CurrentStatus), new CellValue<CurrentStatus>(v, false)))" />
+                        <EnumDropdown TEnum="CurrentStatus" Value="@resume.CurrentStatus" Width="120px"
+                                      ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.CurrentStatus), new CellValue<CurrentStatus>(v, false)))" />
                     </td>
-                    <td><EditableCell T="string" Value="@resume.Position" Width="150px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Position), v))" /></td>
+                    <td><EditableCell T="string" Value="@resume.Position" Width="100px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Position), v))" /></td>
                     <td>
-                        <EnumDropdown TEnum="Degree" Value="@resume.Degree"
-                        ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Degree), new CellValue<Degree>(v, false)))" />
+                        <EnumDropdown TEnum="Degree" Value="@resume.Degree" ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Degree), new CellValue<Degree>(v, false)))" />
                     </td>
                     <td><EditableCell T="int" Value="@resume.AnnualSalary" Width="50px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.AnnualSalary), v))" /></td>
                     <td><EditableCell T="string" Value="@(AreaService.GetAreaName(resume.City))" Width="80px" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.City), v))" /></td>
                     <td>
-                        <EnumDropdown TEnum="ResumeSource" Value="@resume.Source" 
-                        ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Source), new CellValue<ResumeSource>(v, false)))" />
+                        <EnumDropdown TEnum="ResumeSource" Value="@resume.Source" Width="80px"
+                                      ValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Source), new CellValue<ResumeSource>(v, false)))" />
                     </td>
-                    <td>
-                        <EditableCell T="string" Value="@resume.Note" Width="240px" IsMultiline="true" OnValueChanged="@(v => UpdateProperty(resume.Id, nameof(Resume.Note), v))" /></td>
                     <td>
                         <div class="tooltip-container">
                             @resume.UpdatedAt.ToRelativeTimeString()
@@ -70,16 +152,42 @@
                             </span>
                         </div>
                     </td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" @onclick="() => OnCommunicate(resume)">沟通</button>
-                        <button class="btn btn-sm btn-info" @onclick="() => OnViewHistory(resume)">沟通记录</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteResume(resume.Id)">删除</button>
+                    <td class="action-cell">
+                        <div class="action-dropdown hover-dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                更多
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button class="dropdown-item" @onclick="() => ShowNoteModal(resume)">备注</button></li>
+                                <li><button class="dropdown-item" @onclick="() => OnCommunicate(resume)">沟通</button></li>
+                                <li><button class="dropdown-item" @onclick="() => ScheduleInterview(resume)">面试安排</button></li>
+                                <li><button class="dropdown-item text-danger" @onclick="() => DeleteResume(resume.Id)">删除</button></li>
+                            </ul>
+                        </div>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
+
+@if (_showNoteModal)
+{
+    <div class="modal-backdrop show" @onclick="CloseNoteModal"></div>
+    <div class="modal show d-block" tabindex="-1" @onclick="CloseNoteModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">备注</h5>
+                    <button type="button" class="btn-close" @onclick="CloseNoteModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditableCell T="string" Value="@_selectedResume?.Note" Width="100%" IsMultiline="true" OnValueChanged="@(v => UpdateProperty(_selectedResume.Id, nameof(Resume.Note), v))" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <div class="d-flex justify-content-between align-items-center">
     <div class="d-flex gap-2 align-items-center">
@@ -125,14 +233,14 @@
             }
 
             <li class="page-item @(_currentPage >= TotalPages - 1 ? "disabled" : "")">
-                <button class="page-link" @onclick="async () => await NavigateToPage(_currentPage + 1)" 
-                disabled="@(_currentPage >= TotalPages - 1)">
+                <button class="page-link" @onclick="async () => await NavigateToPage(_currentPage + 1)"
+                        disabled="@(_currentPage >= TotalPages - 1)">
                     下一页
                 </button>
             </li>
             <li class="page-item @(_currentPage >= TotalPages - 1 ? "disabled" : "")">
-                <button class="page-link" @onclick="async () => await NavigateToPage(TotalPages - 1)" 
-                disabled="@(_currentPage >= TotalPages - 1)">
+                <button class="page-link" @onclick="async () => await NavigateToPage(TotalPages - 1)"
+                        disabled="@(_currentPage >= TotalPages - 1)">
                     末页
                 </button>
             </li>
@@ -147,6 +255,23 @@
     private int _currentPage;
     private int _pageSize = 10;
     private Type _modelType = typeof(Resume);
+
+    // 搜索参数
+    private string SearchField { get; set; } = "";
+    private string SearchTerm { get; set; } = "";
+
+    // 过滤参数
+    private Gender? SelectedGender { get; set; }
+    private CurrentStatus? SelectedStatus { get; set; }
+    private Degree? SelectedDegree { get; set; }
+    private ResumeSource? SelectedSource { get; set; }
+
+    private bool HasActiveFilters =>
+        !string.IsNullOrEmpty(SearchTerm) ||
+        SelectedGender.HasValue ||
+        SelectedStatus.HasValue ||
+        SelectedDegree.HasValue ||
+        SelectedSource.HasValue;
 
     private int PageSize
     {
@@ -167,6 +292,9 @@
 
     private int TotalPages => (int)Math.Ceiling(_totalCount / (double)PageSize);
 
+    private bool _showNoteModal;
+    private Resume _selectedResume;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
@@ -176,13 +304,44 @@
     {
         try
         {
-            var result = await ResumeService.GetResumesAsync(_currentPage, PageSize);
-            _resumes = new List<Resume>(result.Items);
-            _totalCount = result.TotalCount;
+            if (HasActiveFilters)
+            {
+                Console.WriteLine($"正在搜索/筛选数据，当前筛选条件: " +
+                   $"SearchField={SearchField}, " +
+                   $"SearchTerm={SearchTerm}, " +
+                   $"Gender={SelectedGender}, " +
+                   $"Status={SelectedStatus}, " +
+                   $"Degree={SelectedDegree}, " +
+                   $"Source={SelectedSource}");
+
+                var result = await ResumeService.GetResumesAsync(
+                    _currentPage,
+                    PageSize,
+                    SearchField,
+                    SearchTerm,
+                    SelectedGender,
+                    SelectedStatus,
+                    SelectedDegree,
+                    SelectedSource);
+
+                _resumes = new List<Resume>(result.Items);
+                _totalCount = result.TotalCount;
+                Console.WriteLine($"筛选结果: 共找到 {_totalCount} 条记录，当前页显示 {_resumes.Count} 条");
+            }
+            else
+            {
+                Console.WriteLine("正在加载所有数据，无筛选条件");
+                var result = await ResumeService.GetResumesAsync(_currentPage, PageSize);
+                _resumes = new List<Resume>(result.Items);
+                _totalCount = result.TotalCount;
+                Console.WriteLine($"加载结果: 共 {_totalCount} 条记录，当前页显示 {_resumes.Count} 条");
+            }
+
             StateHasChanged();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"加载数据失败: {ex.Message}");
             _resumes = new List<Resume>();
             _totalCount = 0;
             StateHasChanged();
@@ -191,7 +350,6 @@
 
     private async Task NavigateToPage(int page)
     {
-
         Console.WriteLine("Hit " + page);
         if (page < 0 || page >= TotalPages)
             return;
@@ -199,6 +357,120 @@
         _currentPage = page;
         await LoadData();
         StateHasChanged();
+    }
+
+    private async Task DoSearch()
+    {
+        _currentPage = 0;
+        await LoadData();
+    }
+
+    private async Task SearchOnEnter(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await DoSearch();
+        }
+    }
+
+    private async Task ClearSearch()
+    {
+        SearchField = "";
+        SearchTerm = "";
+        _currentPage = 0;
+        await LoadData();
+    }
+
+    private async Task FilterByGender(Gender? gender)
+    {
+        SelectedGender = gender;
+        _currentPage = 0;
+        Console.WriteLine($"正在按性别筛选: {(gender.HasValue ? gender.Value.ToString() : "全部")}");
+        await LoadData();
+    }
+
+    private async Task FilterByStatus(CurrentStatus? status)
+    {
+        SelectedStatus = status;
+        _currentPage = 0;
+        Console.WriteLine($"正在按当前状态筛选: {(status.HasValue ? status.Value.ToString() : "全部")}");
+        await LoadData();
+    }
+
+    private async Task FilterByDegree(Degree? degree)
+    {
+        SelectedDegree = degree;
+        _currentPage = 0;
+        Console.WriteLine($"正在按学历筛选: {(degree.HasValue ? degree.Value.ToString() : "全部")}");
+        await LoadData();
+    }
+
+    private async Task FilterBySource(ResumeSource? source)
+    {
+        SelectedSource = source;
+        _currentPage = 0;
+        Console.WriteLine($"正在按来源筛选: {(source.HasValue ? source.Value.ToString() : "全部")}");
+        await LoadData();
+    }
+
+    private async Task ClearAllFilters()
+    {
+        SearchField = "";
+        SearchTerm = "";
+        SelectedGender = null;
+        SelectedStatus = null;
+        SelectedDegree = null;
+        SelectedSource = null;
+        _currentPage = 0;
+        await LoadData();
+    }
+
+    private string GetGenderName(Gender gender)
+    {
+        return gender switch
+        {
+            Gender.Male => "男",
+            Gender.Female => "女",
+            _ => "保密"
+        };
+    }
+
+    private string GetStatusName(CurrentStatus status)
+    {
+        return status switch
+        {
+            CurrentStatus.Unemployed => "待业中",
+            CurrentStatus.EmployedAndNotConsideringOpportunities => "在职-暂不考虑机会",
+            CurrentStatus.EmployedAndOpenToOpportunities => "在职-考虑新机会",
+            _ => "未知"
+        };
+    }
+
+    private string GetDegreeName(Degree degree)
+    {
+        return degree switch
+        {
+            Degree.PhD => "博士",
+            Degree.Master => "硕士",
+            Degree.Bachelor => "学士",
+            Degree.Associate => "专科",
+            Degree.Other => "其他",
+            _ => "未知"
+        };
+    }
+
+    private string GetSourceName(ResumeSource source)
+    {
+        return source switch
+        {
+            ResumeSource.TalentPool => "人才库",
+            ResumeSource.Consultant => "猎头搜集",
+            ResumeSource.Company => "企业推荐",
+            ResumeSource.Candidate => "本人投递",
+            ResumeSource.Partner => "合作伙伴",
+            ResumeSource.Others => "其他",
+            _ => "未知"
+        };
     }
 
     private async Task UpdateProperty<T>(string id, string propertyName, CellValue<T> cell)
@@ -265,7 +537,7 @@
         return Task.FromResult(0);
     }
 
-    private void OnViewHistory(Resume resume)
+    private void ScheduleInterview(Resume resume)
     {
         // To be implemented
     }
@@ -273,5 +545,106 @@
     private async Task ShowComingSoonMessage()
     {
         await JSRuntime.InvokeVoidAsync("alert", "此功能即将上线");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // 初始化Bootstrap的下拉菜单和添加悬停效果的自定义JavaScript
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                // 初始化下拉菜单
+                var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+                var dropdownList = dropdownElementList.map(function(element) {
+                    return new bootstrap.Dropdown(element);
+                });
+
+                // 为带有hover-dropdown类的下拉菜单添加悬停效果
+                document.addEventListener('DOMContentLoaded', function() {
+                    const hoverDropdowns = document.querySelectorAll('.hover-dropdown');
+
+                    hoverDropdowns.forEach(dropdown => {
+                        const dropdownToggle = dropdown.querySelector('.dropdown-toggle');
+                        const instance = bootstrap.Dropdown.getInstance(dropdownToggle);
+
+                        dropdown.addEventListener('mouseenter', function() {
+                            if (instance) {
+                                instance.show();
+                            } else {
+                                new bootstrap.Dropdown(dropdownToggle).show();
+                            }
+                        });
+
+                        dropdown.addEventListener('mouseleave', function() {
+                            if (instance) {
+                                instance.hide();
+                            } else {
+                                const newInstance = bootstrap.Dropdown.getInstance(dropdownToggle);
+                                if (newInstance) {
+                                    newInstance.hide();
+                                }
+                            }
+                        });
+                    });
+                });
+
+                // 初始监听，之后会在DOM变化时重新应用
+                function setupHoverDropdowns() {
+                    const hoverDropdowns = document.querySelectorAll('.hover-dropdown');
+
+                    hoverDropdowns.forEach(dropdown => {
+                        const dropdownToggle = dropdown.querySelector('.dropdown-toggle');
+                        let instance = bootstrap.Dropdown.getInstance(dropdownToggle);
+
+                        // 移除旧的事件监听器以避免重复
+                        dropdown.removeEventListener('mouseenter', onMouseEnter);
+                        dropdown.removeEventListener('mouseleave', onMouseLeave);
+
+                        function onMouseEnter() {
+                            instance = bootstrap.Dropdown.getInstance(dropdownToggle);
+                            if (instance) {
+                                instance.show();
+                            } else {
+                                new bootstrap.Dropdown(dropdownToggle).show();
+                            }
+                        }
+
+                        function onMouseLeave() {
+                            instance = bootstrap.Dropdown.getInstance(dropdownToggle);
+                            if (instance) {
+                                instance.hide();
+                            }
+                        }
+
+                        dropdown.addEventListener('mouseenter', onMouseEnter);
+                        dropdown.addEventListener('mouseleave', onMouseLeave);
+                    });
+                }
+
+                // 监听DOM变化以重新应用悬停效果
+                const observer = new MutationObserver(function(mutations) {
+                    setupHoverDropdowns();
+                });
+
+                observer.observe(document.body, { childList: true, subtree: true });
+
+                // 立即设置初始下拉菜单
+                setupHoverDropdowns();
+            ");
+        }
+    }
+
+    private void ShowNoteModal(Resume resume)
+    {
+        _selectedResume = resume;
+        _showNoteModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseNoteModal()
+    {
+        _showNoteModal = false;
+        _selectedResume = null;
+        StateHasChanged();
     }
 }
