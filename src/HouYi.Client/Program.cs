@@ -1,4 +1,8 @@
+using HouYi.Client.Services;
+using HouYi.Data;
+using HouYi.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.EntityFrameworkCore;
 
 namespace HouYi.Client;
 
@@ -12,6 +16,16 @@ class Program
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddAuthenticationStateDeserialization();
 
-        await builder.Build().RunAsync();
+        builder.Services.AddSingleton(
+            new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+        #region HouYi Services
+        builder.Services.AddScoped<IResumeService, ClientResumeService>();
+        builder.Services.AddSingleton<IAreaService, ClientAreaService>();
+        #endregion
+
+        var app = builder.Build();
+        app.Services.GetRequiredService<IAreaService>().RefreshCacheAsync();
+        await app.RunAsync();
     }
 }

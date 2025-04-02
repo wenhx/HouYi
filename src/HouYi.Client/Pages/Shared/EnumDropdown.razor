@@ -1,0 +1,117 @@
+﻿@typeparam TEnum where TEnum : struct, Enum
+@implements IAsyncDisposable
+
+<div class="enum-dropdown" @onclick="OnContainerClick" @ref="containerElement" style="width: @Width; min-width: 50px;">
+    @if (!isEditing)
+    {
+        <span class="enum-display" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">@GetDisplayText(Value)</span>
+    }
+    else
+    {
+        <select class="form-select form-select-sm" 
+                value="@Value" 
+                @onchange="OnSelectionChanged"
+                @ref="selectElement"
+                @onfocusout="OnFocusOut">
+            @foreach (var value in Enum.GetValues<TEnum>())
+            {
+                <option value="@value">@GetDisplayText(value)</option>
+            }
+        </select>
+    }
+</div>
+
+@code {
+    [Parameter] public TEnum Value { get; set; }
+    [Parameter] public EventCallback<TEnum> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string Width { get; set; } = "auto";
+
+    private bool isEditing;
+    private ElementReference containerElement;
+    private ElementReference selectElement;
+    private DotNetObjectReference<EnumDropdown<TEnum>>? objRef;
+
+    protected override void OnInitialized()
+    {
+        objRef = DotNetObjectReference.Create(this);
+    }
+
+    private async Task OnContainerClick()
+    {
+        if (!isEditing && !Disabled)
+        {
+            isEditing = true;
+            await InvokeAsync(StateHasChanged);
+            
+            // Wait for the select element to be rendered
+            await Task.Delay(10);
+            await selectElement.FocusAsync();
+        }
+    }
+
+    private async Task OnFocusOut()
+    {
+        // Small delay to allow for the selection to complete
+        await Task.Delay(150);
+        isEditing = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnSelectionChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<TEnum>(e.Value?.ToString(), out var newValue))
+        {
+            await ValueChanged.InvokeAsync(newValue);
+            isEditing = false;
+        }
+    }
+
+    private string GetDisplayText(TEnum value)
+    {
+        return value switch
+        {
+            Gender gender => gender switch
+            {
+                Gender.Male => "男",
+                Gender.Female => "女",
+                _ => "保密"
+            },
+            CurrentStatus status => status switch
+            {
+                CurrentStatus.Unemployed => "待业中",
+                CurrentStatus.EmployedAndNotConsideringOpportunities => "在职-不考虑机会",
+                CurrentStatus.EmployedAndOpenToOpportunities => "在职-考虑新机会",
+                _ => "未知"
+            },
+            Degree degree => degree switch
+            {
+                Degree.PhD => "博士",
+                Degree.Master => "硕士",
+                Degree.Bachelor => "学士",
+                Degree.Associate => "专科",
+                Degree.Other => "其他",
+                _ => "未知"
+            },
+            ResumeSource source => source switch
+            {
+                ResumeSource.TalentPool => "人才库",
+                ResumeSource.Consultant => "猎头搜集",
+                ResumeSource.Company => "企业推荐",
+                ResumeSource.Candidate => "本人投递",
+                ResumeSource.Partner => "合作伙伴",
+                ResumeSource.Others => "其他",
+                _ => "未知"
+            },
+            _ => value.ToString()
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (objRef is not null)
+        {
+            objRef.Dispose();
+        }
+    }
+}

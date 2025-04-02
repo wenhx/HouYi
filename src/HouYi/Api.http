@@ -1,0 +1,14 @@
+﻿@HouYi_HostAddress = https://localhost:7169
+@id=1c62b0c1-051f-46d9-8995-276f4f890055
+
+GET {{HouYi_HostAddress}}/api/resumes
+Content-Type: application/json
+
+###
+PUT {{HouYi_HostAddress}}/api/resumes/{{id}}
+Content-Type: application/json
+
+{
+  "Name": "Phone",
+  "Value": "13826500888"
+}

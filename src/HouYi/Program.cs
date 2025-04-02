@@ -1,9 +1,10 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using HouYi.Client.Pages;
 using HouYi.Components;
 using HouYi.Components.Account;
 using HouYi.Data;
+using HouYi.Data.Utils;
+using HouYi.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace HouYi;
 
@@ -13,9 +14,11 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        #region Build in services.
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveWebAssemblyComponents()
+            .AddInteractiveServerComponents()
             .AddAuthenticationStateSerialization();
 
         builder.Services.AddCascadingAuthenticationState();
@@ -41,6 +44,14 @@ public class Program
             .AddDefaultTokenProviders();
 
         builder.Services.AddSingleton<IEmailSender<HouYiUser>, IdentityNoOpEmailSender>();
+        #endregion
+        #region HouYi services.
+        builder.Services.AddScoped<IResumeService, ResumeService>();
+        builder.Services.AddScoped<IAreaService, AreaService>();
+        #endregion
+
+        // Add services for controllers
+        builder.Services.AddControllers();
 
         var app = builder.Build();
 
@@ -49,6 +60,8 @@ public class Program
         {
             app.UseWebAssemblyDebugging();
             app.UseMigrationsEndPoint();
+            using var devScope = app.Services.CreateScope();
+            SampleAppInitializer.Seed(devScope.ServiceProvider.GetRequiredService<HouYiDbContext>());
         }
         else
         {
@@ -58,16 +71,24 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-
         app.UseAntiforgery();
-
         app.MapStaticAssets();
         app.MapRazorComponents<App>()
             .AddInteractiveWebAssemblyRenderMode()
+            .AddInteractiveServerRenderMode()
             .AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
 
         // Add additional endpoints required by the Identity /Account Razor components.
         app.MapAdditionalIdentityEndpoints();
+
+        // Map controllers
+        app.MapControllers();
+
+        #region HouYi
+        using var scope = app.Services.CreateScope();
+        var areaService = scope.ServiceProvider.GetRequiredService<IAreaService>();
+        areaService.RefreshCacheAsync();
+        #endregion
 
         app.Run();
     }

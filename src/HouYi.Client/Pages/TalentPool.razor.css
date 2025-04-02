@@ -1,0 +1,91 @@
+﻿.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.custom-tooltip {
+    visibility: hidden;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.tooltip-container:hover .custom-tooltip {
+    visibility: visible;
+}
+
+/* Optional: Add a small arrow to the tooltip */
+.custom-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* 为"更多"按钮添加固定宽度，防止抖动 */
+.action-cell {
+    width: 80px;
+    text-align: center;
+    position: relative; /* Ensure relative positioning for absolute children */
+}
+
+.action-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+}
+
+.action-dropdown .dropdown-menu {
+    min-width: 100px;
+    right: 0;  /* Align to the right of the button */
+    left: auto !important; /* Override Bootstrap's left positioning */
+}
+
+/* 确保模态层覆盖整个页面 */
+.modal-backdrop.show {
+    opacity: 0.5;
+    z-index: 1040;
+}
+
+/* Add/modify these styles to fix dropdown overflow issues */
+.table-responsive {
+    overflow-x: visible !important; /* Override Bootstrap's default overflow-x: auto */
+    min-height: 0.01%; /* Prevent collapsing margins */
+}
+
+/* Ensure dropdowns can appear outside table boundaries */
+.dropdown-menu {
+    position: absolute !important;
+    z-index: 1050 !important; /* Match or exceed the z-index specified in markup */
+}
+
+/* Ensure proper stacking context for nested elements */
+.table {
+    position: relative;
+    z-index: 1;
+}
+
+/* Handle table header dropdowns */
+thead .dropdown-menu {
+    margin-top: 0; /* Remove default margin to prevent gaps */
+}
+
+/* Ensure buttons don't cause overflow */
+.btn-sm {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
