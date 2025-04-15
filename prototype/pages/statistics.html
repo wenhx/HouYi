@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统计管理 - 人才招聘系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 主内容区 -->
+            <div class="col p-4">
+                <h1 class="mb-4">统计分析</h1>
+                
+                <!-- 筛选条件卡片 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">查询条件</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="statisticsForm">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="startDate" class="form-label">开始日期</label>
+                                    <input type="date" class="form-control" id="startDate" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="endDate" class="form-label">结束日期</label>
+                                    <input type="date" class="form-control" id="endDate" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="dataType" class="form-label">数据类型</label>
+                                    <select class="form-select" id="dataType" required>
+                                        <option value="all" selected>全部数据</option>
+                                        <option value="resume">人才库</option>
+                                        <option value="position">职位</option>
+                                        <option value="interview">面试</option>
+                                        <option value="recommendation">推荐</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="groupBy" class="form-label">统计维度</label>
+                                    <select class="form-select" id="groupBy">
+                                        <option value="day">按日</option>
+                                        <option value="week">按周</option>
+                                        <option value="month" selected>按月</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="consultant" class="form-label">顾问</label>
+                                    <select class="form-select" id="consultant">
+                                        <option value="all" selected>全部顾问</option>
+                                        <option value="1">张三</option>
+                                        <option value="2">李四</option>
+                                        <option value="3">王五</option>
+                                        <option value="4">赵六</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="chartType" class="form-label">图表类型</label>
+                                    <select class="form-select" id="chartType">
+                                        <option value="line" selected>折线图</option>
+                                        <option value="bar">柱状图</option>
+                                        <option value="pie">饼图</option>
+                                        <option value="radar">雷达图</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="button" class="btn btn-outline-secondary me-2" id="resetBtn">重置</button>
+                                    <button type="submit" class="btn btn-primary" id="queryBtn">查询</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 快捷时间范围选择 -->
+                <div class="mb-4">
+                    <div class="btn-group" role="group" aria-label="时间范围选择">
+                        <button type="button" class="btn btn-primary active" data-range="today" id="range-today">今日</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="yesterday" id="range-yesterday">昨日</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="thisWeek" id="range-thisWeek">本周</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="lastWeek" id="range-lastWeek">上周</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="thisMonth" id="range-thisMonth">本月</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="lastMonth" id="range-lastMonth">上月</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="last3Months" id="range-last3Months">近3个月</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="thisYear" id="range-thisYear">今年</button>
+                    </div>
+                </div>
+                
+                <!-- 统计摘要卡片 -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">新增简历</h6>
+                                        <h3 id="resumeCount" class="mb-0">0</h3>
+                                    </div>
+                                    <i class="bi bi-file-earmark-person fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">新增职位</h6>
+                                        <h3 id="positionCount" class="mb-0">0</h3>
+                                    </div>
+                                    <i class="bi bi-briefcase fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-secondary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">沟通</h6>
+                                        <h3 id="communicationCount" class="mb-0">0</h3>
+                                    </div>
+                                    <i class="bi bi-chat-dots fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">成单总数</h6>
+                                        <h3 id="dealCount" class="mb-0">0</h3>
+                                    </div>
+                                    <i class="bi bi-check-circle fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">推荐</h6>
+                                        <h3 id="recommendationCount" class="mb-0">0</h3>
+                                    </div>
+                                    <i class="bi bi-person-plus fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">推荐接受率</h6>
+                                        <h3 id="recommendPassRate" class="mb-0">0%</h3>
+                                    </div>
+                                    <i class="bi bi-graph-up-arrow fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">面试总数</h6>
+                                        <h3 id="interviewCount" class="mb-0">0</h3>
+                                    </div>
+                                    <i class="bi bi-calendar-event fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">面试通过率</h6>
+                                        <h3 id="passRate" class="mb-0">0%</h3>
+                                    </div>
+                                    <i class="bi bi-bar-chart-line fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 图表区域 -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">数据趋势图</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary" id="downloadChart">
+                                <i class="bi bi-download me-1"></i>下载图表
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height:400px;">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 表格数据区域 -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">详细数据</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="exportExcel">
+                                <i class="bi bi-file-earmark-excel me-1"></i>导出Excel
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger ms-2" id="exportPdf">
+                                <i class="bi bi-file-earmark-pdf me-1"></i>导出PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="statisticsTable">
+                                <colgroup>
+                                    <col style="width: 12%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>日期</th>
+                                        <th>新增简历</th>
+                                        <th>新增职位</th>
+                                        <th>沟通</th>
+                                        <th>推荐</th>
+                                        <th>成单</th>
+                                        <th>面试</th>
+                                        <th>面试通过</th>
+                                        <th>面试未通过</th>
+                                        <th>面试取消</th>
+                                        <th>通过率</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="statisticsTableBody">
+                                    <!-- 表格内容将通过JavaScript动态生成 -->
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-dark fw-bold">
+                                        <td>合计</td>
+                                        <td id="totalResume">0</td>
+                                        <td id="totalPosition">0</td>
+                                        <td id="totalCommunication">0</td>
+                                        <td id="totalRecommendation">0</td>
+                                        <td id="totalDeal">0</td>
+                                        <td id="totalInterview">0</td>
+                                        <td id="totalPass">0</td>
+                                        <td id="totalFail">0</td>
+                                        <td id="totalCancel">0</td>
+                                        <td id="avgPassRate">0%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="../js/data/mockData.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../js/statistics.js"></script>
+</body>
+</html> 

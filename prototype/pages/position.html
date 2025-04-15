@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>职位管理 - 人才招聘系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* 排序图标样式 */
+        .sorting {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .sorting-asc:after,
+        .sorting-desc:after {
+            margin-left: 5px;
+            display: inline-block;
+        }
+        
+        .sorting-asc:after {
+            content: "↑";
+        }
+        
+        .sorting-desc:after {
+            content: "↓";
+        }
+        
+        body {
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <!-- 主内容区 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>职位管理</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal">
+                <i class="bi bi-plus-circle me-1"></i> 添加职位
+            </button>
+        </div>
+        
+        <!-- 搜索和过滤 -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <form class="search-form">
+                    <div class="d-flex">
+                        <input type="search" class="form-control" placeholder="搜索职位..." aria-label="搜索">
+                        <button class="btn btn-primary btn-search" type="submit">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 职位列表 -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th data-sortable="true" data-field="title" class="sorting">职位名称</th>
+                                <th data-sortable="true" data-field="company" class="sorting">公司</th>
+                                <th data-sortable="true" data-field="status" class="sorting">
+                                    <span>状态</span>
+                                    <div class="dropdown d-inline-block ms-1">
+                                        <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-filter"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item active" href="#">所有状态</a></li>
+                                            <li><a class="dropdown-item" href="#">关闭</a></li>
+                                            <li><a class="dropdown-item" href="#">开放</a></li>
+                                            <li><a class="dropdown-item" href="#">暂停</a></li>
+                                            <li><a class="dropdown-item" href="#">完成</a></li>
+                                        </ul>
+                                    </div>
+                                </th>
+                                <th data-sortable="true" data-field="recruiter" class="sorting">招聘人数</th>
+                                <th>顾问</th>
+                                <th>客户联系人</th>
+                                <th>联系方式</th>
+                                <th data-sortable="true" data-field="createTime" class="sorting-desc">发布日期</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positionTableBody">
+                            <!-- 表格内容将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 分页 -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">每页显示：</span>
+                        <select class="form-select me-2" id="pageSize" style="width: 70px; padding-right: 28px;">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span class="pagination-info">显示 1-10 条，共 25 条记录</span>
+                    </div>
+                    <ul class="pagination mb-0">
+                        <li class="page-item"><a class="page-link" href="#">上一页</a></li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link" href="#">下一页</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加职位模态框 -->
+    <div class="modal fade" id="addPositionModal" tabindex="-1" aria-labelledby="addPositionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPositionModalLabel">添加职位</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPositionForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="title" class="form-label">职位名称</label>
+                                <input type="text" class="form-control" id="title" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="company" class="form-label">公司</label>
+                                <select class="form-select" id="company" required>
+                                    <option value="">选择公司</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="recruiter" class="form-label">招聘人数</label>
+                                <input type="number" class="form-control" id="recruiter" min="1" value="1" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">状态</label>
+                                <select class="form-select" id="status" required>
+                                    <option value="0">关闭</option>
+                                    <option value="1" selected>开放</option>
+                                    <option value="2">暂停</option>
+                                    <option value="3">完成</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="customerContact" class="form-label">客户联系人</label>
+                                <input type="text" class="form-control" id="customerContact" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="contactMethod" class="form-label">联系方式</label>
+                                <input type="text" class="form-control" id="contactMethod" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="requirements" class="form-label">职位要求</label>
+                            <textarea class="form-control" id="requirements" rows="4"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="savePositionBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑职位模态框 -->
+    <div class="modal fade" id="editPositionModal" tabindex="-1" aria-labelledby="editPositionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPositionModalLabel">编辑职位</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPositionForm">
+                        <input type="hidden" id="edit-id">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit-title" class="form-label">职位名称</label>
+                                <input type="text" class="form-control" id="edit-title" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-company" class="form-label">公司</label>
+                                <select class="form-select" id="edit-company" required>
+                                    <option value="">选择公司</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit-recruiter" class="form-label">招聘人数</label>
+                                <input type="number" class="form-control" id="edit-recruiter" min="1" value="1" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-status" class="form-label">状态</label>
+                                <select class="form-select" id="edit-status" required>
+                                    <option value="0">关闭</option>
+                                    <option value="1">开放</option>
+                                    <option value="2">暂停</option>
+                                    <option value="3">完成</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit-customerContact" class="form-label">客户联系人</label>
+                                <input type="text" class="form-control" id="edit-customerContact" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-contactMethod" class="form-label">联系方式</label>
+                                <input type="text" class="form-control" id="edit-contactMethod" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-requirements" class="form-label">职位要求</label>
+                            <textarea class="form-control" id="edit-requirements" rows="4"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="updatePositionBtn">保存修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 职位详情模态框 -->
+    <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewModalLabel">职位详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="position-details">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h3 id="view-title" class="mb-1"></h3>
+                                <p id="view-company" class="mb-3"></p>
+                                <div class="mb-3">
+                                    <strong>状态：</strong>
+                                    <span id="view-status-badge"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <p class="text-muted mb-1">发布日期：<span id="view-create-time"></span></p>
+                                <p class="text-muted">ID：<span id="view-id"></span></p>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <strong>招聘人数：</strong>
+                                    <span id="view-recruiter"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <strong>客户联系人：</strong>
+                                    <span id="view-customer-contact"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>联系方式：</strong>
+                                    <span id="view-contact-method"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h5>职位要求</h5>
+                                <div class="p-3 bg-light rounded" id="view-requirements"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="editFromViewBtn">编辑职位</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/data/mockData.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../js/position.js"></script>
+</body>
+</html> 

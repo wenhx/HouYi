@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>面试管理 - 人才招聘系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        body {
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <!-- 主内容区 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>面试管理</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInterviewModal">
+                <i class="bi bi-plus-circle me-1"></i> 添加面试
+            </button>
+        </div>
+        
+        <!-- 面试日历和列表 -->
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">今日面试安排</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>候选人</th>
+                                        <th>应聘职位</th>
+                                        <th>面试时间</th>
+                                        <th>面试地点</th>
+                                        <th>面试轮次</th>
+                                        <th>面试结果</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="todayInterviewTableBody">
+                                    <!-- 表格内容将通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">所有面试记录</h5>
+                        <form class="d-flex">
+                            <input type="search" class="form-control me-2" placeholder="搜索面试..." aria-label="搜索">
+                            <button class="btn btn-outline-primary" type="submit">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>候选人</th>
+                                        <th>应聘职位</th>
+                                        <th>面试时间</th>
+                                        <th>面试地点</th>
+                                        <th>面试轮次</th>
+                                        <th>面试结果</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="interviewTableBody">
+                                    <!-- 表格内容将通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 分页 -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">每页显示：</span>
+                                <select class="form-select me-2" id="pageSize" style="width: 70px; padding-right: 28px;">
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <span class="pagination-info">显示 1-10 条，共 38 条记录</span>
+                            </div>
+                            <ul class="pagination mb-0">
+                                <li class="page-item"><a class="page-link" href="#">上一页</a></li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item"><a class="page-link" href="#">4</a></li>
+                                <li class="page-item"><a class="page-link" href="#">下一页</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加面试模态框 -->
+    <div class="modal fade" id="addInterviewModal" tabindex="-1" aria-labelledby="addInterviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addInterviewModalLabel">添加面试</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addInterviewForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="resumeId" class="form-label">候选人</label>
+                                <select class="form-select" id="resumeId" required>
+                                    <option value="">请选择候选人</option>
+                                    <!-- 候选人数据将通过JavaScript动态生成 -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="positionId" class="form-label">应聘职位</label>
+                                <select class="form-select" id="positionId" required>
+                                    <option value="">请选择职位</option>
+                                    <!-- 职位数据将通过JavaScript动态生成 -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="interviewTime" class="form-label">面试时间</label>
+                                <input type="datetime-local" class="form-control" id="interviewTime" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="location" class="form-label">面试地点</label>
+                                <input type="text" class="form-control" id="location" placeholder="请输入面试地点" required>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2 quick-location" data-value="线上面试">线上面试</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2 quick-location" data-value="电话面试">电话面试</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-location-offline">线下面试</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="round" class="form-label">面试轮次</label>
+                                <select class="form-select" id="round" required>
+                                    <option value="1">第一轮</option>
+                                    <option value="2">第二轮</option>
+                                    <option value="3">第三轮</option>
+                                    <option value="4">终面</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">状态</label>
+                                <select class="form-select" id="status" required>
+                                    <option value="0">已安排</option>
+                                    <option value="2">已通过</option>
+                                    <option value="3">已取消</option>
+                                    <option value="4">未通过</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedback" class="form-label">面试反馈</label>
+                            <textarea class="form-control" id="feedback" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveInterviewBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑面试模态框 -->
+    <div class="modal fade" id="editInterviewModal" tabindex="-1" aria-labelledby="editInterviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editInterviewModalLabel">编辑面试</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editInterviewForm">
+                        <input type="hidden" id="edit-id">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit-resumeId" class="form-label">候选人</label>
+                                <select class="form-select" id="edit-resumeId" required>
+                                    <option value="">请选择候选人</option>
+                                    <!-- 候选人数据将通过JavaScript动态生成 -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-positionId" class="form-label">应聘职位</label>
+                                <select class="form-select" id="edit-positionId" required>
+                                    <option value="">请选择职位</option>
+                                    <!-- 职位数据将通过JavaScript动态生成 -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit-interviewTime" class="form-label">面试时间</label>
+                                <input type="datetime-local" class="form-control" id="edit-interviewTime" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-location" class="form-label">面试地点</label>
+                                <input type="text" class="form-control" id="edit-location" placeholder="请输入面试地点" required>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2 edit-quick-location" data-value="线上面试">线上面试</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2 edit-quick-location" data-value="电话面试">电话面试</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary edit-quick-location-offline">线下面试</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit-round" class="form-label">面试轮次</label>
+                                <select class="form-select" id="edit-round" required>
+                                    <option value="1">第一轮</option>
+                                    <option value="2">第二轮</option>
+                                    <option value="3">第三轮</option>
+                                    <option value="4">终面</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-status" class="form-label">状态</label>
+                                <select class="form-select" id="edit-status" required>
+                                    <option value="0">已安排</option>
+                                    <option value="2">已通过</option>
+                                    <option value="3">已取消</option>
+                                    <option value="4">未通过</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-feedback" class="form-label">面试反馈</label>
+                            <textarea class="form-control" id="edit-feedback" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="updateInterviewBtn">保存修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 面试反馈模态框 -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedbackModalLabel">面试反馈</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="feedbackForm">
+                        <input type="hidden" id="feedback-id">
+                        <input type="hidden" id="feedback-resumeId">
+                        <input type="hidden" id="feedback-positionId">
+                        <input type="hidden" id="feedback-interviewTime">
+                        <input type="hidden" id="feedback-location">
+                        <input type="hidden" id="feedback-round">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="feedback-status" class="form-label">面试结果</label>
+                                <select class="form-select" id="feedback-status" required>
+                                    <option value="0">已安排</option>
+                                    <option value="2">已通过</option>
+                                    <option value="3">已取消</option>
+                                    <option value="4">未通过</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedback-feedback" class="form-label">面试反馈详情</label>
+                            <textarea class="form-control" id="feedback-feedback" rows="5" placeholder="请输入面试反馈，包括候选人表现、技能评估、文化匹配度等信息..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="submitFeedbackBtn">提交反馈</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/interview.js"></script>
+</body>
+</html> 

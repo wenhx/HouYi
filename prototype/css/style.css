@@ -1,0 +1,306 @@
+/* 全局样式 */
+body {
+    font-family: "Microsoft YaHei", sans-serif;
+    background-color: #f9f9f9;
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar .nav-link {
+    border-radius: 5px;
+    margin: 0 10px;
+    padding: 8px 15px;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    background-color: #0d6efd;
+}
+
+/* 卡片样式 */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 15px 20px;
+}
+
+/* 表格样式 */
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-top: none;
+}
+
+.table thead th.sorting {
+    cursor: pointer;
+}
+
+.table thead th.sorting_asc:after,
+.table thead th.sorting_desc:after {
+    margin-left: 5px;
+    display: inline-block;
+}
+
+.table thead th.sorting_asc:after {
+    content: "↑";
+}
+
+.table thead th.sorting_desc:after {
+    content: "↓";
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* 分页样式 */
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #ffffff !important;
+    font-weight: bold !important;
+    z-index: 3 !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    position: relative !important;
+}
+
+.pagination .page-link {
+    color: #0d6efd;
+    background-color: #fff;
+    position: relative;
+    display: block;
+    text-decoration: none;
+}
+
+/* 表单控件样式 */
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 10px 15px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+}
+
+/* 按钮样式 */
+.btn {
+    border-radius: 5px;
+    padding: 8px 15px;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* 徽章样式 */
+.badge {
+    border-radius: 4px;
+    font-weight: 500;
+    padding: 5px 8px;
+}
+
+/* 搜索表单 */
+.search-form {
+    position: relative;
+}
+
+.search-form .form-control {
+    height: 42px;
+}
+
+.btn-search {
+    margin-left: 10px;
+    min-width: 100px;
+    white-space: nowrap;
+    height: 42px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 250px;
+        height: 100%;
+        z-index: 999;
+        transition: all 0.3s;
+    }
+    
+    .sidebar.show {
+        left: 0;
+    }
+    
+    .content {
+        margin-left: 0;
+    }
+}
+
+/* 表头下拉菜单样式 */
+th .dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+th .dropdown .btn.dropdown-toggle {
+    font-weight: 600;
+    font-size: 1rem;
+    color: inherit;
+    text-align: inherit;
+    padding: 0;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* 表头悬停下拉菜单 */
+th .dropdown:hover .dropdown-menu {
+    display: block;
+    margin-top: 0;
+    left: auto;
+    right: 0;
+    min-width: 10rem;
+    position: absolute;
+    z-index: 1050;
+}
+
+/* 确保下拉菜单项有合适的样式 */
+th .dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid rgba(0,0,0,.15);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+}
+
+th .dropdown-menu .dropdown-item.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* 确保表格容器有最小高度 */
+.table-responsive {
+    min-height: 300px;
+    overflow: visible !important;
+}
+
+/* 卡片内容调整，确保表格显示正常 */
+.card-body {
+    overflow: visible;
+}
+
+/* 当需要水平滚动时 */
+@media (max-width: 992px) {
+    .table-responsive {
+        overflow-x: auto !important;
+    }
+    
+    /* 确保在滚动状态下菜单仍然可见 */
+    th .dropdown .dropdown-menu {
+        position: fixed;
+    }
+}
+
+/* 表头下拉按钮箭头样式 */
+th .dropdown .dropdown-toggle::after {
+    vertical-align: middle;
+}
+
+/* 数据看板页面样式 */
+.dashboard-stats .card {
+    transition: transform 0.3s ease;
+}
+
+.dashboard-stats .card:hover {
+    transform: translateY(-5px);
+}
+
+/* 统计卡片图标 */
+.stats-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+/* 沟通记录时间轴样式 */
+.communication-timeline {
+    position: relative;
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.communication-timeline .card {
+    position: relative;
+    border-left: 4px solid #0d6efd;
+}
+
+.communication-timeline .card:after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: -10px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px #0d6efd;
+}
+
+/* 沟通记录结果颜色样式 */
+.communication-timeline .bg-success:after {
+    background-color: #198754;
+    box-shadow: 0 0 0 1px #198754;
+}
+
+.communication-timeline .bg-danger:after {
+    background-color: #dc3545;
+    box-shadow: 0 0 0 1px #dc3545;
+}
+
+.communication-timeline .bg-warning:after {
+    background-color: #ffc107;
+    box-shadow: 0 0 0 1px #ffc107;
+}
+
+.communication-timeline .bg-info:after {
+    background-color: #0dcaf0;
+    box-shadow: 0 0 0 1px #0dcaf0;
+}
+
+.communication-timeline .bg-secondary:after {
+    background-color: #6c757d;
+    box-shadow: 0 0 0 1px #6c757d;
+}
+
+/* 分页下拉菜单样式 */
+#pageSize {
+    min-width: 70px;
+    text-align: center;
+    padding-right: 28px;
+}
+
+/* 调整文本框内填充 */
+textarea.form-control {
+    padding: 10px;
+} 

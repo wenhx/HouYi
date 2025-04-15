@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人才推荐 - 人才招聘系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* 排序图标样式 */
+        .sorting {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .sorting-asc:after,
+        .sorting-desc:after {
+            margin-left: 5px;
+            display: inline-block;
+        }
+        
+        .sorting-asc:after {
+            content: "↑";
+        }
+        
+        .sorting-desc:after {
+            content: "↓";
+        }
+        
+        /* 推荐详情卡片样式 */
+        .recommendation-card {
+            border-left: 4px solid #0d6efd;
+            transition: all 0.3s ease;
+        }
+        
+        .recommendation-card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .match-score {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .match-score.high {
+            background-color: #198754;
+        }
+        
+        .match-score.medium {
+            background-color: #ffc107;
+        }
+        
+        .match-score.low {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 主内容区 -->
+            <div class="col-12 p-4">
+                <!-- 职位信息卡片 -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 id="position-title" class="mb-1">职位推荐</h2>
+                                <p id="position-company" class="mb-0 text-muted"></p>
+                            </div>
+                            <div>
+                                <span id="position-status-badge"></span>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>招聘人数：</strong> <span id="position-recruiter"></span></p>
+                                <p class="mb-1"><strong>创建时间：</strong> <span id="position-create-time"></span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>客户联系人：</strong> <span id="position-contact"></span></p>
+                                <p class="mb-1"><strong>联系方式：</strong> <span id="position-contact-method"></span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>职位要求：</strong></p>
+                                <p id="position-requirements" class="mb-0"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 搜索和过滤 -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <form class="search-form">
+                            <div class="d-flex">
+                                <input type="search" class="form-control" placeholder="搜索人才..." aria-label="搜索">
+                                <button class="btn btn-primary btn-search" type="submit">
+                                    <i class="bi bi-search me-1"></i>搜索
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-outline-primary me-2" id="autoRecommendBtn">
+                            <i class="bi bi-magic me-1"></i> 智能推荐
+                        </button>
+                        <button class="btn btn-primary" id="addRecommendBtn">
+                            <i class="bi bi-person-plus me-1"></i> 添加推荐
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 推荐简历列表 -->
+                <div id="recommendation-container">
+                    <!-- 推荐简历卡片将通过JavaScript动态生成 -->
+                </div>
+                
+                <!-- 分页 -->
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">每页显示：</span>
+                        <select class="form-select me-2" id="pageSize" style="width: auto;">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span class="pagination-info">显示 1-10 条，共 0 条记录</span>
+                    </div>
+                    <ul class="pagination mb-0">
+                        <li class="page-item disabled"><a class="page-link" href="#">上一页</a></li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item disabled"><a class="page-link" href="#">下一页</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加推荐模态框 -->
+    <div class="modal fade" id="addRecommendationModal" tabindex="-1" aria-labelledby="addRecommendationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addRecommendationModalLabel">添加推荐</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="recommend-resume" class="form-label">选择简历</label>
+                        <select class="form-select" id="recommend-resume" required>
+                            <option value="">-- 请选择简历 --</option>
+                            <!-- 选项将通过JavaScript动态生成 -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="recommend-score" class="form-label">匹配度</label>
+                        <input type="range" class="form-range" min="1" max="100" value="75" id="recommend-score">
+                        <div class="d-flex justify-content-between">
+                            <span>低</span>
+                            <span id="recommend-score-value">75%</span>
+                            <span>高</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="recommend-comment" class="form-label">推荐理由</label>
+                        <textarea class="form-control" id="recommend-comment" rows="3" placeholder="请输入推荐理由..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveRecommendationBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/data/mockData.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../js/recommendation.js"></script>
+</body>
+</html> 
