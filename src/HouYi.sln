@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi", "HouYi\HouYi.csproj", "{E806A8D6-9DF5-467B-A661-03B58E614421}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Client", "HouYi.Client\HouYi.Client.csproj", "{E61468BB-84E1-4757-81A2-64BD048CBFAD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Data", "HouYi.Data\HouYi.Data.csproj", "{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{E61468BB-84E1-4757-81A2-64BD048CBFAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E61468BB-84E1-4757-81A2-64BD048CBFAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E61468BB-84E1-4757-81A2-64BD048CBFAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
