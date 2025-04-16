@@ -1,0 +1,169 @@
+﻿@page "/"
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>Home</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边导航栏 -->
+        <div class="col-md-auto bg-dark text-white sidebar sidebar-custom min-vh-100 py-3">
+            <h2 class="text-center mb-4">HouYi</h2>
+            <div class="d-flex flex-column align-items-center mb-4">
+                <img src="https://via.placeholder.com/80" class="rounded-circle mb-2" alt="用户头像">
+                <h5>管理员</h5>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "dashboard" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("dashboard", "数据看板")'>
+                        <i class="bi bi-speedometer2 me-2"></i> 数据看板
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "resume" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("resume", "人才库")'>
+                        <i class="bi bi-file-earmark-person me-2"></i> 人才库
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "position" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("position", "职位管理")'>
+                        <i class="bi bi-briefcase me-2"></i> 职位管理
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "interview" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("interview", "面试记录")'>
+                        <i class="bi bi-calendar-event me-2"></i> 面试记录
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "statistics" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("statistics", "统计分析")'>
+                        <i class="bi bi-graph-up me-2"></i> 统计分析
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "recommendation" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("recommendation", "人才推荐")'>
+                        <i class="bi bi-person-plus me-2"></i> 人才推荐
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "communication" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("communication", "沟通管理")'>
+                        <i class="bi bi-chat-dots me-2"></i> 沟通管理
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "customers" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("customers", "客户管理")'>
+                        <i class="bi bi-building me-2"></i> 客户管理
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == "user" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("user", "用户管理")'>
+                        <i class="bi bi-people me-2"></i> 用户管理
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="col p-4">
+            <!-- 标签页导航 -->
+            <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                @foreach (var tab in openTabs)
+                {
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link @(tab.Id == activeTabId ? "active" : "")" 
+                                id="@tab.Id-tab" 
+                                @onclick="() => ActivateTab(tab.Id)"
+                                type="button" role="tab">
+                            @tab.Title
+                            <span class="close-tab @(openTabs.Count > 1 ? "" : "d-none")" 
+                                  @onclick="() => CloseTab(tab.Id)" 
+                                  @onclick:stopPropagation="true">✕</span>
+                        </button>
+                    </li>
+                }
+            </ul>
+
+            <!-- 标签页内容 -->
+            <div class="tab-content" id="mainTabContent">
+                @foreach (var tab in openTabs)
+                {
+                    <div class="tab-pane fade @(tab.Id == activeTabId ? "show active" : "")" 
+                         id="@tab.Id-content" role="tabpanel">
+                        @switch (tab.Id)
+                        {
+                            case "dashboard":
+                                <h1 class="mb-4">数据看板</h1>
+                                <p>数据看板内容...</p>
+                                break;
+                            case "customers":
+                                <HouYi.Components.Pages.Customers />
+                                break;
+                            default:
+                                <h1 class="mb-4">@tab.Title</h1>
+                                <p>@tab.Title 内容待开发...</p>
+                                break;
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string currentPage = "dashboard";
+    private string activeTabId = "dashboard";
+    private List<TabItem> openTabs = new List<TabItem>();
+
+    protected override void OnInitialized()
+    {
+        // 初始化默认标签页
+        openTabs.Add(new TabItem { Id = "dashboard", Title = "数据看板" });
+    }
+
+    private void ChangePage(string pageId, string pageTitle)
+    {
+        currentPage = pageId;
+        
+        // 检查标签页是否已经打开
+        var existingTab = openTabs.FirstOrDefault(t => t.Id == pageId);
+        if (existingTab == null)
+        {
+            // 如果标签页不存在，添加新标签页
+            openTabs.Add(new TabItem { Id = pageId, Title = pageTitle });
+        }
+        
+        // 激活对应的标签页
+        ActivateTab(pageId);
+    }
+
+    private void ActivateTab(string tabId)
+    {
+        activeTabId = tabId;
+    }
+
+    private void CloseTab(string tabId)
+    {
+        // 使用@onclick:stopPropagation="true"已经处理了事件冒泡问题
+        
+        if (openTabs.Count > 1)
+        {
+            int index = openTabs.FindIndex(t => t.Id == tabId);
+            openTabs.RemoveAt(index);
+            
+            // 如果关闭的是当前激活的标签页，则激活其他标签页
+            if (tabId == activeTabId)
+            {
+                int newIndex = Math.Min(index, openTabs.Count - 1);
+                activeTabId = openTabs[newIndex].Id;
+            }
+        }
+    }
+
+    private class TabItem
+    {
+        public required string Id { get; set; }
+        public required string Title { get; set; }
+    }
+}

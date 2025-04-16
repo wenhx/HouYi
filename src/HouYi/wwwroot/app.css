@@ -1,0 +1,397 @@
+﻿h1:focus {
+    outline: none;
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid #e50000;
+}
+
+.validation-message {
+    color: #e50000;
+}
+
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+    .blazor-error-boundary::after {
+        content: "An error has occurred."
+    }
+
+.darker-border-checkbox.form-check-input {
+    border-color: #929292;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+    text-align: start;
+}
+
+.nav-tabs .nav-item .nav-link {
+    padding-right: 30px;
+    position: relative;
+}
+
+    .nav-tabs .nav-item .nav-link .close-tab {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.8rem;
+        opacity: 0.5;
+    }
+
+        .nav-tabs .nav-item .nav-link .close-tab:hover {
+            opacity: 1;
+        }
+
+.tab-content {
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px;
+    border-radius: 0 0 0.25rem 0.25rem;
+    height: calc(100vh - 150px);
+    overflow: auto;
+}
+
+.iframe-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+    .iframe-container iframe {
+        border: 0;
+        height: 100%;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 100%;
+    }
+
+.sidebar-custom {
+    width: 180px;
+}
+
+/* 全局样式 */
+body {
+    font-family: "Microsoft YaHei", sans-serif;
+    background-color: #f9f9f9;
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+    .sidebar .nav-link {
+        border-radius: 5px;
+        margin: 0 10px;
+        padding: 8px 15px;
+    }
+
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar .nav-link.active {
+            background-color: #0d6efd;
+        }
+
+/* 卡片样式 */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 15px 20px;
+}
+
+/* 表格样式 */
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-top: none;
+}
+
+    .table thead th.sorting {
+        cursor: pointer;
+    }
+
+    .table thead th.sorting_asc:after,
+    .table thead th.sorting_desc:after {
+        margin-left: 5px;
+        display: inline-block;
+    }
+
+    .table thead th.sorting_asc:after {
+        content: "↑";
+    }
+
+    .table thead th.sorting_desc:after {
+        content: "↓";
+    }
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* 分页样式 */
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #ffffff !important;
+    font-weight: bold !important;
+    z-index: 3 !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    position: relative !important;
+}
+
+.pagination .page-link {
+    color: #0d6efd;
+    background-color: #fff;
+    position: relative;
+    display: block;
+    text-decoration: none;
+}
+
+/* 表单控件样式 */
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 10px 15px;
+}
+
+    .form-control:focus, .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+    }
+
+/* 按钮样式 */
+.btn {
+    border-radius: 5px;
+    padding: 8px 15px;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+
+.btn-operation {
+    padding: 0.25rem 0.6rem;
+    font-size: 1rem;
+}
+/* 徽章样式 */
+.badge {
+    border-radius: 4px;
+    font-weight: 500;
+    padding: 5px 8px;
+}
+
+/* 搜索表单 */
+.search-form {
+    position: relative;
+}
+
+    .search-form .form-control {
+        height: 42px;
+    }
+
+.btn-search {
+    margin-left: 10px;
+    min-width: 100px;
+    white-space: nowrap;
+    height: 42px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 250px;
+        height: 100%;
+        z-index: 999;
+        transition: all 0.3s;
+    }
+
+        .sidebar.show {
+            left: 0;
+        }
+
+    .content {
+        margin-left: 0;
+    }
+}
+
+/* 表头下拉菜单样式 */
+th .dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+    th .dropdown .btn.dropdown-toggle {
+        font-weight: 600;
+        font-size: 1rem;
+        color: inherit;
+        text-align: inherit;
+        padding: 0;
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    /* 表头悬停下拉菜单 */
+    th .dropdown:hover .dropdown-menu {
+        display: block;
+        margin-top: 0;
+        left: auto;
+        right: 0;
+        min-width: 10rem;
+        position: absolute;
+        z-index: 1050;
+    }
+
+/* 确保下拉菜单项有合适的样式 */
+th .dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid rgba(0,0,0,.15);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+}
+
+    th .dropdown-menu .dropdown-item.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+/* 确保表格容器有最小高度 */
+.table-responsive {
+    min-height: 300px;
+    overflow: visible !important;
+}
+
+/* 卡片内容调整，确保表格显示正常 */
+.card-body {
+    overflow: visible;
+}
+
+/* 当需要水平滚动时 */
+@media (max-width: 992px) {
+    .table-responsive {
+        overflow-x: auto !important;
+    }
+
+    /* 确保在滚动状态下菜单仍然可见 */
+    th .dropdown .dropdown-menu {
+        position: fixed;
+    }
+}
+
+/* 表头下拉按钮箭头样式 */
+th .dropdown .dropdown-toggle::after {
+    vertical-align: middle;
+}
+
+/* 数据看板页面样式 */
+.dashboard-stats .card {
+    transition: transform 0.3s ease;
+}
+
+    .dashboard-stats .card:hover {
+        transform: translateY(-5px);
+    }
+
+/* 统计卡片图标 */
+.stats-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+/* 沟通记录时间轴样式 */
+.communication-timeline {
+    position: relative;
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+    .communication-timeline .card {
+        position: relative;
+        border-left: 4px solid #0d6efd;
+    }
+
+        .communication-timeline .card:after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: -10px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 1px #0d6efd;
+        }
+
+    /* 沟通记录结果颜色样式 */
+    .communication-timeline .bg-success:after {
+        background-color: #198754;
+        box-shadow: 0 0 0 1px #198754;
+    }
+
+    .communication-timeline .bg-danger:after {
+        background-color: #dc3545;
+        box-shadow: 0 0 0 1px #dc3545;
+    }
+
+    .communication-timeline .bg-warning:after {
+        background-color: #ffc107;
+        box-shadow: 0 0 0 1px #ffc107;
+    }
+
+    .communication-timeline .bg-info:after {
+        background-color: #0dcaf0;
+        box-shadow: 0 0 0 1px #0dcaf0;
+    }
+
+    .communication-timeline .bg-secondary:after {
+        background-color: #6c757d;
+        box-shadow: 0 0 0 1px #6c757d;
+    }
+
+/* 分页下拉菜单样式 */
+#pageSize {
+    min-width: 70px;
+    text-align: center;
+    padding-right: 28px;
+}
+
+/* 调整文本框内填充 */
+textarea.form-control {
+    padding: 10px;
+} 
