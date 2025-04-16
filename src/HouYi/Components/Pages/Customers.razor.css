@@ -1,0 +1,5 @@
+﻿.search-form .form-control,
+.search-form .form-select,
+.search-form .btn {
+    height: 42px;
+}
