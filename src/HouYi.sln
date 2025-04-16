@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Client", "HouYi.Clien
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Data", "HouYi.Data\HouYi.Data.csproj", "{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Models", "HouYi.Models\HouYi.Models.csproj", "{65E19AAD-91FA-4366-8B5D-3FF732FC3DE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HouYi.Services", "HouYi.Services\HouYi.Services.csproj", "{19D8AF13-5D88-4A5E-9EAC-60DEE3FE4F0D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C489A53D-52AB-8B02-3B99-EE4DA3ECAB02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65E19AAD-91FA-4366-8B5D-3FF732FC3DE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65E19AAD-91FA-4366-8B5D-3FF732FC3DE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65E19AAD-91FA-4366-8B5D-3FF732FC3DE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65E19AAD-91FA-4366-8B5D-3FF732FC3DE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19D8AF13-5D88-4A5E-9EAC-60DEE3FE4F0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19D8AF13-5D88-4A5E-9EAC-60DEE3FE4F0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19D8AF13-5D88-4A5E-9EAC-60DEE3FE4F0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19D8AF13-5D88-4A5E-9EAC-60DEE3FE4F0D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

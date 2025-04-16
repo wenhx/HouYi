@@ -10,6 +10,8 @@
   <ItemGroup>
     <ProjectReference Include="..\HouYi.Client\HouYi.Client.csproj" />
     <ProjectReference Include="..\HouYi.Data\HouYi.Data.csproj" />
+    <ProjectReference Include="..\HouYi.Models\HouYi.Models.csproj" />
+    <ProjectReference Include="..\HouYi.Services\HouYi.Services.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.4" />

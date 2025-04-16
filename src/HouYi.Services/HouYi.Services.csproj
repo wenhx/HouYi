@@ -7,11 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\HouYi.Data\HouYi.Data.csproj" />
     <ProjectReference Include="..\HouYi.Models\HouYi.Models.csproj" />
   </ItemGroup>
 

@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using HouYi.Components;
 using HouYi.Components.Account;
 using HouYi.Data;
+using HouYi.Data.Utils;
+using HouYi.Services;
 
 namespace HouYi;
 
@@ -43,6 +45,8 @@ public class Program
 
         builder.Services.AddSingleton<IEmailSender<HouYiUser>, IdentityNoOpEmailSender>();
 
+        builder.Services.AddScoped<ICustomerService, CustomerService>();
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -50,6 +54,10 @@ public class Program
         {
             app.UseWebAssemblyDebugging();
             app.UseMigrationsEndPoint();
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<HouYiDbContext>();
+            dbContext.Database.EnsureCreated();
+            ExampleDataInitializer.Seed(dbContext);
         }
         else
         {

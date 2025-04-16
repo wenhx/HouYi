@@ -1,0 +1,191 @@
+﻿@inject ICustomerService CustomerService
+
+<div class="container-fluid">
+    <!-- 主内容区 -->
+    <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>客户管理</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                <i class="bi bi-plus-circle me-1"></i> 添加客户
+            </button>
+        </div>
+
+        <!-- 搜索 -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <form class="search-form">
+                    <div class="d-flex">
+                        <input type="search" class="form-control" placeholder="搜索客户名称..." aria-label="搜索">
+                        <button class="btn btn-primary btn-search" type="submit">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 客户列表 -->
+        <div class="card">
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th data-sortable="true" class="sorting">ID</th>
+                                <th data-sortable="true" class="sorting">客户名称</th>
+                                <th data-sortable="true" class="sorting">联系人</th>
+                                <th data-sortable="true" class="sorting">联系电话</th>
+                                <th data-sortable="true" class="sorting">邮箱</th>
+                                <th data-sortable="true" class="sorting">地址</th>
+                                <th data-sortable="true" class="sorting">更新时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customerTableBody">
+                            @if (pagedCustomers == null)
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center">加载中...</td>
+                                </tr>
+                            }
+                            else if (!pagedCustomers.Items.Any())
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center">没有客户数据</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var customer in pagedCustomers.Items)
+                                {
+                                    <tr>
+                                        <td>@customer.Id</td>
+                                        <td>@customer.Name</td>
+                                        <td>@customer.ContactPerson</td>
+                                        <td>@customer.Phone</td>
+                                        <td>@customer.Email</td>
+                                        <td>@customer.Address</td>
+                                        <td>@customer.UpdatedAt.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@customer.Id">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@customer.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@customer.Id">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">每页显示：</span>
+                        <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
+                            <option value="10" selected="@(pageSize == 10)">10</option>
+                            <option value="20" selected="@(pageSize == 20)">20</option>
+                            <option value="50" selected="@(pageSize == 50)">50</option>
+                        </select>
+                        @if (pagedCustomers != null)
+                        {
+                            <span class="pagination-info">
+                                显示 @((pagedCustomers.PageNumber - 1) * pagedCustomers.PageSize + 1)-@(Math.Min(pagedCustomers.PageNumber * pagedCustomers.PageSize, pagedCustomers.TotalCount)) 条，
+                                共 @pagedCustomers.TotalCount 条记录
+                            </span>
+                        }
+                    </div>
+                    @if (pagedCustomers != null && pagedCustomers.TotalPages > 0)
+                    {
+                        <ul class="pagination mb-0">
+                            <li class="page-item @(pagedCustomers.PageNumber == 1 ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                            </li>
+                            <li class="page-item @(!pagedCustomers.HasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCustomers.PageNumber - 1)">上一页</a>
+                            </li>
+
+                            @{
+                                int startPage = Math.Max(1, pagedCustomers.PageNumber - 2);
+                                int endPage = Math.Min(pagedCustomers.TotalPages, startPage + 4);
+                                
+                                if (endPage - startPage < 4 && startPage > 1)
+                                {
+                                    startPage = Math.Max(1, endPage - 4);
+                                }
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                int pageNumber = i;
+                                <li class="page-item @(pageNumber == pagedCustomers.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(!pagedCustomers.HasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCustomers.PageNumber + 1)">下一页</a>
+                            </li>
+                            <li class="page-item @(pagedCustomers.PageNumber == pagedCustomers.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCustomers.TotalPages)">末页</a>
+                            </li>
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PagedResult<Customer>? pagedCustomers;
+    private string? errorMessage;
+    private int currentPage = 1;
+    private int pageSize = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            pagedCustomers = await CustomerService.GetCustomersAsync(currentPage, pageSize);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载客户数据时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task NavigateToPage(int page)
+    {
+        currentPage = page;
+        await LoadCustomersAsync();
+    }
+    
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newPageSize))
+        {
+            pageSize = newPageSize;
+            currentPage = 1; // 切换每页显示数量时重置到第一页
+            await LoadCustomersAsync();
+        }
+    }
+}
