@@ -1,12 +1,138 @@
 ﻿using HouYi.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace HouYi.Data.Utils;
 
 public partial class ExampleDataInitializer
 {
-    public static void Seed(HouYiDbContext dbContext)
+    private static readonly string s_AdminRoleName = "管理员";
+
+    public static async Task Seed(IServiceProvider sp)
     {
+        ILogger<ExampleDataInitializer> logger = sp.GetRequiredService<ILogger<ExampleDataInitializer>>();
+        HouYiDbContext dbContext = sp.GetRequiredService<HouYiDbContext>();
+        dbContext.Database.EnsureDeleted();
+        dbContext.Database.EnsureCreated();
+
+        await SeedUserData(dbContext,
+            sp.GetRequiredService<UserManager<HouYiUser>>(),
+            sp.GetRequiredService<RoleManager<IdentityRole<int>>>());
         SeedCustomersData(dbContext);
+        SeedPositionData(dbContext, logger);
+    }
+
+    private static void SeedPositionData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
+    {
+        if (dbContext.Positions.Any()) return;
+
+        List<Customer> customers = dbContext.Customers.ToList();
+        List<HouYiUser> notAdminUsers = (from u in dbContext.Users
+                                         join ur in dbContext.UserRoles on u.Id equals ur.UserId
+                                         join r in dbContext.Roles on ur.RoleId equals r.Id
+                                         where r.Name != s_AdminRoleName
+                                         select u).ToList();
+
+        var random = new Random();
+        var positions = new List<Position>();
+
+        var positionNames = new[]
+        {
+            "高级Java开发工程师",
+            "前端开发工程师",
+            "产品经理",
+            "测试工程师",
+            "运维工程师",
+            "UI设计师",
+            "数据分析师",
+            "架构师",
+            "项目经理",
+            "安全工程师",
+            "移动开发工程师",
+            "大数据工程师",
+            "人工智能工程师",
+            "DevOps工程师",
+            "技术总监"
+        };
+
+        var descriptions = new[]
+        {
+            "负责核心业务系统开发，要求5年以上Java开发经验",
+            "负责Web前端开发，要求精通React或Vue",
+            "负责产品规划与设计，要求3年以上产品经验",
+            "负责软件测试工作，要求熟悉自动化测试",
+            "负责系统运维，要求熟悉Linux和Docker",
+            "负责产品UI设计，要求有良好的审美能力",
+            "负责数据分析和挖掘，要求熟悉Python和SQL",
+            "负责系统架构设计，要求8年以上开发经验",
+            "负责项目管理，要求PMP认证优先",
+            "负责系统安全，要求熟悉网络安全技术",
+            "负责iOS/Android开发，要求3年以上移动开发经验",
+            "负责大数据平台开发，要求熟悉Hadoop生态",
+            "负责AI算法开发，要求熟悉机器学习框架",
+            "负责CI/CD流程，要求熟悉Jenkins和Kubernetes",
+            "负责技术团队管理，要求10年以上技术经验"
+        };
+
+        var statuses = Enum.GetValues<PositionStatus>();
+        for (int i = 0; i < positionNames.Length; i++)
+        {
+            var customer = customers[random.Next(customers.Count)];
+            var consultant = notAdminUsers[random.Next(notAdminUsers.Count)];
+            var status = statuses[random.Next(statuses.Length)];
+            var daysAgo = random.Next(180); // 最近6个月内的随机天数
+
+            positions.Add(new Position
+            {
+                Name = positionNames[i],
+                Customer = customer,
+                CustomerId = customer.Id,
+                Status = status,
+                Number = (byte)random.Next(5),
+                Consultant = consultant,
+                ConsultantId = consultant.Id,
+                Description = descriptions[i],
+                CreateAt = DateTime.Now.AddDays(-daysAgo),
+                UpdateAt = DateTime.Now.AddDays(-daysAgo)
+            });
+        }
+
+        dbContext.Positions.AddRange(positions);
+        dbContext.SaveChanges();
+        logger.LogInformation("Position data seeded successfully. [{0}]", positions.Count);
+    }
+
+    private static async Task SeedUserData(HouYiDbContext dbContext, UserManager<HouYiUser> userManager, RoleManager<IdentityRole<int>> roleManager)
+    {
+        string password = "1@34abcD";
+        await CreateUser(userManager, roleManager, s_AdminRoleName, "admin@houyi.com", "Admin", password);
+        await CreateUser(userManager, roleManager, "经理", "manager@houyi.com", "Manager", password);
+        string consultantRoleName = "顾问";
+        await CreateUser(userManager, roleManager, consultantRoleName, "consultant1@houyi.com", "Consultant1", password);
+        await CreateUser(userManager, roleManager, consultantRoleName, "consultant2@houyi.com", "Consultant2", password);
+    }
+
+    private static async Task CreateUser(UserManager<HouYiUser> userManager, RoleManager<IdentityRole<int>> roleManager, string roleName, string email, string userName, string password)
+    {
+        bool isRoleExist = await roleManager.RoleExistsAsync(roleName);
+        if (!isRoleExist)
+        {
+            IdentityRole<int> role = new() { Name = roleName };
+            await roleManager.CreateAsync(role);
+        }
+        HouYiUser? user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            user = new HouYiUser { UserName = userName, Email = email, EmailConfirmed = true };
+            IdentityResult result = await userManager.CreateAsync(user, password);
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(user, roleName);
+                //await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("Permission", "Admin"));
+            }
+        }
     }
 
     private static void SeedCustomersData(HouYiDbContext dbContext)
