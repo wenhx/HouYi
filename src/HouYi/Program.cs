@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using HouYi.Components;
@@ -6,6 +6,7 @@ using HouYi.Components.Account;
 using HouYi.Data;
 using HouYi.Data.Utils;
 using HouYi.Services;
+using HouYi.Models;
 
 namespace HouYi;
 
@@ -39,6 +40,7 @@ public class Program
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
         builder.Services.AddIdentityCore<HouYiUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            .AddRoles<IdentityRole<int>>()
             .AddEntityFrameworkStores<HouYiDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
@@ -46,6 +48,7 @@ public class Program
         builder.Services.AddSingleton<IEmailSender<HouYiUser>, IdentityNoOpEmailSender>();
 
         builder.Services.AddScoped<ICustomerService, CustomerService>();
+        builder.Services.AddScoped<IPositionService, PositionService>();
 
         var app = builder.Build();
 
@@ -55,9 +58,7 @@ public class Program
             app.UseWebAssemblyDebugging();
             app.UseMigrationsEndPoint();
             using var scope = app.Services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<HouYiDbContext>();
-            dbContext.Database.EnsureCreated();
-            ExampleDataInitializer.Seed(dbContext);
+            ExampleDataInitializer.Seed(scope.ServiceProvider).Wait();
         }
         else
         {

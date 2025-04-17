@@ -27,7 +27,7 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "position" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("position", "职位管理")'>
+                    <a class="nav-link @(currentPage == "position" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("Positions", "职位管理")'>
                         <i class="bi bi-briefcase me-2"></i> 职位管理
                     </a>
                 </li>
@@ -52,7 +52,7 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "customers" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("customers", "客户管理")'>
+                    <a class="nav-link @(currentPage == "customers" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("Customers", "客户管理")'>
                         <i class="bi bi-building me-2"></i> 客户管理
                     </a>
                 </li>
@@ -71,13 +71,13 @@
                 @foreach (var tab in openTabs)
                 {
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link @(tab.Id == activeTabId ? "active" : "")" 
-                                id="@tab.Id-tab" 
+                        <button class="nav-link @(tab.Id == activeTabId ? "active" : "")"
+                                id="@tab.Id-tab"
                                 @onclick="() => ActivateTab(tab.Id)"
                                 type="button" role="tab">
                             @tab.Title
-                            <span class="close-tab @(openTabs.Count > 1 ? "" : "d-none")" 
-                                  @onclick="() => CloseTab(tab.Id)" 
+                            <span class="close-tab @(openTabs.Count > 1 ? "" : "d-none")"
+                                  @onclick="() => CloseTab(tab.Id)"
                                   @onclick:stopPropagation="true">✕</span>
                         </button>
                     </li>
@@ -88,7 +88,7 @@
             <div class="tab-content" id="mainTabContent">
                 @foreach (var tab in openTabs)
                 {
-                    <div class="tab-pane fade @(tab.Id == activeTabId ? "show active" : "")" 
+                    <div class="tab-pane fade @(tab.Id == activeTabId ? "show active" : "")"
                          id="@tab.Id-content" role="tabpanel">
                         @switch (tab.Id)
                         {
@@ -96,8 +96,11 @@
                                 <h1 class="mb-4">数据看板</h1>
                                 <p>数据看板内容...</p>
                                 break;
-                            case "customers":
-                                <HouYi.Components.Pages.Customers />
+                            case nameof(Customers):
+                                <Customers />
+                                break;
+                            case nameof(Positions):
+                                <Positions />
                                 break;
                             default:
                                 <h1 class="mb-4">@tab.Title</h1>
@@ -125,7 +128,7 @@
     private void ChangePage(string pageId, string pageTitle)
     {
         currentPage = pageId;
-        
+
         // 检查标签页是否已经打开
         var existingTab = openTabs.FirstOrDefault(t => t.Id == pageId);
         if (existingTab == null)
@@ -133,7 +136,7 @@
             // 如果标签页不存在，添加新标签页
             openTabs.Add(new TabItem { Id = pageId, Title = pageTitle });
         }
-        
+
         // 激活对应的标签页
         ActivateTab(pageId);
     }
@@ -146,12 +149,12 @@
     private void CloseTab(string tabId)
     {
         // 使用@onclick:stopPropagation="true"已经处理了事件冒泡问题
-        
+
         if (openTabs.Count > 1)
         {
             int index = openTabs.FindIndex(t => t.Id == tabId);
             openTabs.RemoveAt(index);
-            
+
             // 如果关闭的是当前激活的标签页，则激活其他标签页
             if (tabId == activeTabId)
             {

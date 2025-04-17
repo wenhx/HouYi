@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using HouYi.Components.Account.Pages;
 using HouYi.Components.Account.Pages.Manage;
-using HouYi.Data;
+using HouYi.Models;
 
 namespace Microsoft.AspNetCore.Routing;
 

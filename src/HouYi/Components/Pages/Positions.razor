@@ -1,0 +1,270 @@
+﻿@inject IPositionService PositionService
+
+<div class="container-fluid p-0">
+    <!-- 主内容区 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>职位管理</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal">
+            <i class="bi bi-plus-circle me-1"></i> 添加职位
+        </button>
+    </div>
+
+    <!-- 搜索和过滤 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form class="search-form" @onsubmit="SearchPositions" @onsubmit:preventDefault>
+                <div class="d-flex">
+                    <select class="form-select me-2" @bind="searchField" style="width: 150px;">
+                        <option value="Name">职位名称</option>
+                        <option value="Customer">公司</option>
+                        <option value="Consultant">顾问</option>
+                    </select>
+                    <input type="search" class="form-control" placeholder="搜索..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                    <button class="btn btn-primary btn-search" type="submit">
+                        <i class="bi bi-search me-1"></i>搜索
+                    </button>
+                    @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
+                    {
+                        <button class="btn btn-outline-secondary ms-2" @onclick:preventDefault @onclick="ClearSearch" style="min-width: 100px;">
+                            <i class="bi bi-x-circle me-1"></i>清除
+                        </button>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 职位列表 -->
+    <div class="card">
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th data-sortable="true" data-field="title" class="sorting">职位名称</th>
+                            <th data-sortable="true" data-field="company" class="sorting">公司</th>
+                            <th data-sortable="true" data-field="status" class="sorting">
+                                <span>状态</span>
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item @(selectedStatus == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(null)">所有状态</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == PositionStatus.Closed ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(PositionStatus.Closed)">关闭</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == PositionStatus.Open ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(PositionStatus.Open)">开放</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == PositionStatus.Suspended ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(PositionStatus.Suspended)">暂停</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == PositionStatus.Completed ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(PositionStatus.Completed)">完成</a></li>
+                                    </ul>
+                                </div>
+                            </th>
+                            <th data-sortable="true" data-field="recruiter" class="sorting">招聘人数</th>
+                            <th>顾问</th>
+                            <th>客户联系人</th>
+                            <th>联系方式</th>
+                            <th data-sortable="true" data-field="createTime" class="sorting-desc">发布日期</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionTableBody">
+                        @if (pagedPositions == null)
+                        {
+                            <tr>
+                                <td colspan="11" class="text-center">加载中...</td>
+                            </tr>
+                        }
+                        else if (!pagedPositions.Items.Any())
+                        {
+                            <tr>
+                                <td colspan="11" class="text-center">没有职位数据</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var position in pagedPositions.Items)
+                            {
+                                <tr>
+                                    <td>@position.Id</td>
+                                    <td>@position.Name</td>
+                                    <td>@position.Customer.Name</td>
+                                    <td>@GetStatusString(position.Status)</td>
+                                    <td>@position.Number</td>
+                                    <td>@position.Consultant.UserName</td>
+                                    <td>@position.Customer.ContactPerson</td>
+                                    <td>@position.Customer.Phone</td>
+                                    <td>@position.CreateAt.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@position.Id">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@position.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@position.Id">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex align-items-center">
+                    <span class="me-2">每页显示：</span>
+                    <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
+                        <option value="10" selected="@(pageSize == 10)">10</option>
+                        <option value="20" selected="@(pageSize == 20)">20</option>
+                        <option value="50" selected="@(pageSize == 50)">50</option>
+                    </select>
+                    @if (pagedPositions != null)
+                    {
+                        <span class="pagination-info">
+                            显示 @((pagedPositions.PageNumber - 1) * pagedPositions.PageSize + 1)-@(Math.Min(pagedPositions.PageNumber * pagedPositions.PageSize, pagedPositions.TotalCount)) 条，
+                            共 @pagedPositions.TotalCount 条记录
+                        </span>
+                    }
+                </div>
+                @if (pagedPositions != null && pagedPositions.TotalPages > 0)
+                {
+                    <ul class="pagination mb-0">
+                        <li class="page-item @(pagedPositions.PageNumber == 1 ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                        </li>
+                        <li class="page-item @(!pagedPositions.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedPositions.PageNumber - 1)">上一页</a>
+                        </li>
+
+                        @{
+                            int startPage = Math.Max(1, pagedPositions.PageNumber - 2);
+                            int endPage = Math.Min(pagedPositions.TotalPages, startPage + 4);
+
+                            if (endPage - startPage < 4 && startPage > 1)
+                            {
+                                startPage = Math.Max(1, endPage - 4);
+                            }
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            int pageNumber = i;
+                            <li class="page-item @(pageNumber == pagedPositions.PageNumber ? "active" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(!pagedPositions.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedPositions.PageNumber + 1)">下一页</a>
+                        </li>
+                        <li class="page-item @(pagedPositions.PageNumber == pagedPositions.TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedPositions.TotalPages)">末页</a>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PagedResult<Position>? pagedPositions;
+    private string? errorMessage;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private string searchField = "Name";
+    private string searchTerm = "";
+    private bool isSearchMode = false;
+    private PositionStatus? selectedStatus;
+
+    // Method to map PositionStatus to Chinese
+    private string GetStatusString(PositionStatus status)
+    {
+        return status switch
+        {
+            PositionStatus.Closed => "关闭",
+            PositionStatus.Open => "开放",
+            PositionStatus.Suspended => "暂停",
+            PositionStatus.Completed => "完成",
+            _ => "未知"
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPositionsAsync();
+    }
+
+    private async Task LoadPositionsAsync()
+    {
+        try
+        {
+            if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
+            {
+                pagedPositions = await PositionService.FindPositionsAsync(searchField, searchTerm, currentPage, pageSize, selectedStatus);
+            }
+            else
+            {
+                pagedPositions = await PositionService.GetPositionsAsync(currentPage, pageSize, selectedStatus);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载职位数据时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task NavigateToPage(int page)
+    {
+        currentPage = page;
+        await LoadPositionsAsync();
+    }
+
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newPageSize))
+        {
+            pageSize = newPageSize;
+            currentPage = 1;
+            await LoadPositionsAsync();
+        }
+    }
+
+    private async Task SearchPositions()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await ClearSearch();
+            return;
+        }
+
+        isSearchMode = true;
+        currentPage = 1;
+        await LoadPositionsAsync();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = "";
+        isSearchMode = false;
+        currentPage = 1;
+        await LoadPositionsAsync();
+    }
+
+    private async Task FilterByStatus(PositionStatus? status)
+    {
+        selectedStatus = status;
+        currentPage = 1;
+        await LoadPositionsAsync();
+    }
+}
