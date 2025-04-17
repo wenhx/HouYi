@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
+using System.Text;
+using System.Text.Json;
 
 namespace HouYi.Data.Utils;
 
@@ -22,6 +23,8 @@ public partial class ExampleDataInitializer
             sp.GetRequiredService<RoleManager<IdentityRole<int>>>());
         SeedCustomersData(dbContext);
         SeedPositionData(dbContext, logger);
+        SeedPlaceData(dbContext, logger);
+        SeedResumeData(dbContext, logger);
     }
 
     private static void SeedPositionData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
@@ -346,4 +349,209 @@ public partial class ExampleDataInitializer
         dbContext.Customers.AddRange(customers);
         dbContext.SaveChanges();
     }
+
+    #region Resume
+    public static void SeedResumeData(HouYiDbContext db, ILogger<ExampleDataInitializer> logger)
+    {
+        if (!db.Resumes.Any())
+        {
+            var cities = db.Places
+                .Where(data => data.Level == 3 && data.IsDeleted == false).ToList();
+            var resumes = GenerateResumes(100, cities);
+            db.Resumes.AddRange(resumes);
+            db.SaveChanges();
+            logger.LogInformation("Resume data seeded successfully. [{0}]", resumes.Count);
+        }
+    }
+
+    private static List<Resume> GenerateResumes(int count, List<Place> cities)
+    {
+        var resumes = new List<Resume>();
+        var random = new Random();
+
+        for (int i = 0; i < count; i++)
+        {
+            var name = s_ChineseNames[i]; // Sequential access instead of random
+            var position = s_Positions[random.Next(s_Positions.Length)];
+            var isComplete = random.NextDouble() <= 0.8;
+
+            var createdAt = GenerateDateTime(random);
+            var updatedAt = createdAt.AddMinutes(random.Next(1, 24 * 60));
+            if (updatedAt > DateTime.Now)
+            {
+                updatedAt = DateTime.Now;
+            }
+            byte age = (byte)random.Next(22, 61);
+            var resume = new Resume
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = name,
+                Gender = (Gender)random.Next(0, 3),
+                Age = age,
+                Phone = GeneratePhoneNumber(random),
+                Email = $"{PinyinConverter.ToPinyin(name)}@qq.com",
+                Status = (EmploymentStatus)random.Next(0, 4),
+                Position = isComplete ? position : string.Empty,
+                HighestEducation = (EducationLevel)random.Next(0, 6),
+                YearsOfExperience = (byte)(age - 22),
+                AnnualSalary = (short)random.Next(50, 200),
+                PlaceId = (short)cities[random.Next(0, cities.Count)].Id,
+                Source = (ResumeSource)random.Next(1, 4),
+                Note = isComplete
+                    ? string.Format(
+                        s_EvaluationTemplates[random.Next(s_EvaluationTemplates.Length)],
+                        position)
+                    : string.Empty,
+                CreatedAt = createdAt,
+                UpdatedAt = updatedAt
+            };
+
+            resumes.Add(resume);
+        }
+
+        return resumes;
+    }
+
+    private static readonly string[] s_ChineseNames = {
+        "李志强", "王建国", "张伟", "刘德华", "陈东海", "杨军", "黄海平", "赵文明", "周国平", "吴德文",
+        "李思源", "王子轩", "张晓峰", "刘明辉", "陈家豪", "杨博文", "黄凯旋", "赵天成", "周建华", "吴俊杰",
+        "郑智勇", "孙志伟", "钱学良", "周海洋", "吴承恩", "郭明亮", "何宇航", "马超", "林志峰", "王浩然",
+        "张云飞", "刘思远", "陈奕然", "杨明哲", "黄博文", "赵鑫磊", "周泽明", "吴思远", "郑博远", "孙长青",
+        "李雨泽", "王子墨", "张浩然", "刘天宇", "陈思远", "杨雨泽", "黄晨阳", "赵瑞祥", "周子豪", "吴宇轩",
+        "郑明哲", "孙浩宇", "钱辰皓", "周子墨", "吴博文", "郭天翔", "何宇轩", "马晨阳", "林子轩", "王博远",
+        "张志强", "刘雨晨", "陈浩宇", "杨子默", "黄天佑", "赵子豪", "周浩然", "吴明轩", "郑子轩", "孙浩轩",
+        "李晓峰", "王浩宇", "张雨轩", "刘子豪", "陈志远", "杨博远", "黄浩轩", "赵明哲", "周博文", "吴子轩",
+        "郑浩然", "孙天成", "钱志远", "周博远", "吴天宇", "郭子轩", "何浩然", "马天翔", "林浩宇", "王子轩",
+        "张浩轩", "刘博远", "陈子轩", "杨天宇", "黄博远", "赵浩然", "周天宇", "吴浩然", "郑天宇", "孙浩然"
+    };
+
+    private static readonly string[] s_Positions = {
+        "研发总监", "技术总监", "首席架构师", "高级架构师", "技术经理",
+        "财务总监", "人力资源总监", "运营总监", "市场总监", "销售总监",
+        "前端工程师", "后端工程师", "全栈工程师", "数据工程师", "测试工程师",
+        "产品经理", "项目经理", "运维工程师", "UI设计师", "数据分析师"
+    };
+
+    private static readonly string[] s_EvaluationTemplates = {
+        "该候选人在{0}领域有丰富经验，技术功底扎实，团队协作能力强。",
+        "作为{0}，展现出优秀的领导才能和项目管理能力，善于解决复杂问题。",
+        "具有多年{0}经验，对业务理解深刻，能力突出，沟通表达清晰。",
+        "在{0}岗位表现出色，具有创新思维，能快速适应新环境和技术。",
+        "专业的{0}人才，工作态度认真负责，有强烈的责任心和进取心。"
+    };
+
+    private static string GeneratePhoneNumber(Random random)
+    {
+        var sb = new StringBuilder("13");
+        for (int i = 0; i < 9; i++)
+        {
+            sb.Append(random.Next(0, 10));
+        }
+        return sb.ToString();
+    }
+
+    private static DateTime GenerateDateTime(Random random)
+    {
+        var rangeDays = 365;
+        var randomDays = random.Next(rangeDays) * -1;
+        var randomTime = random.Next(24 * 60 * 60) * -1; // seconds in a day
+
+        return DateTime.Now.AddDays(randomDays).AddSeconds(randomTime);
+    }
+    #endregion
+    #region Places
+    public static void SeedPlaceData(HouYiDbContext db, ILogger<ExampleDataInitializer> logger)
+    {
+        if (db.Places.Count() > 0)
+            return;
+
+        short id = 10000;
+        var china = new Place
+        {
+            Id = id++,
+            Code = "86",
+            Name = "中国",
+            Level = 1,
+            SortOrder = 0,
+            IsDeleted = false,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+        db.Places.Add(china);
+
+        string json = File.ReadAllText("..\\Places.txt");
+        var provinces = JsonSerializer.Deserialize<List<Province>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        foreach (var province in provinces)
+        {
+            var provinceEntity = new Place
+            {
+                Id = id++,
+                Code = province.Code,
+                Name = province.Name,
+                Level = 2,
+                SortOrder = 0,
+                IsDeleted = false,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                ParentId = china.Id
+            };
+            db.Places.Add(provinceEntity);
+            foreach (var city in province.City)
+            {
+                var cityEntity = new Place
+                {
+                    Id = id++,
+                    Code = city.Code,
+                    Name = city.Name,
+                    Level = 3,
+                    SortOrder = 0,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now,
+                    ParentId = provinceEntity.Id
+                };
+                db.Places.Add(cityEntity);
+
+                foreach (var area in city.Area)
+                {
+                    var areaEntity = new Place
+                    {
+                        Id = id++,
+                        Code = area.Code,
+                        Name = area.Name,
+                        Level = 4,
+                        SortOrder = 0,
+                        IsDeleted = false,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                        ParentId = cityEntity.Id
+                    };
+                    db.Places.Add(areaEntity);
+                }
+            }
+            db.SaveChanges();
+            logger.LogInformation("Place data seeded successfully. [{0}]", id);
+        }
+    }
+
+    class Area
+    {
+        public string Name { get; set; }
+        public string Code { get; set; }
+    }
+
+    class City
+    {
+        public string Name { get; set; }
+        public string Code { get; set; }
+        public List<Area> Area { get; set; } = new List<Area>();
+    }
+
+    class Province
+    {
+        public string Name { get; set; }
+        public string Code { get; set; }
+        public List<City> City { get; set; } = new List<City>();
+    }
+    #endregion
 }

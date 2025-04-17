@@ -49,6 +49,7 @@ public class Program
 
         builder.Services.AddScoped<ICustomerService, CustomerService>();
         builder.Services.AddScoped<IPositionService, PositionService>();
+        builder.Services.AddScoped<IResumeService, ResumeService>();
 
         var app = builder.Build();
 

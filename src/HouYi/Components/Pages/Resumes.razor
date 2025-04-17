@@ -1,0 +1,361 @@
+﻿@inject IResumeService ResumeService
+
+<div class="container-fluid p-0">
+    <!-- 主内容区 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>人才库</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-circle me-1"></i> 添加简历
+        </button>
+    </div>
+
+    <!-- 搜索和过滤 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form class="search-form" @onsubmit="SearchResumes" @onsubmit:preventDefault>
+                <div class="d-flex">
+                    <select class="form-select me-2" @bind="searchField" style="width: 150px;">
+                        <option value="Name">姓名</option>
+                        <option value="Phone">电话</option>
+                        <option value="Email">邮箱</option>
+                        <option value="Position">职位</option>
+                    </select>
+                    <input type="search" class="form-control" placeholder="搜索简历..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                    <button class="btn btn-primary btn-search" type="submit">
+                        <i class="bi bi-search me-1"></i>搜索
+                    </button>
+                    @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
+                    {
+                        <button class="btn btn-outline-secondary ms-2" @onclick:preventDefault @onclick="ClearSearch" style="min-width: 100px;">
+                            <i class="bi bi-x-circle me-1"></i>清除
+                        </button>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 简历列表 -->
+    <div class="card">
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th data-sortable="true" data-field="id" class="sorting d-none">ID</th>
+                            <th data-sortable="true" data-field="name" class="sorting">姓名</th>
+                            <th data-sortable="true" data-field="gender" class="sorting">
+                                <span>性别</span>
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item @(selectedGender == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByGender(null)">所有性别</a></li>
+                                        <li><a class="dropdown-item @(selectedGender == Gender.Male ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByGender(Gender.Male)">男</a></li>
+                                        <li><a class="dropdown-item @(selectedGender == Gender.Female ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByGender(Gender.Female)">女</a></li>
+                                        <li><a class="dropdown-item @(selectedGender == Gender.PreferNotToSay ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByGender(Gender.PreferNotToSay)">保密</a></li>
+                                    </ul>
+                                </div>
+                            </th>
+                            <th data-sortable="true" data-field="age" class="sorting">年龄</th>
+                            <th data-sortable="true" data-field="phone" class="sorting">电话</th>
+                            <th data-sortable="true" data-field="email" class="sorting">邮箱</th>
+                            <th data-sortable="true" data-field="position" class="sorting">职位</th>
+                            <th data-sortable="true" data-field="status" class="sorting">
+                                <span>状态</span>
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item @(selectedStatus == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(null)">所有状态</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == EmploymentStatus.Unemployed ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(EmploymentStatus.Unemployed)">待业中</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == EmploymentStatus.EmployedAndNotConsideringOpportunities ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(EmploymentStatus.EmployedAndNotConsideringOpportunities)">在职-不考虑机会</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == EmploymentStatus.EmployedAndOpenToOpportunities ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(EmploymentStatus.EmployedAndOpenToOpportunities)">在职-考虑新机会</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == EmploymentStatus.Unknown ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(EmploymentStatus.Unknown)">未知</a></li>
+                                    </ul>
+                                </div>
+                            </th>
+                            <th data-sortable="true" data-field="degree" class="sorting">学历</th>
+                            <th data-sortable="true" data-field="salary" class="sorting">年薪(K)</th>
+                            <th data-sortable="true" data-field="experience" class="sorting">工作经验</th>
+                            <th data-sortable="true" data-field="city" class="sorting">所在地</th>
+                            <th data-sortable="true" data-field="source" class="sorting">简历来源</th>
+                            <th data-sortable="true" data-field="updateTime" class="sorting-desc">更新时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resumeTableBody">
+                        @if (pagedResumes == null)
+                        {
+                            <tr>
+                                <td colspan="14" class="text-center">加载中...</td>
+                            </tr>
+                        }
+                        else if (!pagedResumes.Items.Any())
+                        {
+                            <tr>
+                                <td colspan="14" class="text-center">没有简历数据</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var resume in pagedResumes.Items)
+                            {
+                                <tr>
+                                    <td class="d-none">@resume.Id</td>
+                                    <td>@resume.Name</td>
+                                    <td>@GetGenderString(resume.Gender)</td>
+                                    <td>@resume.Age</td>
+                                    <td>@resume.Phone</td>
+                                    <td>@resume.Email</td>
+                                    <td>@resume.Position</td>
+                                    <td>@GetStatusString(resume.Status)</td>
+                                    <td>@GetEducationString(resume.HighestEducation)</td>
+                                    <td>@resume.AnnualSalary</td>
+                                    <td>@GetExperienceString(resume.YearsOfExperience)</td>
+                                    <td>@resume.Place.Name</td>
+                                    <td>@GetSourceString(resume.Source)</td>
+                                    <td>@resume.UpdatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@resume.Id">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@resume.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@resume.Id">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex align-items-center">
+                    <span class="me-2">每页显示：</span>
+                    <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
+                        <option value="10" selected="@(pageSize == 10)">10</option>
+                        <option value="20" selected="@(pageSize == 20)">20</option>
+                        <option value="50" selected="@(pageSize == 50)">50</option>
+                    </select>
+                    @if (pagedResumes != null)
+                    {
+                        <span class="pagination-info">
+                            显示 @((pagedResumes.PageNumber - 1) * pagedResumes.PageSize + 1)-@(Math.Min(pagedResumes.PageNumber * pagedResumes.PageSize, pagedResumes.TotalCount)) 条，
+                            共 @pagedResumes.TotalCount 条记录
+                        </span>
+                    }
+                </div>
+                @if (pagedResumes != null && pagedResumes.TotalPages > 0)
+                {
+                    <ul class="pagination mb-0">
+                        <li class="page-item @(pagedResumes.PageNumber == 1 ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                        </li>
+                        <li class="page-item @(!pagedResumes.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedResumes.PageNumber - 1)">上一页</a>
+                        </li>
+
+                        @{
+                            int startPage = Math.Max(1, pagedResumes.PageNumber - 2);
+                            int endPage = Math.Min(pagedResumes.TotalPages, startPage + 4);
+
+                            if (endPage - startPage < 4 && startPage > 1)
+                            {
+                                startPage = Math.Max(1, endPage - 4);
+                            }
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            int pageNumber = i;
+                            <li class="page-item @(pageNumber == pagedResumes.PageNumber ? "active" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(!pagedResumes.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedResumes.PageNumber + 1)">下一页</a>
+                        </li>
+                        <li class="page-item @(pagedResumes.PageNumber == pagedResumes.TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedResumes.TotalPages)">末页</a>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PagedResult<Resume>? pagedResumes;
+    private string? errorMessage;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private string searchField = "Name";
+    private string searchTerm = "";
+    private bool isSearchMode = false;
+    private Gender? selectedGender;
+    private EmploymentStatus? selectedStatus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadResumesAsync();
+    }
+
+    private async Task LoadResumesAsync()
+    {
+        try
+        {
+            if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
+            {
+                pagedResumes = await ResumeService.FindResumesAsync(searchField, searchTerm, currentPage, pageSize, selectedGender, selectedStatus);
+            }
+            else
+            {
+                pagedResumes = await ResumeService.GetResumesAsync(currentPage, pageSize, selectedGender, selectedStatus);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载简历数据时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task NavigateToPage(int page)
+    {
+        currentPage = page;
+        await LoadResumesAsync();
+    }
+
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newPageSize))
+        {
+            pageSize = newPageSize;
+            currentPage = 1;
+            await LoadResumesAsync();
+        }
+    }
+
+    private async Task SearchResumes()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await ClearSearch();
+            return;
+        }
+
+        isSearchMode = true;
+        currentPage = 1;
+        await LoadResumesAsync();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = "";
+        isSearchMode = false;
+        currentPage = 1;
+        await LoadResumesAsync();
+    }
+
+    private async Task FilterByGender(Gender? gender)
+    {
+        selectedGender = gender;
+        currentPage = 1;
+        await LoadResumesAsync();
+    }
+
+    private async Task FilterByStatus(EmploymentStatus? status)
+    {
+        selectedStatus = status;
+        currentPage = 1;
+        await LoadResumesAsync();
+    }
+
+    private string GetGenderString(Gender gender)
+    {
+        return gender switch
+        {
+            Gender.Male => "男",
+            Gender.Female => "女",
+            Gender.PreferNotToSay => "保密",
+            _ => "未知"
+        };
+    }
+
+    private string GetStatusString(EmploymentStatus status)
+    {
+        return status switch
+        {
+            EmploymentStatus.Unemployed => "待业中",
+            EmploymentStatus.EmployedAndNotConsideringOpportunities => "在职-不考虑机会",
+            EmploymentStatus.EmployedAndOpenToOpportunities => "在职-考虑新机会",
+            _ => "未知"
+        };
+    }
+
+    private string GetEducationString(EducationLevel degree)
+    {
+        return degree switch
+        {
+            EducationLevel.Doctorate => "博士",
+            EducationLevel.Master => "硕士",
+            EducationLevel.Bachelor => "本科",
+            EducationLevel.Associate => "大专",
+            EducationLevel.Other => "其他",
+            _ => "未知"
+        };
+    }
+
+    private string GetSourceString(ResumeSource source)
+    {
+        return source switch
+        {
+            ResumeSource.TalentPool => "人才库",
+            ResumeSource.Consultant => "猎头搜集",
+            ResumeSource.Company => "企业推荐",
+            ResumeSource.Candidate => "主动投递",
+            ResumeSource.Partner => "合作伙伴",
+            _ => "其他"
+        };
+    }
+
+    private string GetExperienceString(byte year)
+    {
+        if (year == 0)
+        {
+            return "应届生";
+        }
+        else if (year < 3)
+        {
+            return "1-3年";
+        }
+        else if (year < 5)
+        {
+            return "3-5年";
+        }
+        else if (year < 10)
+        {
+            return "5-10年";
+        }
+        else
+        {
+            return "10年以上";
+        }
+    }
+}

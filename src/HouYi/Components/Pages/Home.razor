@@ -22,12 +22,12 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "resume" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("resume", "人才库")'>
+                    <a class="nav-link @(currentPage == "resume" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Resumes), "人才库")'>
                         <i class="bi bi-file-earmark-person me-2"></i> 人才库
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "position" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("Positions", "职位管理")'>
+                    <a class="nav-link @(currentPage == "position" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Positions), "职位管理")'>
                         <i class="bi bi-briefcase me-2"></i> 职位管理
                     </a>
                 </li>
@@ -52,7 +52,7 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "customers" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("Customers", "客户管理")'>
+                    <a class="nav-link @(currentPage == "customers" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Customers), "客户管理")'>
                         <i class="bi bi-building me-2"></i> 客户管理
                     </a>
                 </li>
@@ -72,13 +72,13 @@
                 {
                     <li class="nav-item" role="presentation">
                         <button class="nav-link @(tab.Id == activeTabId ? "active" : "")"
-                                id="@tab.Id-tab"
-                                @onclick="() => ActivateTab(tab.Id)"
-                                type="button" role="tab">
+                        id="@tab.Id-tab"
+                        @onclick="() => ActivateTab(tab.Id)"
+                        type="button" role="tab">
                             @tab.Title
                             <span class="close-tab @(openTabs.Count > 1 ? "" : "d-none")"
-                                  @onclick="() => CloseTab(tab.Id)"
-                                  @onclick:stopPropagation="true">✕</span>
+                            @onclick="() => CloseTab(tab.Id)"
+                            @onclick:stopPropagation="true">✕</span>
                         </button>
                     </li>
                 }
@@ -89,12 +89,15 @@
                 @foreach (var tab in openTabs)
                 {
                     <div class="tab-pane fade @(tab.Id == activeTabId ? "show active" : "")"
-                         id="@tab.Id-content" role="tabpanel">
+                    id="@tab.Id-content" role="tabpanel">
                         @switch (tab.Id)
                         {
                             case "dashboard":
                                 <h1 class="mb-4">数据看板</h1>
                                 <p>数据看板内容...</p>
+                                break;
+                            case nameof(Resumes):
+                                <Resumes />
                                 break;
                             case nameof(Customers):
                                 <Customers />
