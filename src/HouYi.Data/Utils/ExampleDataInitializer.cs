@@ -25,6 +25,7 @@ public partial class ExampleDataInitializer
         SeedPositionData(dbContext, logger);
         SeedPlaceData(dbContext, logger);
         SeedResumeData(dbContext, logger);
+        SeedRecommendationData(dbContext, logger);
     }
 
     private static void SeedPositionData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
@@ -533,7 +534,6 @@ public partial class ExampleDataInitializer
             logger.LogInformation("Place data seeded successfully. [{0}]", id);
         }
     }
-
     class Area
     {
         public string Name { get; set; }
@@ -552,6 +552,122 @@ public partial class ExampleDataInitializer
         public string Name { get; set; }
         public string Code { get; set; }
         public List<City> City { get; set; } = new List<City>();
+    }
+    #endregion
+    #region Recommendations
+    public static void SeedRecommendationData(HouYiDbContext db, ILogger<ExampleDataInitializer> logger)
+    {
+        if (db.Recommendations.Any()) return;
+
+        var positions = db.Positions.ToList();
+        var resumes = db.Resumes.ToList();
+        var random = new Random();
+        var recommendations = new List<Recommendation>();
+        var statuses = Enum.GetValues<RecommendationStatus>();
+        RatingLevel[] matchLevels = new RatingLevel[] { RatingLevel.OneStar, RatingLevel.TwoStars, RatingLevel.ThreeStars, RatingLevel.FourStars, RatingLevel.FiveStars };
+
+        foreach (var position in positions)
+        {
+            // 每个职位生成1-10条推荐记录
+            int recommendationCount = random.Next(1, 11);
+            var selectedResumes = resumes.OrderBy(x => random.Next()).Take(recommendationCount).ToList();
+
+            foreach (var resume in selectedResumes)
+            {
+                RecommendationStatus status = statuses[random.Next(statuses.Length)];
+                var recommendation = new Recommendation
+                {
+                    ResumeId = resume.Id,
+                    PositionId = position.Id,
+                    Reason = GenerateRecommendationReason(position, resume),
+                    Status = status,
+                    MatchLevel = matchLevels[random.Next(matchLevels.Length)],
+                    Feedback = GenerateFeedback(position, resume, status, random),
+                    CreatedAt = DateTime.Now.AddDays(-random.Next(1, 30)),
+                    UpdatedAt = DateTime.Now
+                };
+
+                recommendations.Add(recommendation);
+            }
+        }
+
+        db.Recommendations.AddRange(recommendations);
+        db.SaveChanges();
+        logger.LogInformation("Recommendation data seeded successfully. [{0}]", recommendations.Count);
+    }
+
+    private static string GenerateRecommendationReason(Position position, Resume resume)
+    {
+        var reasons = new List<string>();
+
+        // 基于职位和简历的匹配度生成推荐理由
+        if (resume.Position.Contains(position.Name))
+        {
+            reasons.Add($"候选人当前职位与目标职位高度匹配，具有{resume.YearsOfExperience}年相关工作经验。");
+        }
+
+        if (resume.HighestEducation >= EducationLevel.Bachelor)
+        {
+            reasons.Add($"候选人具有{GetEducationString(resume.HighestEducation)}学历，符合职位要求。");
+        }
+
+        if (resume.AnnualSalary <= position.Number * 20) // 假设年薪期望在职位预算范围内
+        {
+            reasons.Add($"候选人期望薪资在合理范围内，与职位预算匹配。");
+        }
+
+        if (resume.Status == EmploymentStatus.EmployedAndOpenToOpportunities)
+        {
+            reasons.Add($"候选人目前在职但考虑新机会，稳定性较好。");
+        }
+
+        if (reasons.Count == 0)
+        {
+            reasons.Add($"候选人具有相关行业经验，学习能力强，能够快速适应新环境。");
+        }
+
+        return string.Join(" ", reasons);
+    }
+
+    private static string GenerateFeedback(Position position, Resume resume, RecommendationStatus status, Random random)
+    {
+        if (status != RecommendationStatus.Accepted && status != RecommendationStatus.Rejected)
+            return string.Empty;
+
+        if (status == RecommendationStatus.Accepted)
+        {
+            var feedbacks = new[]
+            {
+                $"候选人技术能力突出，与团队文化契合度高，已安排面试。",
+                $"候选人经验丰富，项目经历与职位需求匹配度高，已进入下一轮面试。",
+                $"候选人综合素质优秀，沟通能力强，已通过初试。"
+            };
+            return feedbacks[random.Next(feedbacks.Length)];
+        }
+        else
+        {
+            var feedbacks = new[]
+            {
+                $"候选人技术栈与职位要求存在一定差距，暂不考虑。",
+                $"候选人期望薪资超出预算范围，无法满足。",
+                $"候选人工作经历与职位要求匹配度不够，建议寻找更合适的候选人。",
+                $"候选人目前在职状态不稳定，存在风险。"
+            };
+            return feedbacks[random.Next(feedbacks.Length)];
+        }
+    }
+
+    private static string GetEducationString(EducationLevel level)
+    {
+        return level switch
+        {
+            EducationLevel.Doctorate => "博士",
+            EducationLevel.Master => "硕士",
+            EducationLevel.Bachelor => "本科",
+            EducationLevel.Associate => "大专",
+            EducationLevel.Other => "其他",
+            _ => "未知"
+        };
     }
     #endregion
 }

@@ -1,4 +1,5 @@
 ﻿@inject IPositionService PositionService
+@inject NavigationManager NavigationManager
 
 <div class="container-fluid p-0">
     <!-- 主内容区 -->
@@ -103,6 +104,9 @@
                                             <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@position.Id">
                                                 <i class="bi bi-eye"></i>
                                             </button>
+                                            <button type="button" class="btn btn-sm btn-outline-info btn-recommendation" data-id="position.Id" title="查看推荐" @onclick="() => ViewRecommendations(position.Id)">
+                                                <i class="bi bi-people"></i>
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@position.Id" data-bs-toggle="modal" data-bs-target="#editModal">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
@@ -177,6 +181,9 @@
 </div>
 
 @code {
+    [Parameter]
+    public EventCallback<int> OnViewRecommendation { get; set; }
+
     private PagedResult<Position>? pagedPositions;
     private string? errorMessage;
     private int currentPage = 1;
@@ -266,5 +273,11 @@
         selectedStatus = status;
         currentPage = 1;
         await LoadPositionsAsync();
+    }
+
+    private async Task ViewRecommendations(int positionId)
+    {
+        Console.WriteLine(positionId);
+        await OnViewRecommendation.InvokeAsync(positionId);
     }
 }

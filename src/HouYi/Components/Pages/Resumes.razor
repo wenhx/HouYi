@@ -110,15 +110,15 @@
                                 <tr>
                                     <td class="d-none">@resume.Id</td>
                                     <td>@resume.Name</td>
-                                    <td>@GetGenderString(resume.Gender)</td>
+                                    <td>@DisplayHelper.GetGenderText(resume.Gender)</td>
                                     <td>@resume.Age</td>
                                     <td>@resume.Phone</td>
                                     <td>@resume.Email</td>
                                     <td>@resume.Position</td>
                                     <td>@GetStatusString(resume.Status)</td>
-                                    <td>@GetEducationString(resume.HighestEducation)</td>
+                                    <td>@DisplayHelper.GetEducationText(resume.HighestEducation)</td>
                                     <td>@resume.AnnualSalary</td>
-                                    <td>@GetExperienceString(resume.YearsOfExperience)</td>
+                                    <td>@DisplayHelper.GetExperienceText(resume.YearsOfExperience)</td>
                                     <td>@resume.Place.Name</td>
                                     <td>@GetSourceString(resume.Source)</td>
                                     <td>@resume.UpdatedAt.ToString("yyyy-MM-dd")</td>
@@ -287,17 +287,6 @@
         await LoadResumesAsync();
     }
 
-    private string GetGenderString(Gender gender)
-    {
-        return gender switch
-        {
-            Gender.Male => "男",
-            Gender.Female => "女",
-            Gender.PreferNotToSay => "保密",
-            _ => "未知"
-        };
-    }
-
     private string GetStatusString(EmploymentStatus status)
     {
         return status switch
@@ -305,19 +294,6 @@
             EmploymentStatus.Unemployed => "待业中",
             EmploymentStatus.EmployedAndNotConsideringOpportunities => "在职-不考虑机会",
             EmploymentStatus.EmployedAndOpenToOpportunities => "在职-考虑新机会",
-            _ => "未知"
-        };
-    }
-
-    private string GetEducationString(EducationLevel degree)
-    {
-        return degree switch
-        {
-            EducationLevel.Doctorate => "博士",
-            EducationLevel.Master => "硕士",
-            EducationLevel.Bachelor => "本科",
-            EducationLevel.Associate => "大专",
-            EducationLevel.Other => "其他",
             _ => "未知"
         };
     }
@@ -333,29 +309,5 @@
             ResumeSource.Partner => "合作伙伴",
             _ => "其他"
         };
-    }
-
-    private string GetExperienceString(byte year)
-    {
-        if (year == 0)
-        {
-            return "应届生";
-        }
-        else if (year < 3)
-        {
-            return "1-3年";
-        }
-        else if (year < 5)
-        {
-            return "3-5年";
-        }
-        else if (year < 10)
-        {
-            return "5-10年";
-        }
-        else
-        {
-            return "10年以上";
-        }
     }
 }

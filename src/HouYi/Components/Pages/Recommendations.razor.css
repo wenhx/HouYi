@@ -1,0 +1,35 @@
+﻿/* 推荐详情卡片样式 */
+.recommendation-card {
+    border-left: 4px solid #0d6efd;
+    transition: all 0.3s ease;
+}
+
+    .recommendation-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+.match-score {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: bold;
+    color: white;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+    .match-score.high {
+        background-color: #198754;
+    }
+
+    .match-score.medium {
+        background-color: #ffc107;
+    }
+
+    .match-score.low {
+        background-color: #dc3545;
+    }

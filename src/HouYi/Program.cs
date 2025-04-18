@@ -50,6 +50,7 @@ public class Program
         builder.Services.AddScoped<ICustomerService, CustomerService>();
         builder.Services.AddScoped<IPositionService, PositionService>();
         builder.Services.AddScoped<IResumeService, ResumeService>();
+        builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
         var app = builder.Build();
 

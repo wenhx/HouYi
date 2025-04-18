@@ -15,6 +15,7 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
         ReferenceData = Set<ReferenceData>();
         LeveledReferenceData = Set<LeveledReferenceData>();
         Places = Set<Place>();
+        Recommendations = Set<Recommendation>();
     }
 
     public DbSet<Customer> Customers { get; init; }
@@ -23,6 +24,7 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
     public DbSet<LeveledReferenceData> LeveledReferenceData { get; init; }
     public DbSet<ReferenceData> ReferenceData { get; init; }
     public DbSet<Place> Places { get; init; }
+    public DbSet<Recommendation> Recommendations { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
