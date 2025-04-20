@@ -4,6 +4,6 @@ namespace HouYi.Models;
 
 public class HouYiUser : IdentityUser<int>
 {
-    public DateTime CreateAt { get; set; } = DateTime.Now;
-    public DateTime UpdateAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }

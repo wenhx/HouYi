@@ -1,0 +1,326 @@
+﻿@inject InterviewService InterviewService
+
+<div class="container-fluid p-0">
+    <!-- 主内容区 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>面试管理</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInterviewModal">
+            <i class="bi bi-plus-circle me-1"></i> 添加面试
+        </button>
+    </div>
+
+    <!-- 面试日历和列表 -->
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">今日面试安排</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>候选人</th>
+                                    <th>应聘职位</th>
+                                    <th>面试时间</th>
+                                    <th>面试地点</th>
+                                    <th>面试轮次</th>
+                                    <th>面试结果</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (todayInterviews == null)
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">加载中...</td>
+                                    </tr>
+                                }
+                                else if (!todayInterviews.Any())
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">今日暂无面试安排</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var interview in todayInterviews)
+                                    {
+                                        <tr>
+                                            <td>@interview.Id</td>
+                                            <td>@interview.Resume.Name</td>
+                                            <td>@($"{interview.Position.Name}-{interview.Position.Customer.Name}")</td>
+                                            <td>@interview.InterviewTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>@interview.Location</td>
+                                            <td>第 @interview.Round 轮</td>
+                                            <td>@GetStatusString(interview.Status)</td>
+                                            <td>@interview.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => ViewInterview(interview.Id)">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview.Id)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview.Id)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">所有面试记录</h5>
+                    <form class="d-flex" @onsubmit="SearchInterviews" @onsubmit:preventDefault>
+                        <input type="search" class="form-control me-2" placeholder="搜索面试..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                        <button class="btn btn-outline-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
+                        {
+                            <button class="btn btn-outline-secondary ms-2" style="min-width: 100px;" @onclick:preventDefault @onclick="ClearSearch">
+                                <i class="bi bi-x-circle me-1"></i>清除
+                            </button>
+                        }
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>候选人</th>
+                                    <th>应聘职位</th>
+                                    <th>面试时间</th>
+                                    <th>面试地点</th>
+                                    <th>面试轮次</th>
+                                    <th>面试结果</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (pagedInterviews == null)
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">加载中...</td>
+                                    </tr>
+                                }
+                                else if (!pagedInterviews.Items.Any())
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">没有面试数据</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var interview in pagedInterviews.Items)
+                                    {
+                                        <tr>
+                                            <td>@interview.Id</td>
+                                            <td>@interview.Resume.Name</td>
+                                            <td>@($"{interview.Position.Name}-{interview.Position.Customer.Name}")</td>
+                                            <td>@interview.InterviewTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>@interview.Location</td>
+                                            <td>第 @interview.Round 轮</td>
+                                            <td>@GetStatusString(interview.Status)</td>
+                                            <td>@interview.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => ViewInterview(interview.Id)">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview.Id)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview.Id)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">每页显示：</span>
+                            <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
+                                <option value="10" selected="@(pageSize == 10)">10</option>
+                                <option value="20" selected="@(pageSize == 20)">20</option>
+                                <option value="50" selected="@(pageSize == 50)">50</option>
+                            </select>
+                            @if (pagedInterviews != null)
+                            {
+                                <span class="pagination-info">
+                                    显示 @((pagedInterviews.PageNumber - 1) * pagedInterviews.PageSize + 1)-@(Math.Min(pagedInterviews.PageNumber * pagedInterviews.PageSize, pagedInterviews.TotalCount)) 条，
+                                    共 @pagedInterviews.TotalCount 条记录
+                                </span>
+                            }
+                        </div>
+                        @if (pagedInterviews != null && pagedInterviews.TotalPages > 0)
+                        {
+                            <ul class="pagination mb-0">
+                                <li class="page-item @(pagedInterviews.PageNumber == 1 ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                                </li>
+                                <li class="page-item @(!pagedInterviews.HasPreviousPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedInterviews.PageNumber - 1)">上一页</a>
+                                </li>
+
+                                @{
+                                    int startPage = Math.Max(1, pagedInterviews.PageNumber - 2);
+                                    int endPage = Math.Min(pagedInterviews.TotalPages, startPage + 4);
+
+                                    if (endPage - startPage < 4 && startPage > 1)
+                                    {
+                                        startPage = Math.Max(1, endPage - 4);
+                                    }
+                                }
+
+                                @for (int i = startPage; i <= endPage; i++)
+                                {
+                                    int pageNumber = i;
+                                    <li class="page-item @(pageNumber == pagedInterviews.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                                    </li>
+                                }
+
+                                <li class="page-item @(!pagedInterviews.HasNextPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedInterviews.PageNumber + 1)">下一页</a>
+                                </li>
+                                <li class="page-item @(pagedInterviews.PageNumber == pagedInterviews.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedInterviews.TotalPages)">末页</a>
+                                </li>
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Interview>? todayInterviews;
+    private PagedResult<Interview>? pagedInterviews;
+    private string? errorMessage;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private string searchTerm = "";
+    private bool isSearchMode = false;
+
+    private string GetStatusString(InterviewStatus status)
+    {
+        return status switch
+        {
+            InterviewStatus.Scheduled => "已安排",
+            InterviewStatus.Completed => "已完成",
+            InterviewStatus.Postponed => "已延期",
+            InterviewStatus.Passed => "已通过",
+            InterviewStatus.Failed => "未通过",
+            InterviewStatus.Cancelled => "已取消",
+            _ => "未知"
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInterviewsAsync();
+    }
+
+    private async Task LoadInterviewsAsync()
+    {
+        try
+        {
+            // 加载今日面试
+            todayInterviews = await InterviewService.GetTodayInterviewsAsync();
+
+            // 加载所有面试
+            if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
+            {
+                pagedInterviews = await InterviewService.FindInterviewsAsync(searchTerm, currentPage, pageSize);
+            }
+            else
+            {
+                pagedInterviews = await InterviewService.GetInterviewsAsync(currentPage, pageSize);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载面试数据时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task NavigateToPage(int page)
+    {
+        currentPage = page;
+        await LoadInterviewsAsync();
+    }
+
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newPageSize))
+        {
+            pageSize = newPageSize;
+            currentPage = 1;
+            await LoadInterviewsAsync();
+        }
+    }
+
+    private async Task SearchInterviews()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await ClearSearch();
+            return;
+        }
+
+        isSearchMode = true;
+        currentPage = 1;
+        await LoadInterviewsAsync();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = "";
+        isSearchMode = false;
+        currentPage = 1;
+        await LoadInterviewsAsync();
+    }
+
+    private async Task ViewInterview(int id)
+    {
+        // TODO: 实现查看面试详情
+    }
+
+    private async Task EditInterview(int id)
+    {
+        // TODO: 实现编辑面试
+    }
+
+    private async Task DeleteInterview(int id)
+    {
+        // TODO: 实现删除面试
+    }
+}

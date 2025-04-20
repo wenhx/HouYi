@@ -1,5 +1,6 @@
 ﻿using HouYi.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Text;
@@ -26,6 +27,7 @@ public partial class ExampleDataInitializer
         SeedPlaceData(dbContext, logger);
         SeedResumeData(dbContext, logger);
         SeedRecommendationData(dbContext, logger);
+        SeedInterviewsData(dbContext, logger);
     }
 
     private static void SeedPositionData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
@@ -98,8 +100,8 @@ public partial class ExampleDataInitializer
                 Consultant = consultant,
                 ConsultantId = consultant.Id,
                 Description = descriptions[i],
-                CreateAt = DateTime.Now.AddDays(-daysAgo),
-                UpdateAt = DateTime.Now.AddDays(-daysAgo)
+                CreatedAt = DateTime.Now.AddDays(-daysAgo),
+                UpdatedAt = DateTime.Now.AddDays(-daysAgo)
             });
         }
 
@@ -668,6 +670,109 @@ public partial class ExampleDataInitializer
             EducationLevel.Other => "其他",
             _ => "未知"
         };
+    }
+    #endregion
+    #region
+    private static void SeedInterviewsData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
+    {
+        if (dbContext.Interviews.Any()) return;
+
+        var acceptedRecommendations = dbContext.Recommendations
+            .Where(r => r.Status == RecommendationStatus.Accepted)
+            .Include(r => r.Resume)
+            .Include(r => r.Position)
+            .ToList();
+
+        if (!acceptedRecommendations.Any())
+            throw new InvalidOperationException("推荐记录表中必须要有被接受的推荐记录。");
+
+        var random = new Random();
+        var interviews = new List<Interview>();
+        var todayInterviewCount = random.Next(1, 6); // 确保1-5条今天的面试
+
+        // 生成面试地点
+        var locations = new[]
+        {
+            "北京市海淀区中关村软件园二期",
+            "上海市浦东新区张江高科技园区",
+            "深圳市南山区科技园",
+            "杭州市西湖区文三路",
+            "广州市天河区珠江新城",
+            "成都市高新区天府大道",
+            "武汉市东湖新技术开发区",
+            "南京市建邺区河西新城",
+            "西安市高新区科技路",
+            "重庆市渝北区光电园"
+        };
+
+        // 生成面试官名称
+        var interviewers = new[]
+        {
+            "张明", "李华", "王强", "刘伟", "陈静", "杨光", "赵亮", "周涛", "吴芳", "郑军",
+            "孙丽", "朱勇", "胡刚", "林峰", "徐静", "高强", "马明", "黄伟", "谢芳", "董军"
+        };
+
+        // 生成今天的面试
+        for (int i = 0; i < todayInterviewCount; i++)
+        {
+            var recommendation = acceptedRecommendations[random.Next(acceptedRecommendations.Count)];
+            var interview = new Interview
+            {
+                ResumeId = recommendation.ResumeId,
+                PositionId = recommendation.PositionId,
+                RecommendationId = recommendation.Id,
+                InterviewTime = DateTime.Today.AddHours(9 + random.Next(8)).AddMinutes(random.Next(60)),
+                Location = locations[random.Next(locations.Length)],
+                Round = (byte)(1 + random.Next(3)),
+                Interviewer = interviewers[random.Next(interviewers.Length)],
+                Status = InterviewStatus.Scheduled,
+                Feedback = string.Empty,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            interviews.Add(interview);
+        }
+
+        // 生成其他时间的面试
+        InterviewStatus[] historicalInterviewStatuses = [InterviewStatus.Postponed, InterviewStatus.Passed, InterviewStatus.Failed, InterviewStatus.Cancelled];
+        string[] feedbacks = [
+            "候选人技术能力扎实，沟通表达清晰，建议进入下一轮面试。",
+            "候选人项目经验丰富，与团队文化契合度高，建议录用。",
+            "候选人基础知识掌握良好，但项目经验稍显不足，建议继续观察。",
+            "候选人技术能力符合要求，但期望薪资超出预算，建议协商。",
+            "候选人综合素质优秀，但专业方向与职位要求略有偏差，建议考虑其他岗位。",
+            "候选人表现良好，建议进入下一轮技术面试。",
+            "候选人技术能力突出，但英语沟通能力需要提升，建议加强。",
+            "候选人项目经验丰富，但技术深度有待提升，建议继续考察。",
+            "候选人学习能力强，潜力大，建议给予机会。",
+            "候选人表现一般，建议寻找更合适的候选人。"
+        ];
+        int otherInterviewCount = random.Next(10, 21); // 生成10-20条其他时间的面试
+        for (int i = 0; i < otherInterviewCount; i++)
+        {
+            var recommendation = acceptedRecommendations[random.Next(acceptedRecommendations.Count)];
+            var daysOffset = random.Next(-30, 31); // 最近一个月到未来一个月
+            var interview = new Interview
+            {
+                ResumeId = recommendation.ResumeId,
+                PositionId = recommendation.PositionId,
+                RecommendationId = recommendation.Id,
+                InterviewTime = DateTime.Today.AddDays(daysOffset).AddHours(9 + random.Next(8)).AddMinutes(random.Next(60)),
+                Location = locations[random.Next(locations.Length)],
+                Round = (byte)(1 + random.Next(3)), // 1-3轮面试
+                Interviewer = interviewers[random.Next(interviewers.Length)],
+                Status = daysOffset < 0 ? historicalInterviewStatuses[random.Next(historicalInterviewStatuses.Length)] :
+                                            InterviewStatus.Scheduled,
+                Feedback = daysOffset < 0 ? feedbacks[random.Next(feedbacks.Length)] : string.Empty,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            interviews.Add(interview);
+        }
+
+        dbContext.Interviews.AddRange(interviews);
+        dbContext.SaveChanges();
+        logger.LogInformation("Interview data seeded successfully. [{0}]", interviews.Count);
     }
     #endregion
 }
