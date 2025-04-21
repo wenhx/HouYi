@@ -28,6 +28,7 @@ public partial class ExampleDataInitializer
         SeedResumeData(dbContext, logger);
         SeedRecommendationData(dbContext, logger);
         SeedInterviewsData(dbContext, logger);
+        SeedCommunicationData(dbContext, logger);
     }
 
     private static void SeedPositionData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
@@ -672,7 +673,6 @@ public partial class ExampleDataInitializer
         };
     }
     #endregion
-    #region
     private static void SeedInterviewsData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
     {
         if (dbContext.Interviews.Any()) return;
@@ -773,6 +773,199 @@ public partial class ExampleDataInitializer
         dbContext.Interviews.AddRange(interviews);
         dbContext.SaveChanges();
         logger.LogInformation("Interview data seeded successfully. [{0}]", interviews.Count);
+    }
+
+    #region Communications
+    private static void SeedCommunicationData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
+    {
+        if (dbContext.Communications.Any()) return;
+
+        var positions = dbContext.Positions.ToList();
+        var resumes = dbContext.Resumes.ToList();
+        var random = new Random();
+        var communications = new List<Communication>();
+
+        // 生成沟通方法数组
+        var methods = Enum.GetValues<CommunicationMethod>();
+        // 生成沟通原因数组
+        var reasons = Enum.GetValues<ContactReason>();
+        // 生成沟通结果数组
+        var results = Enum.GetValues<CommunicatedResult>();
+
+        // 生成20条没有PositionId的记录
+        for (int i = 0; i < 20; i++)
+        {
+            var resume = resumes[random.Next(resumes.Count)];
+            var method = methods[random.Next(methods.Length)];
+            var reason = reasons[random.Next(reasons.Length)];
+            // 确保reason是Opportunity、Relationship或Other
+            while (reason != ContactReason.Opportunity && reason != ContactReason.Relationship && reason != ContactReason.Other)
+            {
+                reason = reasons[random.Next(reasons.Length)];
+            }
+
+            var (content, result) = GenerateCommunicationContent(method, reason, null, resume, random);
+            var daysAgo = random.Next(1, 365); // 过去一年内的随机天数
+
+            communications.Add(new Communication
+            {
+                Id = 0,
+                ResumeId = resume.Id,
+                Method = method,
+                Reason = reason,
+                Content = content,
+                Result = result,
+                CommunicationTime = DateTime.Now.AddDays(-daysAgo),
+                CreatedTime = DateTime.Now.AddDays(-daysAgo),
+                UpdatedTime = DateTime.Now.AddDays(-daysAgo)
+            });
+        }
+
+        // 生成40条有PositionId的记录
+        for (int i = 0; i < 40; i++)
+        {
+            var position = positions[random.Next(positions.Count)];
+            var resume = resumes[random.Next(resumes.Count)];
+            var method = methods[random.Next(methods.Length)];
+            var reason = reasons[random.Next(reasons.Length)];
+            // 确保reason不是Opportunity、Relationship或Other
+            while (reason == ContactReason.Relationship || reason == ContactReason.Other)
+            {
+                reason = reasons[random.Next(reasons.Length)];
+            }
+
+            var (content, result) = GenerateCommunicationContent(method, reason, position, resume, random);
+            var daysAgo = random.Next(1, 365); // 过去一年内的随机天数
+
+            communications.Add(new Communication
+            {
+                Id = 0,
+                ResumeId = resume.Id,
+                PositionId = position.Id,
+                Method = method,
+                Reason = reason,
+                Content = content,
+                Result = result,
+                CommunicationTime = DateTime.Now.AddDays(-daysAgo),
+                CreatedTime = DateTime.Now.AddDays(-daysAgo),
+                UpdatedTime = DateTime.Now.AddDays(-daysAgo)
+            });
+        }
+
+        dbContext.Communications.AddRange(communications);
+        dbContext.SaveChanges();
+        logger.LogInformation("Communication data seeded successfully. [{0}]", communications.Count);
+    }
+
+    private static (string Content, CommunicatedResult Result) GenerateCommunicationContent(
+        CommunicationMethod method, 
+        ContactReason reason, 
+        Position? position, 
+        Resume resume, 
+        Random random)
+    {
+        var methodStr = method.ToString();
+        var reasonStr = reason.ToString();
+        var positionName = position?.Name ?? "新机会";
+        var candidateName = resume.Name;
+
+        // 根据不同的沟通方法和原因生成不同的内容
+        string content;
+        CommunicatedResult result;
+
+        if (method == CommunicationMethod.Phone)
+        {
+            if (reason == ContactReason.Opportunity)
+            {
+                content = $"电话联系{candidateName}，介绍{positionName}职位机会。候选人表示有兴趣，愿意进一步了解。";
+                result = CommunicatedResult.Interested;
+            }
+            else if (reason == ContactReason.FollowUp)
+            {
+                content = $"电话通知{candidateName}关于{positionName}职位的后续安排。候选人确认可以参加。";
+                result = CommunicatedResult.Interested;
+            }
+            else if (reason == ContactReason.Notification)
+            {
+                content = $"电话沟通{candidateName}关于{positionName}职位的通知细节。候选人表示需要考虑。";
+                result = CommunicatedResult.Pending;
+            }
+            else if (reason == ContactReason.Relationship)
+            {
+                content = $"电话联系{candidateName}进行日常关系维护，了解其近况。候选人表示一切顺利。";
+                result = CommunicatedResult.Interested;
+            }
+            else
+            {
+                content = $"电话联系{candidateName}，讨论{positionName}职位的具体细节。候选人提出了一些问题，已详细解答。";
+                result = CommunicatedResult.Interested;
+            }
+        }
+        else if (method == CommunicationMethod.Email)
+        {
+            if (reason == ContactReason.Opportunity)
+            {
+                content = $"发送邮件给{candidateName}，详细介绍{positionName}职位信息。候选人回复表示感兴趣。";
+                result = CommunicatedResult.Interested;
+            }
+            else if (reason == ContactReason.FollowUp)
+            {
+                content = $"发送邮件给{candidateName}，确认{positionName}职位的后续安排。候选人已确认。";
+                result = CommunicatedResult.Interested;
+            }
+            else if (reason == ContactReason.Notification)
+            {
+                content = $"发送邮件给{candidateName}，提供{positionName}职位的通知信息。候选人已收到。";
+                result = CommunicatedResult.Interested;
+            }
+            else if (reason == ContactReason.Relationship)
+            {
+                content = $"发送邮件给{candidateName}，分享行业动态和职业发展建议。候选人表示感谢。";
+                result = CommunicatedResult.Interested;
+            }
+            else
+            {
+                content = $"发送邮件给{candidateName}，提供{positionName}职位的补充信息。候选人已阅读。";
+                result = CommunicatedResult.Interested;
+            }
+        }
+        else // IM
+        {
+            if (reason == ContactReason.Opportunity)
+            {
+                content = $"即时消息联系{candidateName}，发送{positionName}职位信息。候选人表示有兴趣了解。";
+                result = CommunicatedResult.Interested;
+            }
+            else if (reason == ContactReason.FollowUp)
+            {
+                content = $"即时消息通知{candidateName}关于{positionName}职位的后续安排。候选人确认参加。";
+                result = CommunicatedResult.Interested;
+            }
+            else if (reason == ContactReason.Notification)
+            {
+                content = $"即时消息沟通{candidateName}关于{positionName}职位的通知细节。候选人表示需要考虑。";
+                result = CommunicatedResult.Pending;
+            }
+            else if (reason == ContactReason.Relationship)
+            {
+                content = $"即时消息联系{candidateName}进行日常关系维护，分享行业资讯。候选人表示收获很大。";
+                result = CommunicatedResult.Interested;
+            }
+            else
+            {
+                content = $"即时消息联系{candidateName}，讨论{positionName}职位的具体细节。候选人提出了一些问题，已详细解答。";
+                result = CommunicatedResult.Interested;
+            }
+        }
+
+        // 随机添加一些负面结果
+        if (random.NextDouble() < 0.2) // 20%的概率生成负面结果
+        {
+            result = CommunicatedResult.NotInterested;
+            content += " 但候选人最终表示不感兴趣。";
+        }
+
+        return (content, result);
     }
     #endregion
 }

@@ -1,0 +1,405 @@
+﻿@inject ICommunicationService CommunicationService
+
+<div class="container-fluid p-0">
+    <!-- 搜索和过滤 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form class="search-form" @onsubmit="SearchCommunications" @onsubmit:preventDefault>
+                <div class="d-flex">
+                    <input type="search" class="form-control" placeholder="搜索沟通记录..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                    <button class="btn btn-primary btn-search" type="submit">
+                        <i class="bi bi-search me-1"></i>搜索
+                    </button>
+                    @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
+                    {
+                        <button class="btn btn-outline-secondary ms-2" @onclick:preventDefault @onclick="ClearSearch" style="min-width: 100px;">
+                            <i class="bi bi-x-circle me-1"></i>清除
+                        </button>
+                    }
+                </div>
+            </form>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCommunicationModal">
+                <i class="bi bi-plus-circle me-1"></i> 添加沟通记录
+            </button>
+        </div>
+    </div>
+
+    <!-- 沟通记录列表 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>姓名</th>
+                            <th>当前职位</th>
+                            <th>意向职位</th>
+                            <th data-sortable="true" data-field="communicationTime" class="sorting sorting-desc">沟通时间</th>
+                            <th>沟通方式</th>
+                            <th>沟通原因</th>
+                            <th data-sortable="true" data-field="status" class="sorting">
+                                <span>沟通结果</span>
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item @(selectedResult == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(null)">所有结果</a></li>
+                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Interested ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Interested)">有意向</a></li>
+                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.NotInterested ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.NotInterested)">无意向</a></li>
+                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Pending ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Pending)">待定</a></li>
+                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.NoResponse ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.NoResponse)">未响应</a></li>
+                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Further ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Further)">进一步沟通</a></li>
+                                    </ul>
+                                </div>
+                            </th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (pagedCommunications == null)
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center">加载中...</td>
+                            </tr>
+                        }
+                        else if (!pagedCommunications.Items.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center">没有沟通记录</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var communication in pagedCommunications.Items)
+                            {
+                                <tr>
+                                    <td>@communication.Id</td>
+                                    <td>@communication.Resume.Name</td>
+                                    <td>@communication.Resume.Position</td>
+                                    <td>
+                                        @if (communication.Position != null)
+                                        {
+                                            @($"{communication.Position.Name}-{communication.Position.Customer.Name}")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">--</span>
+                                        }
+                                    </td>
+                                    <td>@communication.CommunicationTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@GetMethodText(communication.Method)</td>
+                                    <td>@GetReasonText(communication.Reason)</td>
+                                    <td>
+                                        <span class="badge @GetResultBadgeClass(communication.Result)">
+                                            @GetResultText(communication.Result)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view" @onclick="() => ViewCommunication(communication.Id)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit" data-id="@communication.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="@communication.Id">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex align-items-center">
+                    <span class="me-2">每页显示：</span>
+                    <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
+                        <option value="10" selected="@(pageSize == 10)">10</option>
+                        <option value="20" selected="@(pageSize == 20)">20</option>
+                        <option value="50" selected="@(pageSize == 50)">50</option>
+                    </select>
+                    @if (pagedCommunications != null)
+                    {
+                        <span class="pagination-info">
+                            显示 @((pagedCommunications.PageNumber - 1) * pagedCommunications.PageSize + 1)-@(Math.Min(pagedCommunications.PageNumber * pagedCommunications.PageSize, pagedCommunications.TotalCount)) 条，
+                            共 @pagedCommunications.TotalCount 条记录
+                        </span>
+                    }
+                </div>
+                @if (pagedCommunications != null && pagedCommunications.TotalPages > 0)
+                {
+                    <ul class="pagination mb-0">
+                        <li class="page-item @(pagedCommunications.PageNumber == 1 ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                        </li>
+                        <li class="page-item @(!pagedCommunications.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.PageNumber - 1)">上一页</a>
+                        </li>
+
+                        @{
+                            int startPage = Math.Max(1, pagedCommunications.PageNumber - 2);
+                            int endPage = Math.Min(pagedCommunications.TotalPages, startPage + 4);
+
+                            if (endPage - startPage < 4 && startPage > 1)
+                            {
+                                startPage = Math.Max(1, endPage - 4);
+                            }
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            int pageNumber = i;
+                            <li class="page-item @(pageNumber == pagedCommunications.PageNumber ? "active" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(!pagedCommunications.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.PageNumber + 1)">下一页</a>
+                        </li>
+                        <li class="page-item @(pagedCommunications.PageNumber == pagedCommunications.TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.TotalPages)">末页</a>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 查看沟通内容模态框 -->
+@if (_showViewModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="viewCommunicationModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewCommunicationModalLabel">沟通记录详情</h5>
+                    <button type="button" class="btn-close" @onclick="CloseViewModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (selectedCommunication != null)
+                    {
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p><strong>候选人：</strong>@selectedCommunication.Resume.Name</p>
+                                <p><strong>当前职位：</strong>@selectedCommunication.Resume.Position</p>
+                                <p>
+                                    <strong>意向职位：</strong>
+                                    @if (selectedCommunication.Position != null)
+                                    {
+                                        @($"{selectedCommunication.Position.Name}-{selectedCommunication.Position.Customer.Name}")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">--</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>沟通时间：</strong>@selectedCommunication.CommunicationTime.ToString("yyyy-MM-dd HH:mm")</p>
+                                <p><strong>沟通方式：</strong>@GetMethodText(selectedCommunication.Method)</p>
+                                <p><strong>沟通原因：</strong>@GetReasonText(selectedCommunication.Reason)</p>
+                                <p>
+                                    <strong>沟通结果：</strong>
+                                    <span class="badge @GetResultBadgeClass(selectedCommunication.Result)">
+                                        @GetResultText(selectedCommunication.Result)
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="mb-2">沟通内容：</h6>
+                                <div class="card">
+                                    <div class="card-body">
+                                        @selectedCommunication.Content
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+
+    private PagedResult<Communication>? pagedCommunications;
+    private string? errorMessage;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private string searchTerm = "";
+    private bool isSearchMode = false;
+    private CommunicatedResult? selectedResult;
+    private Communication? selectedCommunication;
+    private bool _showViewModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCommunicationsAsync();
+    }
+
+    private async Task LoadCommunicationsAsync()
+    {
+        try
+        {
+            if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
+            {
+                pagedCommunications = await CommunicationService.FindCommunicationsAsync(searchTerm, currentPage, pageSize, selectedResult);
+            }
+            else
+            {
+                pagedCommunications = await CommunicationService.GetCommunicationsAsync(currentPage, pageSize, selectedResult);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载沟通记录时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task NavigateToPage(int page)
+    {
+        currentPage = page;
+        await LoadCommunicationsAsync();
+    }
+
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newPageSize))
+        {
+            pageSize = newPageSize;
+            currentPage = 1;
+            await LoadCommunicationsAsync();
+        }
+    }
+
+    private async Task SearchCommunications()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await ClearSearch();
+            return;
+        }
+
+        isSearchMode = true;
+        currentPage = 1;
+        await LoadCommunicationsAsync();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = "";
+        isSearchMode = false;
+        currentPage = 1;
+        await LoadCommunicationsAsync();
+    }
+
+    private async Task FilterByResult(CommunicatedResult? result)
+    {
+        selectedResult = result;
+        currentPage = 1;
+        await LoadCommunicationsAsync();
+    }
+
+    private string GetMethodText(CommunicationMethod method)
+    {
+        return method switch
+        {
+            CommunicationMethod.Phone => "电话",
+            CommunicationMethod.Email => "邮件",
+            CommunicationMethod.IM => "即时消息",
+            CommunicationMethod.Video => "视频",
+            CommunicationMethod.FaceToFace => "面对面",
+            _ => "其他"
+        };
+    }
+
+    private string GetReasonText(ContactReason reason)
+    {
+        return reason switch
+        {
+            ContactReason.FollowUp => "流程跟进",
+            ContactReason.Notification => "通知",
+            ContactReason.Opportunity => "机会推荐",
+            ContactReason.Relationship => "关系维护",
+            _ => "其他"
+        };
+    }
+
+    private string GetResultText(CommunicatedResult result)
+    {
+        return result switch
+        {
+            CommunicatedResult.NoResponse => "未响应",
+            CommunicatedResult.Interested => "有意向",
+            CommunicatedResult.NotInterested => "无意向",
+            CommunicatedResult.Pending => "待定",
+            CommunicatedResult.Further => "进一步沟通",
+            _ => "未知"
+        };
+    }
+
+    private string GetResultBadgeClass(CommunicatedResult result)
+    {
+        return result switch
+        {
+            CommunicatedResult.Interested => "bg-success",
+            CommunicatedResult.NotInterested => "bg-danger",
+            CommunicatedResult.Pending => "bg-warning",
+            CommunicatedResult.Further => "bg-info",
+            CommunicatedResult.NoResponse => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private async Task ViewCommunication(int id)
+    {
+        try
+        {
+            selectedCommunication = pagedCommunications?.Items.FirstOrDefault(c => c.Id == id);
+            if (selectedCommunication != null)
+            {
+                _showViewModal = true;
+                StateHasChanged();
+            }
+            else
+            {
+                errorMessage = $"没有找到指定的沟通记录。";
+
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"查看沟通记录时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseViewModal()
+    {
+        _showViewModal = false;
+        StateHasChanged();
+    }
+}

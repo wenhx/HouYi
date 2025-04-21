@@ -47,7 +47,7 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "communication" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("communication", "沟通管理")'>
+                    <a class="nav-link @(currentPage == "communication" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Communications), "沟通管理")'>
                         <i class="bi bi-chat-dots me-2"></i> 沟通管理
                     </a>
                 </li>
@@ -110,6 +110,9 @@
                                 break;
                             case nameof(Interviews):
                                 <Interviews />
+                                break;
+                            case nameof(Communications):
+                                <Communications />
                                 break;
                             default:
                                 <h1 class="mb-4">@tab.Title</h1>
