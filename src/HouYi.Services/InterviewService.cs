@@ -1,6 +1,7 @@
 ﻿using HouYi.Data;
 using HouYi.Models;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace HouYi.Services;
 
@@ -65,5 +66,49 @@ public class InterviewService : IInterviewService
             .ToListAsync();
 
         return new PagedResult<Interview>(items, pageNumber, pageSize, totalCount);
+    }
+
+    public async Task<Interview> CreateInterviewAsync(Interview interview)
+    {
+        if (interview == null)
+            throw new ArgumentNullException(nameof(interview), "interview不能为空");
+
+        var validationContext = new ValidationContext(interview);
+        var validationResults = new List<ValidationResult>();
+        if (!Validator.TryValidateObject(interview, validationContext, validationResults, true))
+        {
+            var errorMessages = validationResults.Select(r => r.ErrorMessage);
+            throw new ArgumentException(string.Join(Environment.NewLine, errorMessages));
+        }
+
+        // 同时检查简历、职位和推荐记录是否存在
+        var result = await (
+            from r in _dbContext.Resumes
+            join p in _dbContext.Positions on 1 equals 1
+            join rec in _dbContext.Recommendations on 1 equals 1
+            where r.Id == interview.ResumeId
+                && p.Id == interview.PositionId
+                && rec.Id == interview.RecommendationId
+            select new { Resume = r, Position = p, Recommendation = rec })
+            .FirstOrDefaultAsync();
+
+        if (result?.Resume == null)
+            throw new ArgumentException($"简历ID {interview.ResumeId} 不存在", nameof(interview.ResumeId));
+        if (result?.Position == null)
+            throw new ArgumentException($"职位ID {interview.PositionId} 不存在", nameof(interview.PositionId));
+        if (result?.Recommendation == null)
+            throw new ArgumentException($"推荐ID {interview.RecommendationId} 不存在", nameof(interview.RecommendationId));
+
+        // 检查同一简历在同一时间是否已有面试安排
+        var hasConflict = await _dbContext.Interviews
+            .AnyAsync(i => i.ResumeId == interview.ResumeId && 
+                          i.InterviewTime.Date == interview.InterviewTime.Date &&
+                          i.Status != InterviewStatus.Cancelled);
+        if (hasConflict)
+            throw new InvalidOperationException("该候选人当天已有其他面试安排");
+
+        _dbContext.Interviews.Add(interview);
+        await _dbContext.SaveChangesAsync();
+        return interview;
     }
 }
