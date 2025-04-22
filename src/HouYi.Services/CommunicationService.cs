@@ -1,4 +1,4 @@
-using HouYi.Data;
+﻿using HouYi.Data;
 using HouYi.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +13,13 @@ public class CommunicationService : ICommunicationService
         _dbContext = dbContext;
     }
 
-    public async Task<PagedResult<Communication>> GetCommunicationsCoreAsync(Func<IQueryable<Communication>, IQueryable<Communication>>? filter, int pageNumber = 1, int pageSize = 10, CommunicatedResult? result = null)
+    public async Task<PagedResult<Communication>> GetCommunicationsCoreAsync(
+        Func<IQueryable<Communication>, IQueryable<Communication>>? filter,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CommunicatedResult? result = null,
+        CommunicationMethod? method = null,
+        ContactReason? reason = null)
     {
         Utils.NormalizePaginationInputs(ref pageNumber, ref pageSize);
 
@@ -28,10 +34,21 @@ public class CommunicationService : ICommunicationService
             query = query.Where(c => c.Result == result.Value);
         }
 
+        if (method.HasValue)
+        {
+            query = query.Where(c => c.Method == method.Value);
+        }
+
+        if (reason.HasValue)
+        {
+            query = query.Where(c => c.Reason == reason.Value);
+        }
+
         query = filter != null ? filter(query) : query;
 
         var totalCount = await query.CountAsync();
         var items = await query
+            .OrderByDescending(q => q.UpdatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -39,27 +56,41 @@ public class CommunicationService : ICommunicationService
         return new PagedResult<Communication>(items, pageNumber, pageSize, totalCount);
     }
 
-    public async Task<PagedResult<Communication>> GetCommunicationsAsync(int pageNumber = 1, int pageSize = 10, CommunicatedResult? result = null)
+    public async Task<PagedResult<Communication>> GetCommunicationsAsync(
+        int pageNumber = 1,
+        int pageSize = 10,
+        CommunicatedResult? result = null,
+        CommunicationMethod? method = null,
+        ContactReason? reason = null)
     {
-        return await GetCommunicationsCoreAsync(filter: null, pageNumber, pageSize, result);
+        return await GetCommunicationsCoreAsync(filter: null, pageNumber, pageSize, result, method, reason);
     }
 
-    public async Task<PagedResult<Communication>> FindCommunicationsAsync(string term = "", int pageNumber = 1, int pageSize = 10, CommunicatedResult? result = null)
+    public async Task<PagedResult<Communication>> FindCommunicationsAsync(
+        string term = "",
+        int pageNumber = 1,
+        int pageSize = 10,
+        CommunicatedResult? result = null,
+        CommunicationMethod? method = null,
+        ContactReason? reason = null)
     {
-        return await GetCommunicationsCoreAsync(filter, pageNumber, pageSize, result);
+        return await GetCommunicationsCoreAsync(filter, pageNumber, pageSize, result, method, reason);
 
         IQueryable<Communication> filter(IQueryable<Communication> query)
         {
             if (!string.IsNullOrWhiteSpace(term))
             {
                 term = term.Trim();
-                query = query.Where(c => 
-                    c.Resume.Name.Contains(term) || 
+                query = query.Where(c =>
+                    c.Resume.Name.Contains(term) ||
                     c.Resume.Position.Contains(term) ||
-                    (c.Position != null && c.Position.Name.Contains(term)) ||
+                    (c.Position != null && (
+                        c.Position.Name.Contains(term) ||
+                        c.Position.Customer.Name.Contains(term)
+                    )) ||
                     c.Content.Contains(term));
             }
             return query;
         }
     }
-} 
+}

@@ -21,6 +21,6 @@ public class Communication
     public CommunicatedResult Result { get; set; }
 
     public DateTime CommunicationTime { get; set; }
-    public DateTime CreatedTime { get; set; }
-    public DateTime UpdatedTime { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }

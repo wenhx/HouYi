@@ -816,8 +816,8 @@ public partial class ExampleDataInitializer
                 Content = content,
                 Result = result,
                 CommunicationTime = DateTime.Now.AddDays(-daysAgo),
-                CreatedTime = DateTime.Now.AddDays(-daysAgo),
-                UpdatedTime = DateTime.Now.AddDays(-daysAgo)
+                CreatedAt = DateTime.Now.AddDays(-daysAgo),
+                UpdatedAt = DateTime.Now.AddDays(-daysAgo)
             });
         }
 
@@ -847,8 +847,8 @@ public partial class ExampleDataInitializer
                 Content = content,
                 Result = result,
                 CommunicationTime = DateTime.Now.AddDays(-daysAgo),
-                CreatedTime = DateTime.Now.AddDays(-daysAgo),
-                UpdatedTime = DateTime.Now.AddDays(-daysAgo)
+                CreatedAt = DateTime.Now.AddDays(-daysAgo),
+                UpdatedAt = DateTime.Now.AddDays(-daysAgo)
             });
         }
 

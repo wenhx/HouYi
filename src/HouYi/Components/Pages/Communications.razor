@@ -42,8 +42,39 @@
                             <th>当前职位</th>
                             <th>意向职位</th>
                             <th data-sortable="true" data-field="communicationTime" class="sorting sorting-desc">沟通时间</th>
-                            <th>沟通方式</th>
-                            <th>沟通原因</th>
+                            <th>
+                                <span>沟通方式</span>
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item @(selectedMethod == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(null)">所有方式</a></li>
+                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Phone ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Phone)">电话</a></li>
+                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Email ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Email)">邮件</a></li>
+                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.IM ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.IM)">即时消息</a></li>
+                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Video ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Video)">视频</a></li>
+                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.FaceToFace ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.FaceToFace)">面对面</a></li>
+                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Other ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Other)">其他</a></li>
+                                    </ul>
+                                </div>
+                            </th>
+                            <th>
+                                <span>沟通原因</span>
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item @(selectedReason == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(null)">所有原因</a></li>
+                                        <li><a class="dropdown-item @(selectedReason == ContactReason.FollowUp ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.FollowUp)">流程跟进</a></li>
+                                        <li><a class="dropdown-item @(selectedReason == ContactReason.Notification ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Notification)">通知</a></li>
+                                        <li><a class="dropdown-item @(selectedReason == ContactReason.Opportunity ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Opportunity)">机会推荐</a></li>
+                                        <li><a class="dropdown-item @(selectedReason == ContactReason.Relationship ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Relationship)">关系维护</a></li>
+                                        <li><a class="dropdown-item @(selectedReason == ContactReason.Other ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Other)">其他</a></li>
+                                    </ul>
+                                </div>
+                            </th>
                             <th data-sortable="true" data-field="status" class="sorting">
                                 <span>沟通结果</span>
                                 <div class="dropdown d-inline-block ms-1">
@@ -243,7 +274,6 @@
 }
 
 @code {
-
     private PagedResult<Communication>? pagedCommunications;
     private string? errorMessage;
     private int currentPage = 1;
@@ -251,6 +281,8 @@
     private string searchTerm = "";
     private bool isSearchMode = false;
     private CommunicatedResult? selectedResult;
+    private CommunicationMethod? selectedMethod;
+    private ContactReason? selectedReason;
     private Communication? selectedCommunication;
     private bool _showViewModal;
 
@@ -265,11 +297,22 @@
         {
             if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
             {
-                pagedCommunications = await CommunicationService.FindCommunicationsAsync(searchTerm, currentPage, pageSize, selectedResult);
+                pagedCommunications = await CommunicationService.FindCommunicationsAsync(
+                    searchTerm,
+                    currentPage,
+                    pageSize,
+                    selectedResult,
+                    selectedMethod,
+                    selectedReason);
             }
             else
             {
-                pagedCommunications = await CommunicationService.GetCommunicationsAsync(currentPage, pageSize, selectedResult);
+                pagedCommunications = await CommunicationService.GetCommunicationsAsync(
+                    currentPage,
+                    pageSize,
+                    selectedResult,
+                    selectedMethod,
+                    selectedReason);
             }
         }
         catch (Exception ex)
@@ -319,6 +362,20 @@
     private async Task FilterByResult(CommunicatedResult? result)
     {
         selectedResult = result;
+        currentPage = 1;
+        await LoadCommunicationsAsync();
+    }
+
+    private async Task FilterByMethod(CommunicationMethod? method)
+    {
+        selectedMethod = method;
+        currentPage = 1;
+        await LoadCommunicationsAsync();
+    }
+
+    private async Task FilterByReason(ContactReason? reason)
+    {
+        selectedReason = reason;
         currentPage = 1;
         await LoadCommunicationsAsync();
     }
@@ -387,7 +444,6 @@
             else
             {
                 errorMessage = $"没有找到指定的沟通记录。";
-
             }
         }
         catch (Exception ex)
