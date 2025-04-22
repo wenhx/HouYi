@@ -71,4 +71,11 @@ public class PositionService : IPositionService
             return query;
         }
     }
+
+    public async Task<Position?> GetPositionByIdAsync(int id)
+    {
+        return await _dbContext.Positions
+            .Include(p => p.Customer)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
 }

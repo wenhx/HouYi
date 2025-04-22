@@ -25,6 +25,5 @@ public sealed class Constants
     }
     public sealed class Categories
     {
-        public static readonly string Area = "Area";
     }
 }

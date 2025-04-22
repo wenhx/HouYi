@@ -11,10 +11,24 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
     {
         Customers = Set<Customer>();
         Positions = Set<Position>();
+        Resumes = Set<Resume>();
+        ReferenceData = Set<ReferenceData>();
+        LeveledReferenceData = Set<LeveledReferenceData>();
+        Places = Set<Place>();
+        Recommendations = Set<Recommendation>();
+        Interviews = Set<Interview>();
+        Communications = Set<Communication>();
     }
 
     public DbSet<Customer> Customers { get; init; }
     public DbSet<Position> Positions { get; init; }
+    public DbSet<Resume> Resumes { get; init; }
+    public DbSet<LeveledReferenceData> LeveledReferenceData { get; init; }
+    public DbSet<ReferenceData> ReferenceData { get; init; }
+    public DbSet<Place> Places { get; init; }
+    public DbSet<Recommendation> Recommendations { get; init; }
+    public DbSet<Interview> Interviews { get; init; }
+    public DbSet<Communication> Communications { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,5 +43,7 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
         modelBuilder.Entity<Customer>()
             .Property(c => c.Id)
             .UseIdentityColumn(10000, 1); // 起始值为 10000，增量为 1
+
+        modelBuilder.Entity<ReferenceData>().UseTpcMappingStrategy();
     }
 }
