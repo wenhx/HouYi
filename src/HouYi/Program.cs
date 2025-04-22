@@ -51,6 +51,8 @@ public class Program
         builder.Services.AddScoped<IPositionService, PositionService>();
         builder.Services.AddScoped<IResumeService, ResumeService>();
         builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+        builder.Services.AddScoped<IInterviewService, InterviewService>();
+        builder.Services.AddScoped<ICommunicationService, CommunicationService>();
 
         var app = builder.Build();
 

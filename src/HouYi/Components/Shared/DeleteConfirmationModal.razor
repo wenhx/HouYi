@@ -1,0 +1,44 @@
+﻿@if (ShowModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmationModalLabel">确认删除</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除@(ItemName ?? "该项记录")吗？此操作不可恢复。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public bool ShowModal { get; set; }
+
+    [Parameter]
+    public string? ItemName { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnConfirm { get; set; }
+
+    private void CloseModal()
+    {
+        ShowModal = false;
+        OnConfirm.InvokeAsync(false);
+    }
+
+    private void ConfirmDelete()
+    {
+        ShowModal = false;
+        OnConfirm.InvokeAsync(true);
+    }
+} 

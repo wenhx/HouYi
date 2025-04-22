@@ -8,8 +8,9 @@ public class Recommendation
 
     [StringLength(Constants.StringLengths.GUID)]
     public required string ResumeId { get; init; }
-    public Resume Resume { get; set; }
+    public virtual Resume Resume { get; set; }
     public required int PositionId { get; init; }
+    public virtual Position Position { get; set; }
 
     [StringLength(Constants.StringLengths.Text)]
     public required string Reason { get; init; }
