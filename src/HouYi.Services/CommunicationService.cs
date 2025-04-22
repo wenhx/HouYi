@@ -112,4 +112,14 @@ public class CommunicationService : ICommunicationService
             return query;
         }
     }
+
+    public async Task DeleteCommunicationAsync(int id)
+    {
+        var communication = await _dbContext.Communications.FindAsync(id);
+        if (communication != null)
+        {
+            _dbContext.Communications.Remove(communication);
+            await _dbContext.SaveChangesAsync();
+        }
+    }
 }

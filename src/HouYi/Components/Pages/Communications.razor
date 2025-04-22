@@ -142,7 +142,7 @@
                                             <button type="button" class="btn btn-sm btn-outline-success btn-edit" @onclick="() => OpenEditModal(communication.Id)">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="@communication.Id">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" @onclick="() => OpenDeleteModal(communication.Id)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -354,7 +354,16 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+<!-- 删除确认模态框 -->
+<DeleteConfirmationModal 
+ShowModal="showDeleteModal"
+ItemName="@GetDeletingItemName()"
+OnConfirm="HandleDeleteConfirmation" />
+
 @code {
+
+
+
     private PagedResult<Communication>? pagedCommunications;
     private string? errorMessage;
     private int currentPage = 1;
@@ -368,6 +377,7 @@
     private bool _showViewModal;
     private bool showEditModal;
     private List<Position>? openPositions;
+    private bool showDeleteModal;
 
     protected override async Task OnInitializedAsync()
     {
@@ -603,5 +613,49 @@
             errorMessage = $"更新沟通记录时发生错误: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
+    }
+
+    private void OpenDeleteModal(int id)
+    {
+        selectedCommunication = pagedCommunications?.Items.FirstOrDefault(c => c.Id == id);
+        if (selectedCommunication != null)
+        {
+            showDeleteModal = true;
+            StateHasChanged();
+        }
+        else
+        {
+            errorMessage = "未找到指定的沟通记录";
+        }
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        if (confirmed && selectedCommunication != null)
+        {
+            try
+            {
+                await CommunicationService.DeleteCommunicationAsync(selectedCommunication.Id);
+                await LoadCommunicationsAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"删除沟通记录时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+        showDeleteModal = false;
+        selectedCommunication = null;
+        StateHasChanged();
+    }
+
+
+
+    private string GetDeletingItemName()
+    { 
+        if (!string.IsNullOrEmpty(selectedCommunication?.Resume.Name))
+            return $" {selectedCommunication?.Resume.Name} 的沟通记录";
+
+        return "沟通记录";
     }
 }

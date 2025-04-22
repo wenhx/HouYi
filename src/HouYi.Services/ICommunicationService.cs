@@ -21,4 +21,5 @@ public interface ICommunicationService
 
     Task<Communication> CreateCommunicationAsync(Communication communication);
     Task<Communication> UpdateCommunicationAsync(Communication communication);
+    Task DeleteCommunicationAsync(int id);
 } 
