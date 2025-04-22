@@ -35,6 +35,7 @@ public class ResumeService : IResumeService
         var items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .OrderByDescending(r => r.UpdatedAt)
             .ToListAsync();
 
         return new PagedResult<Resume>(items, pageNumber, pageSize, totalCount);
@@ -76,4 +77,30 @@ public class ResumeService : IResumeService
             return query;
         }
     }
-} 
+
+    public async Task<Resume> UpdateResumeAsync(Resume editingResume)
+    {
+        var resume = await _dbContext.Resumes.FindAsync(editingResume.Id);
+        if (resume == null)
+            throw new InvalidOperationException($"找不到ID为 {editingResume.Id} 的简历");
+
+        // 更新所有属性
+        resume.Name = editingResume.Name;
+        resume.Gender = editingResume.Gender;
+        resume.Age = editingResume.Age;
+        resume.Phone = editingResume.Phone;
+        resume.Email = editingResume.Email;
+        resume.Status = editingResume.Status;
+        resume.Position = editingResume.Position;
+        resume.HighestEducation = editingResume.HighestEducation;
+        resume.AnnualSalary = editingResume.AnnualSalary;
+        resume.YearsOfExperience = editingResume.YearsOfExperience;
+        resume.PlaceId = editingResume.PlaceId;
+        resume.Source = editingResume.Source;
+        resume.Note = editingResume.Note;
+        resume.UpdatedAt = DateTime.Now;
+
+        await _dbContext.SaveChangesAsync();
+        return resume;
+    }
+}
