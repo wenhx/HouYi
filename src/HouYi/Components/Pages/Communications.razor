@@ -1,212 +1,217 @@
 ﻿@inject ICommunicationService CommunicationService
 @inject IPositionService PositionService
 
-<div class="container-fluid p-0">
-    <!-- 搜索和过滤 -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <form class="search-form" @onsubmit="SearchCommunications" @onsubmit:preventDefault>
-                <div class="d-flex">
-                    <input type="search" class="form-control" placeholder="搜索沟通记录..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
-                    <button class="btn btn-primary btn-search" type="submit">
-                        <i class="bi bi-search me-1"></i>搜索
-                    </button>
-                    @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
-                    {
-                        <button class="btn btn-outline-secondary ms-2" @onclick:preventDefault @onclick="ClearSearch" style="min-width: 100px;">
-                            <i class="bi bi-x-circle me-1"></i>清除
-                        </button>
-                    }
-                </div>
-            </form>
-        </div>
-        <div class="col-md-4 text-end">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCommunicationModal">
+<div class="container-fluid">
+    <!-- 主内容区 -->
+    <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>沟通管理</h1>
+            @* <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCommunicationModal">
                 <i class="bi bi-plus-circle me-1"></i> 添加沟通记录
-            </button>
+            </button> *@
         </div>
-    </div>
 
-    <!-- 沟通记录列表 -->
-    <div class="card mb-4">
-        <div class="card-body">
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="alert alert-danger">@errorMessage</div>
-            }
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>姓名</th>
-                            <th>当前职位</th>
-                            <th>意向职位</th>
-                            <th data-sortable="true" data-field="communicationTime" class="sorting sorting-desc">沟通时间</th>
-                            <th>
-                                <span>沟通方式</span>
-                                <div class="dropdown d-inline-block ms-1">
-                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
-                                        <i class="bi bi-filter"></i>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item @(selectedMethod == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(null)">所有方式</a></li>
-                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Phone ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Phone)">电话</a></li>
-                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Email ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Email)">邮件</a></li>
-                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.IM ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.IM)">即时消息</a></li>
-                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Video ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Video)">视频</a></li>
-                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.FaceToFace ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.FaceToFace)">面对面</a></li>
-                                        <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Other ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Other)">其他</a></li>
-                                    </ul>
-                                </div>
-                            </th>
-                            <th>
-                                <span>沟通原因</span>
-                                <div class="dropdown d-inline-block ms-1">
-                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
-                                        <i class="bi bi-filter"></i>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item @(selectedReason == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(null)">所有原因</a></li>
-                                        <li><a class="dropdown-item @(selectedReason == ContactReason.FollowUp ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.FollowUp)">流程跟进</a></li>
-                                        <li><a class="dropdown-item @(selectedReason == ContactReason.Notification ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Notification)">通知</a></li>
-                                        <li><a class="dropdown-item @(selectedReason == ContactReason.Opportunity ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Opportunity)">机会推荐</a></li>
-                                        <li><a class="dropdown-item @(selectedReason == ContactReason.Relationship ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Relationship)">关系维护</a></li>
-                                        <li><a class="dropdown-item @(selectedReason == ContactReason.Other ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Other)">其他</a></li>
-                                    </ul>
-                                </div>
-                            </th>
-                            <th data-sortable="true" data-field="status" class="sorting">
-                                <span>沟通结果</span>
-                                <div class="dropdown d-inline-block ms-1">
-                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
-                                        <i class="bi bi-filter"></i>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item @(selectedResult == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(null)">所有结果</a></li>
-                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Interested ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Interested)">有意向</a></li>
-                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.NotInterested ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.NotInterested)">无意向</a></li>
-                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Pending ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Pending)">待定</a></li>
-                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.NoResponse ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.NoResponse)">未响应</a></li>
-                                        <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Further ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Further)">进一步沟通</a></li>
-                                    </ul>
-                                </div>
-                            </th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (pagedCommunications == null)
+        <!-- 搜索和过滤 -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <form class="search-form" @onsubmit="SearchCommunications" @onsubmit:preventDefault>
+                    <div class="d-flex">
+                        <input type="search" class="form-control" placeholder="搜索沟通记录..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                        <button class="btn btn-primary btn-search" type="submit">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
+                        @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
                         {
-                            <tr>
-                                <td colspan="9" class="text-center">加载中...</td>
-                            </tr>
+                            <button class="btn btn-outline-secondary ms-2" @onclick:preventDefault @onclick="ClearSearch" style="min-width: 100px;">
+                                <i class="bi bi-x-circle me-1"></i>清除
+                            </button>
                         }
-                        else if (!pagedCommunications.Items.Any())
-                        {
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 沟通记录列表 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
                             <tr>
-                                <td colspan="9" class="text-center">没有沟通记录</td>
+                                <th>#</th>
+                                <th>姓名</th>
+                                <th>当前职位</th>
+                                <th>意向职位</th>
+                                <th data-sortable="true" data-field="communicationTime" class="sorting sorting-desc">沟通时间</th>
+                                <th>
+                                    <span>沟通方式</span>
+                                    <div class="dropdown d-inline-block ms-1">
+                                        <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-filter"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item @(selectedMethod == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(null)">所有方式</a></li>
+                                            <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Phone ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Phone)">电话</a></li>
+                                            <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Email ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Email)">邮件</a></li>
+                                            <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.IM ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.IM)">即时消息</a></li>
+                                            <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Video ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Video)">视频</a></li>
+                                            <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.FaceToFace ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.FaceToFace)">面对面</a></li>
+                                            <li><a class="dropdown-item @(selectedMethod == CommunicationMethod.Other ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByMethod(CommunicationMethod.Other)">其他</a></li>
+                                        </ul>
+                                    </div>
+                                </th>
+                                <th>
+                                    <span>沟通原因</span>
+                                    <div class="dropdown d-inline-block ms-1">
+                                        <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-filter"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item @(selectedReason == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(null)">所有原因</a></li>
+                                            <li><a class="dropdown-item @(selectedReason == ContactReason.FollowUp ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.FollowUp)">流程跟进</a></li>
+                                            <li><a class="dropdown-item @(selectedReason == ContactReason.Notification ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Notification)">通知</a></li>
+                                            <li><a class="dropdown-item @(selectedReason == ContactReason.Opportunity ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Opportunity)">机会推荐</a></li>
+                                            <li><a class="dropdown-item @(selectedReason == ContactReason.Relationship ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Relationship)">关系维护</a></li>
+                                            <li><a class="dropdown-item @(selectedReason == ContactReason.Other ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByReason(ContactReason.Other)">其他</a></li>
+                                        </ul>
+                                    </div>
+                                </th>
+                                <th data-sortable="true" data-field="status" class="sorting">
+                                    <span>沟通结果</span>
+                                    <div class="dropdown d-inline-block ms-1">
+                                        <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-filter"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item @(selectedResult == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(null)">所有结果</a></li>
+                                            <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Interested ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Interested)">有意向</a></li>
+                                            <li><a class="dropdown-item @(selectedResult == CommunicatedResult.NotInterested ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.NotInterested)">无意向</a></li>
+                                            <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Pending ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Pending)">待定</a></li>
+                                            <li><a class="dropdown-item @(selectedResult == CommunicatedResult.NoResponse ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.NoResponse)">未响应</a></li>
+                                            <li><a class="dropdown-item @(selectedResult == CommunicatedResult.Further ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByResult(CommunicatedResult.Further)">进一步沟通</a></li>
+                                        </ul>
+                                    </div>
+                                </th>
+                                <th>操作</th>
                             </tr>
-                        }
-                        else
-                        {
-                            @foreach (var communication in pagedCommunications.Items)
+                        </thead>
+                        <tbody>
+                            @if (pagedCommunications == null)
                             {
                                 <tr>
-                                    <td>@communication.Id</td>
-                                    <td>@communication.Resume.Name</td>
-                                    <td>@communication.Resume.Position</td>
-                                    <td>
-                                        @if (communication.Position != null)
-                                        {
-                                            @($"{communication.Position.Name}-{communication.Position.Customer.Name}")
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">--</span>
-                                        }
-                                    </td>
-                                    <td>@communication.CommunicationTime.ToString("yyyy-MM-dd HH:mm")</td>
-                                    <td>@GetMethodText(communication.Method)</td>
-                                    <td>@GetReasonText(communication.Reason)</td>
-                                    <td>
-                                        <span class="badge @GetResultBadgeClass(communication.Result)">
-                                            @GetResultText(communication.Result)
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view" @onclick="() => ViewCommunication(communication.Id)">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit" @onclick="() => OpenEditModal(communication.Id)">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" @onclick="() => OpenDeleteModal(communication.Id)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
+                                    <td colspan="9" class="text-center">加载中...</td>
                                 </tr>
                             }
-                        }
-                    </tbody>
-                </table>
-            </div>
+                            else if (!pagedCommunications.Items.Any())
+                            {
+                                <tr>
+                                    <td colspan="9" class="text-center">没有沟通记录</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var communication in pagedCommunications.Items)
+                                {
+                                    <tr>
+                                        <td>@communication.Id</td>
+                                        <td>@communication.Resume.Name</td>
+                                        <td>@communication.Resume.Position</td>
+                                        <td>
+                                            @if (communication.Position != null)
+                                            {
+                                                @($"{communication.Position.Name}-{communication.Position.Customer.Name}")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">--</span>
+                                            }
+                                        </td>
+                                        <td>@communication.CommunicationTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td>@GetMethodText(communication.Method)</td>
+                                        <td>@GetReasonText(communication.Reason)</td>
+                                        <td>
+                                            <span class="badge @GetResultBadgeClass(communication.Result)">
+                                                @GetResultText(communication.Result)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary btn-view" @onclick="() => ViewCommunication(communication.Id)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-success btn-edit" @onclick="() => OpenEditModal(communication.Id)">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete" @onclick="() => OpenDeleteModal(communication.Id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- 分页 -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div class="d-flex align-items-center">
-                    <span class="me-2">每页显示：</span>
-                    <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
-                        <option value="10" selected="@(pageSize == 10)">10</option>
-                        <option value="20" selected="@(pageSize == 20)">20</option>
-                        <option value="50" selected="@(pageSize == 50)">50</option>
-                    </select>
-                    @if (pagedCommunications != null)
+                <!-- 分页 -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">每页显示：</span>
+                        <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
+                            <option value="10" selected="@(pageSize == 10)">10</option>
+                            <option value="20" selected="@(pageSize == 20)">20</option>
+                            <option value="50" selected="@(pageSize == 50)">50</option>
+                        </select>
+                        @if (pagedCommunications != null)
+                        {
+                            <span class="pagination-info">
+                                显示 @((pagedCommunications.PageNumber - 1) * pagedCommunications.PageSize + 1)-@(Math.Min(pagedCommunications.PageNumber * pagedCommunications.PageSize, pagedCommunications.TotalCount)) 条，
+                                共 @pagedCommunications.TotalCount 条记录
+                            </span>
+                        }
+                    </div>
+                    @if (pagedCommunications != null && pagedCommunications.TotalPages > 0)
                     {
-                        <span class="pagination-info">
-                            显示 @((pagedCommunications.PageNumber - 1) * pagedCommunications.PageSize + 1)-@(Math.Min(pagedCommunications.PageNumber * pagedCommunications.PageSize, pagedCommunications.TotalCount)) 条，
-                            共 @pagedCommunications.TotalCount 条记录
-                        </span>
+                        <ul class="pagination mb-0">
+                            <li class="page-item @(pagedCommunications.PageNumber == 1 ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                            </li>
+                            <li class="page-item @(!pagedCommunications.HasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.PageNumber - 1)">上一页</a>
+                            </li>
+
+                            @{
+                                int startPage = Math.Max(1, pagedCommunications.PageNumber - 2);
+                                int endPage = Math.Min(pagedCommunications.TotalPages, startPage + 4);
+
+                                if (endPage - startPage < 4 && startPage > 1)
+                                {
+                                    startPage = Math.Max(1, endPage - 4);
+                                }
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                int pageNumber = i;
+                                <li class="page-item @(pageNumber == pagedCommunications.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(!pagedCommunications.HasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.PageNumber + 1)">下一页</a>
+                            </li>
+                            <li class="page-item @(pagedCommunications.PageNumber == pagedCommunications.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.TotalPages)">末页</a>
+                            </li>
+                        </ul>
                     }
                 </div>
-                @if (pagedCommunications != null && pagedCommunications.TotalPages > 0)
-                {
-                    <ul class="pagination mb-0">
-                        <li class="page-item @(pagedCommunications.PageNumber == 1 ? "disabled" : "")">
-                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
-                        </li>
-                        <li class="page-item @(!pagedCommunications.HasPreviousPage ? "disabled" : "")">
-                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.PageNumber - 1)">上一页</a>
-                        </li>
-
-                        @{
-                            int startPage = Math.Max(1, pagedCommunications.PageNumber - 2);
-                            int endPage = Math.Min(pagedCommunications.TotalPages, startPage + 4);
-
-                            if (endPage - startPage < 4 && startPage > 1)
-                            {
-                                startPage = Math.Max(1, endPage - 4);
-                            }
-                        }
-
-                        @for (int i = startPage; i <= endPage; i++)
-                        {
-                            int pageNumber = i;
-                            <li class="page-item @(pageNumber == pagedCommunications.PageNumber ? "active" : "")">
-                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
-                            </li>
-                        }
-
-                        <li class="page-item @(!pagedCommunications.HasNextPage ? "disabled" : "")">
-                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.PageNumber + 1)">下一页</a>
-                        </li>
-                        <li class="page-item @(pagedCommunications.PageNumber == pagedCommunications.TotalPages ? "disabled" : "")">
-                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCommunications.TotalPages)">末页</a>
-                        </li>
-                    </ul>
-                }
             </div>
         </div>
     </div>
@@ -355,10 +360,9 @@
 }
 
 <!-- 删除确认模态框 -->
-<DeleteConfirmationModal 
-ShowModal="showDeleteModal"
-ItemName="@GetDeletingItemName()"
-OnConfirm="HandleDeleteConfirmation" />
+<DeleteConfirmationModal ShowModal="showDeleteModal"
+                         ItemName="@GetDeletingItemName()"
+                         OnConfirm="HandleDeleteConfirmation" />
 
 @code {
 
@@ -652,7 +656,7 @@ OnConfirm="HandleDeleteConfirmation" />
 
 
     private string GetDeletingItemName()
-    { 
+    {
         if (!string.IsNullOrEmpty(selectedCommunication?.Resume.Name))
             return $" {selectedCommunication?.Resume.Name} 的沟通记录";
 
