@@ -13,6 +13,14 @@ public class CommunicationService : ICommunicationService
         _dbContext = dbContext;
     }
 
+    public async Task<Communication> UpdateCommunicationAsync(Communication communication)
+    {
+        communication.UpdatedAt = DateTime.Now;
+        _dbContext.Communications.Update(communication);
+        await _dbContext.SaveChangesAsync();
+        return communication;
+    }
+
     public async Task<Communication> CreateCommunicationAsync(Communication communication)
     {
         communication.CreatedAt = DateTime.Now;

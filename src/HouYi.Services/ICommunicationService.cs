@@ -1,4 +1,4 @@
-using HouYi.Models;
+﻿using HouYi.Models;
 
 namespace HouYi.Services;
 
@@ -20,4 +20,5 @@ public interface ICommunicationService
         ContactReason? reason = null);
 
     Task<Communication> CreateCommunicationAsync(Communication communication);
+    Task<Communication> UpdateCommunicationAsync(Communication communication);
 } 
