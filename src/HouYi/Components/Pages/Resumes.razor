@@ -1,4 +1,6 @@
 ﻿@inject IResumeService ResumeService
+@inject ICommunicationService CommunicationService
+@inject IPositionService PositionService
 
 <div class="container-fluid p-0">
     <!-- 主内容区 -->
@@ -124,13 +126,16 @@
                                     <td>@resume.UpdatedAt.ToString("yyyy-MM-dd")</td>
                                     <td>
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@resume.Id">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@resume.Id" title="查看简历详情">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@resume.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                            <button type="button" class="btn btn-sm btn-outline-info btn-communication" @onclick="() => OpenAddCommunicationModal(resume.Id)" title="添加沟通记录" style="padding: 0.25rem 0.4rem;">
+                                                <i class="bi bi-telephone"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@resume.Id" data-bs-toggle="modal" data-bs-target="#editModal" title="编辑简历">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@resume.Id">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@resume.Id" title="删除简历">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -200,6 +205,86 @@
     </div>
 </div>
 
+<!-- 添加沟通记录模态框 -->
+@if (showAddCommunicationModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="addCommunicationModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCommunicationModalLabel">正在添加 @(pagedResumes?.Items.FirstOrDefault(r => r.Id == selectedResumeId)?.Name ?? "未知") 的沟通记录</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddCommunicationModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@newCommunication" OnValidSubmit="AddCommunication">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">沟通方式</label>
+                            <InputSelect @bind-Value="newCommunication.Method" class="form-select">
+                                <option value="@CommunicationMethod.Phone">电话</option>
+                                <option value="@CommunicationMethod.Email">邮件</option>
+                                <option value="@CommunicationMethod.IM">即时消息</option>
+                                <option value="@CommunicationMethod.Video">视频</option>
+                                <option value="@CommunicationMethod.FaceToFace">面对面</option>
+                                <option value="@CommunicationMethod.Other">其他</option>
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">沟通原因</label>
+                            <InputSelect @bind-Value="newCommunication.Reason" class="form-select">
+                                <option value="@ContactReason.FollowUp">流程跟进</option>
+                                <option value="@ContactReason.Notification">通知</option>
+                                <option value="@ContactReason.Opportunity">机会推荐</option>
+                                <option value="@ContactReason.Relationship">关系维护</option>
+                                <option value="@ContactReason.Other">其他</option>
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">意向职位</label>
+                            <InputSelect @bind-Value="newCommunication.PositionId" class="form-select">
+                                <option value="">-- 请选择 --</option>
+                                @if (openPositions != null)
+                                {
+                                    @foreach (var position in openPositions)
+                                    {
+                                        <option value="@position.Id">@($"{position.Name} - {position.Customer.Name}")</option>
+                                    }
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">沟通内容</label>
+                            <InputTextArea @bind-Value="newCommunication.Content" class="form-control" rows="4" />
+                            <ValidationMessage For="@(() => newCommunication.Content)" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">沟通结果</label>
+                            <InputSelect @bind-Value="newCommunication.Result" class="form-select">
+                                <option value="@CommunicatedResult.NoResponse">未响应</option>
+                                <option value="@CommunicatedResult.Interested">有意向</option>
+                                <option value="@CommunicatedResult.NotInterested">无意向</option>
+                                <option value="@CommunicatedResult.Pending">待定</option>
+                                <option value="@CommunicatedResult.Further">进一步沟通</option>
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">沟通时间</label>
+                            <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="newCommunication.CommunicationTime" class="form-control" />
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseAddCommunicationModal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     private PagedResult<Resume>? pagedResumes;
     private string? errorMessage;
@@ -210,6 +295,18 @@
     private bool isSearchMode = false;
     private Gender? selectedGender;
     private EmploymentStatus? selectedStatus;
+    private bool showAddCommunicationModal;
+    private Communication newCommunication = new()
+        {
+            ResumeId = string.Empty,
+            Method = CommunicationMethod.Phone,
+            Reason = ContactReason.FollowUp,
+            Content = string.Empty,
+            CommunicationTime = DateTime.Now,
+            Result = CommunicatedResult.Pending
+        };
+    private string? selectedResumeId;
+    private List<Position>? openPositions;
 
     protected override async Task OnInitializedAsync()
     {
@@ -232,6 +329,20 @@
         catch (Exception ex)
         {
             errorMessage = $"加载简历数据时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task LoadOpenPositionsAsync()
+    {
+        try
+        {
+            var result = await PositionService.GetPositionsAsync(status: PositionStatus.Open);
+            openPositions = result.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载职位数据时发生错误: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
     }
@@ -309,5 +420,58 @@
             ResumeSource.Partner => "合作伙伴",
             _ => "其他"
         };
+    }
+
+    private async Task AddCommunication()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(selectedResumeId))
+            {
+                errorMessage = "请选择简历";
+                return;
+            }
+
+            newCommunication.ResumeId = selectedResumeId;
+            await CommunicationService.CreateCommunicationAsync(newCommunication);
+
+            // 关闭模态框
+            showAddCommunicationModal = false;
+            StateHasChanged();
+
+            // 重置表单
+            newCommunication = new()
+                {
+                    ResumeId = string.Empty,
+                    Method = CommunicationMethod.Phone,
+                    Reason = ContactReason.FollowUp,
+                    Content = string.Empty,
+                    CommunicationTime = DateTime.Now,
+                    Result = CommunicatedResult.Pending
+                };
+            selectedResumeId = null;
+
+            // 刷新页面
+            await LoadResumesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"添加沟通记录时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task OpenAddCommunicationModal(string resumeId)
+    {
+        selectedResumeId = resumeId;
+        await LoadOpenPositionsAsync();
+        showAddCommunicationModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseAddCommunicationModal()
+    {
+        showAddCommunicationModal = false;
+        StateHasChanged();
     }
 }

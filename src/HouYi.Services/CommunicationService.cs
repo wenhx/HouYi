@@ -13,6 +13,17 @@ public class CommunicationService : ICommunicationService
         _dbContext = dbContext;
     }
 
+    public async Task<Communication> CreateCommunicationAsync(Communication communication)
+    {
+        communication.CreatedAt = DateTime.Now;
+        communication.UpdatedAt = DateTime.Now;
+
+        _dbContext.Communications.Add(communication);
+        await _dbContext.SaveChangesAsync();
+
+        return communication;
+    }
+
     public async Task<PagedResult<Communication>> GetCommunicationsCoreAsync(
         Func<IQueryable<Communication>, IQueryable<Communication>>? filter,
         int pageNumber = 1,

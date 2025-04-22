@@ -18,4 +18,6 @@ public interface ICommunicationService
         CommunicatedResult? result = null,
         CommunicationMethod? method = null,
         ContactReason? reason = null);
+
+    Task<Communication> CreateCommunicationAsync(Communication communication);
 } 
