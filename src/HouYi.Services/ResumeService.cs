@@ -103,4 +103,14 @@ public class ResumeService : IResumeService
         await _dbContext.SaveChangesAsync();
         return resume;
     }
+
+    public async Task DeleteResumeAsync(string resumeId)
+    {
+        var resume = await _dbContext.Resumes.FindAsync(resumeId);
+        if (resume == null)
+            throw new InvalidOperationException($"找不到ID为 {resumeId} 的简历");
+
+        _dbContext.Resumes.Remove(resume);
+        await _dbContext.SaveChangesAsync();
+    }
 }

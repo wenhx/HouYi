@@ -5,6 +5,7 @@
 @inject IPlaceService PlaceService
 
 <CitySelector @ref="citySelector" OnCitySelected="HandleCitySelected" />
+<DeleteConfirmationModal @ref="deleteConfirmationModal" ShowModal="showDeleteConfirmation" ItemName="@(deletingResume == null ? "该简历" : $" {deletingResume.Name} 的简历")" OnConfirm="HandleDeleteConfirmation" />
 
 <div class="container-fluid p-0">
     <!-- 主内容区 -->
@@ -143,7 +144,7 @@
                                             <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" @onclick="() => OpenEditModal(resume.Id)" title="编辑简历">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@resume.Id" title="删除简历">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@resume.Id" title="删除简历" @onclick="() => OpenDeleteConfirmation(resume.Id)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -560,6 +561,9 @@
     private CitySelector? citySelector;
     private bool showViewModal;
     private Resume? viewingResume;
+    private bool showDeleteConfirmation;
+    private Resume? deletingResume;
+    private DeleteConfirmationModal? deleteConfirmationModal;
 
     // InputNumber组件不支持byte、short类型，定义一个辅助类来协助。
     public class EditingResume
@@ -846,5 +850,34 @@
             CloseViewModal();
             OpenEditModal(resumeId);
         }
+    }
+
+    private void OpenDeleteConfirmation(string resumeId)
+    {
+        deletingResume = pagedResumes?.Items.FirstOrDefault(r => r.Id == resumeId);
+        if (deletingResume != null)
+        {
+            showDeleteConfirmation = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        showDeleteConfirmation = false;
+        if (confirmed && deletingResume != null)
+        {
+            try
+            {
+                await ResumeService.DeleteResumeAsync(deletingResume.Id);
+                await LoadResumesAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"删除简历时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+        deletingResume = null;
     }
 }
