@@ -31,6 +31,8 @@ public class PositionService : IPositionService
 
         var totalCount = await query.CountAsync();
         var items = await query
+            .OrderByDescending(p => p.Status == PositionStatus.Open)
+            .ThenByDescending(p => p.UpdatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
