@@ -1,0 +1,128 @@
+﻿@namespace HouYi.Components.Shared
+@inject IPlaceService PlaceService
+
+@if (showModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px; z-index: 10500;" tabindex="-1" aria-labelledby="citySelectorModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-dialog-centered" style="max-height: 80vh; margin: 1.75rem auto;">
+            <div class="modal-content" style="max-height: 80vh;">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="citySelectorModalLabel">选择城市</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body" style="overflow: hidden;">
+                    <div class="row" style="height: 60vh;">
+                        <div class="col-md-6" style="height: 100%; overflow-y: auto;">
+                            <div class="list-group">
+                                <div class="list-group-item list-group-item-action @(selectedProvince == null ? "active" : "")"
+                                     style="cursor: pointer; user-select: none;"
+                                     @onclick="() => SelectProvince(null)">
+                                    所有省份
+                                </div>
+                                @foreach (var province in provinces)
+                                {
+                                    <div class="list-group-item list-group-item-action @(selectedProvince?.Id == province.Id ? "active" : "")"
+                                         style="cursor: pointer; user-select: none;"
+                                         @onclick="() => SelectProvince(province)">
+                                        @province.Name
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-6" style="height: 100%; overflow-y: auto;">
+                            <div class="list-group">
+                                @if (selectedProvince == null)
+                                {
+                                    <div class="list-group-item">请选择省份</div>
+                                }
+                                else
+                                {
+                                    @foreach (var city in cities)
+                                    {
+                                        <div class="list-group-item list-group-item-action @(selectedCity?.Id == city.Id ? "active" : "")"
+                                             style="cursor: pointer; user-select: none;"
+                                             @onclick="() => SelectCity(city)">
+                                            @city.Name
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmSelection">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show" style="z-index: 10400;"></div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<Place> OnCitySelected { get; set; }
+
+    private IReadOnlyCollection<Place> provinces = Array.Empty<Place>();
+    private IList<Place> cities = Array.Empty<Place>();
+    private Place? selectedProvince;
+    private Place? selectedCity;
+    private bool showModal;
+
+    private async Task LoadProvincesAsync()
+    {
+        provinces = await PlaceService.GetChineseProvincesAsync();
+    }
+
+    private async Task LoadCitiesAsync(short provinceId)
+    {
+        cities = new List<Place>(await PlaceService.GetCitiesOfProvinceAsync(provinceId));
+    }
+
+    private async Task SelectProvince(Place? province)
+    {
+        if (province != null)
+        {
+            await LoadCitiesAsync(province.Id);
+        }
+        else
+        {
+            cities.Clear();
+        }
+        selectedProvince = province;
+        selectedCity = null;
+        StateHasChanged();
+    }
+
+    private void SelectCity(Place city)
+    {
+        selectedCity = city;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmSelection()
+    {
+        if (selectedCity != null)
+        {
+            await OnCitySelected.InvokeAsync(selectedCity);
+        }
+        CloseModal();
+    }
+
+    public async Task Show()
+    {
+        await LoadProvincesAsync();
+        showModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedProvince = null;
+        selectedCity = null;
+        cities.Clear();
+        StateHasChanged();
+    }
+} 

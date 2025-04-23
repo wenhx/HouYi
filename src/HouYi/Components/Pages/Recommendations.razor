@@ -1,0 +1,471 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+
+@using HouYi.Models
+@inject IPositionService PositionService
+@inject IRecommendationService RecommendationService
+@inject IInterviewService InterviewService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- 主内容区 -->
+        <div class="col-12 p-4">
+            <!-- 职位信息卡片 -->
+            @if (_position != null)
+            {
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 id="position-title" class="mb-1">@_position.Name</h2>
+                                <p id="position-company" class="mb-0 text-muted">@_position.Customer.Name</p>
+                            </div>
+                            <div>
+                                <span id="position-status-badge" class="badge @GetStatusBadgeClass(_position.Status)">
+                                    @GetStatusText(_position.Status)
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>招聘人数：</strong> <span id="position-recruiter">@_position.Number</span></p>
+                                <p class="mb-1"><strong>创建时间：</strong> <span id="position-create-time">@_position.CreatedAt.ToString("yyyy-MM-dd")</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>客户联系人：</strong> <span id="position-contact">@_position.Customer.ContactPerson</span></p>
+                                <p class="mb-1"><strong>联系方式：</strong> <span id="position-contact-method">@_position.Customer.Phone</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>职位要求：</strong></p>
+                                <p id="position-requirements" class="mb-0">@_position.Description</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- 搜索和过滤 -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <form class="search-form" @onsubmit="SearchRecommendations" @onsubmit:preventDefault>
+                        <div class="d-flex">
+                            <input type="search" class="form-control" placeholder="搜索人才..." aria-label="搜索" @bind="_searchTerm" @bind:event="oninput">
+                            <button class="btn btn-primary btn-search" type="submit">
+                                <i class="bi bi-search me-1"></i>搜索
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    @* <button class="btn btn-outline-primary me-2" id="autoRecommendBtn">
+                        <i class="bi bi-magic me-1"></i> 智能推荐
+                    </button> *@
+                    <button class="btn btn-primary" id="addRecommendBtn">
+                        <i class="bi bi-person-plus me-1"></i> 添加推荐
+                    </button>
+                </div>
+            </div>
+
+            <!-- 推荐简历列表 -->
+            <div id="recommendation-container">
+                @* @if (_position == null)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i> 未指定职位ID，请从职位管理页面选择一个职位进行推荐。
+                        <div class="mt-3">
+                            <a href="Positions" class="btn btn-primary">
+                                <i class="bi bi-arrow-left me-1"></i> 返回职位列表
+                            </a>
+                        </div>
+                    </div>
+                }
+                else *@ 
+                @if (_pagedRecommendations == null)
+                {
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                    </div>
+                }
+                else if (!_pagedRecommendations.Items.Any())
+                {
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i> 暂无推荐记录
+                    </div>
+                }
+                else
+                {
+                    @foreach (var recommendation in _pagedRecommendations.Items)
+                    {
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                        <div class="match-score @GetMatchLevelClass(recommendation.MatchLevel)">
+                                            <span class="stars">@GetMatchLevelText(recommendation.MatchLevel)</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <h5 class="card-title">
+                                            @recommendation.Resume.Name
+                                            <small class="text-muted">（@DisplayHelper.GetGenderText(recommendation.Resume.Gender)，@recommendation.Resume.Age 岁）</small>
+                                        </h5>
+                                        <p class="card-text mb-1">
+                                            <i class="bi bi-briefcase me-1"></i> @recommendation.Resume.Position |
+                                            <i class="bi bi-book me-1"></i> @DisplayHelper.GetEducationText(recommendation.Resume.HighestEducation) |
+                                            <i class="bi bi-clock-history me-1"></i> @DisplayHelper.GetExperienceText(recommendation.Resume.YearsOfExperience) |
+                                            <i class="bi bi-geo-alt me-1"></i> @recommendation.Resume.Place.Name
+                                        </p>
+                                        <p class="card-text mt-2">
+                                            <strong>推荐理由：</strong> @recommendation.Reason
+                                        </p>
+                                    </div>
+                                    <div class="col-md-3 text-end d-flex align-items-center justify-content-end">
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-1" @onclick="() => ViewResume(recommendation.Resume.Id)">
+                                                <i class="bi bi-eye"></i> 查看简历
+                                            </button>
+                                            @if (_position != null)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-success me-1" @onclick="() => ArrangeInterview(recommendation.Resume.Id)">
+                                                    <i class="bi bi-calendar-plus"></i> 安排面试
+                                                </button>
+                                            }
+                                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveRecommendation(recommendation.Id)">
+                                                <i class="bi bi-x-circle"></i> 移除
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- 分页 -->
+            @if (_pagedRecommendations != null)
+            {
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">每页显示：</span>
+                        <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 80px;">
+                            <option value="10" selected="@(_pageSize == 10)">10</option>
+                            <option value="20" selected="@(_pageSize == 20)">20</option>
+                            <option value="50" selected="@(_pageSize == 50)">50</option>
+                        </select>
+                        <span class="pagination-info">
+                            显示 @((_pagedRecommendations.PageNumber - 1) * _pagedRecommendations.PageSize + 1)-@(Math.Min(_pagedRecommendations.PageNumber * _pagedRecommendations.PageSize, _pagedRecommendations.TotalCount)) 条，
+                            共 @_pagedRecommendations.TotalCount 条记录
+                        </span>
+                    </div>
+                    @if (_pagedRecommendations.TotalPages > 0)
+                    {
+                        <ul class="pagination mb-0">
+                            <li class="page-item @(_pagedRecommendations.PageNumber == 1 ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                            </li>
+                            <li class="page-item @(!_pagedRecommendations.HasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedRecommendations.PageNumber - 1)">上一页</a>
+                            </li>
+
+                            @{
+                                int startPage = Math.Max(1, _pagedRecommendations.PageNumber - 2);
+                                int endPage = Math.Min(_pagedRecommendations.TotalPages, startPage + 4);
+
+                                if (endPage - startPage < 4 && startPage > 1)
+                                {
+                                    startPage = Math.Max(1, endPage - 4);
+                                }
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                int pageNumber = i;
+                                <li class="page-item @(pageNumber == _pagedRecommendations.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(!_pagedRecommendations.HasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedRecommendations.PageNumber + 1)">下一页</a>
+                            </li>
+                            <li class="page-item @(_pagedRecommendations.PageNumber == _pagedRecommendations.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedRecommendations.TotalPages)">末页</a>
+                            </li>
+                        </ul>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- 安排面试模态框 -->
+@if (_showInterviewModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="arrangeInterviewModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="arrangeInterviewModalLabel">安排面试</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i> @_errorMessage
+                        </div>
+                    }
+                    <EditForm Model="@_interview" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">面试时间</label>
+                                <InputDate @bind-Value="_interview.InterviewTime" @bind-Value:format="yyyy-dd-MM HH:mm" Type="InputDateType.DateTimeLocal" class="form-control" />
+                                <ValidationMessage For="@(() => _interview.InterviewTime)" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">面试轮次</label>
+                                <InputNumber @bind-Value="_interviewRound" class="form-control" min="1" max="5" />
+                                <ValidationMessage For="@(() => _interview.Round)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">面试地点</label>
+                            <InputText @bind-Value="_interview.Location" class="form-control" />
+                            <ValidationMessage For="@(() => _interview.Location)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">面试官</label>
+                            <InputText @bind-Value="_interview.Interviewer" class="form-control" />
+                            <ValidationMessage For="@(() => _interview.Interviewer)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            <InputTextArea @bind-Value="_interview.Feedback" class="form-control" rows="3" />
+                            <ValidationMessage For="@(() => _interview.Feedback)" />
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- 成功提示模态框 -->
+@if (_showSuccessModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="successModalLabel">操作成功</h5>
+                    <button type="button" class="btn-close" @onclick="CloseSuccessModal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5>面试安排成功！</h5>
+                    <div class="mt-3 text-start">
+                        <p><i class="bi bi-calendar-event me-2"></i> 面试时间：@_interview.InterviewTime.ToString("yyyy-MM-dd HH:mm")</p>
+                        <p><i class="bi bi-geo-alt me-2"></i> 面试地点：@_interview.Location</p>
+                        <p><i class="bi bi-person me-2"></i> 面试官：@_interview.Interviewer</p>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" @onclick="CloseSuccessModal">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public int? PositionId { get; set; }
+
+    private Position? _position;
+    private PagedResult<Recommendation>? _pagedRecommendations;
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private string _searchTerm = "";
+    private Interview _interview;
+    private string? _errorMessage;
+    private bool _showInterviewModal;
+    private int _interviewRound = 1;
+    private bool _showSuccessModal;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (PositionId.HasValue)
+        {
+            await LoadPositionAsync();
+        }
+        await LoadRecommendationsAsync();
+    }
+
+    private async Task LoadPositionAsync()
+    {
+        try
+        {
+            _position = await PositionService.GetPositionByIdAsync(PositionId.Value);
+        }
+        catch (Exception ex)
+        {
+            // 处理错误
+        }
+    }
+
+    private async Task LoadRecommendationsAsync()
+    {
+        _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(PositionId, _currentPage, _pageSize);
+    }
+
+    private async Task NavigateToPage(int page)
+    {
+        _currentPage = page;
+        await LoadRecommendationsAsync();
+    }
+
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newPageSize))
+        {
+            _pageSize = newPageSize;
+            _currentPage = 1;
+            await LoadRecommendationsAsync();
+        }
+    }
+
+    private async Task SearchRecommendations()
+    {
+        _currentPage = 1;
+        _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(PositionId, _currentPage, _pageSize, _searchTerm);
+    }
+
+    private string GetStatusText(PositionStatus status)
+    {
+        return status switch
+        {
+            PositionStatus.Closed => "关闭",
+            PositionStatus.Open => "开放",
+            PositionStatus.Suspended => "暂停",
+            PositionStatus.Completed => "完成",
+            _ => "未知"
+        };
+    }
+
+    private string GetStatusBadgeClass(PositionStatus status)
+    {
+        return status switch
+        {
+            PositionStatus.Closed => "bg-secondary",
+            PositionStatus.Open => "bg-success",
+            PositionStatus.Suspended => "bg-warning",
+            PositionStatus.Completed => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetMatchLevelClass(RatingLevel level)
+    {
+        return level switch
+        {
+            RatingLevel.FiveStars => "text-success",
+            RatingLevel.FourStars => "text-primary",
+            RatingLevel.ThreeStars => "text-info",
+            RatingLevel.TwoStars => "text-warning",
+            RatingLevel.OneStar => "text-danger",
+            _ => "text-muted"
+        };
+    }
+
+    private string GetMatchLevelText(RatingLevel level)
+    {
+        return level switch
+        {
+            RatingLevel.FiveStars => "★★★★★",
+            RatingLevel.FourStars => "★★★★☆",
+            RatingLevel.ThreeStars => "★★★☆☆",
+            RatingLevel.TwoStars => "★★☆☆☆",
+            RatingLevel.OneStar => "★☆☆☆☆",
+            _ => "未评分"
+        };
+    }
+
+    private void ViewResume(string resumeId)
+    {
+        // TODO: 实现查看简历功能
+    }
+
+    private async Task ArrangeInterview(string resumeId)
+    {
+        if (_position == null) return;
+
+        _interview = new Interview
+        {
+            ResumeId = resumeId,
+            PositionId = _position.Id,
+            RecommendationId = _pagedRecommendations?.Items.FirstOrDefault(r => r.Resume.Id == resumeId)?.Id ?? 0,
+            InterviewTime = DateTime.Today.AddDays(1).AddHours(9), // 默认明天上午9点
+            Location = _position.Customer.Address ?? "待定",
+            Round = 1,
+            Interviewer = _position.Customer.ContactPerson,
+            Status = InterviewStatus.Scheduled
+        };
+
+        _showInterviewModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseModal()
+    {
+        _showInterviewModal = false;
+        StateHasChanged();
+    }
+
+    private void CloseSuccessModal()
+    {
+        _showSuccessModal = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            _errorMessage = null;
+            _interview.Round = (byte)_interviewRound;
+            await InterviewService.CreateInterviewAsync(_interview);
+            _showInterviewModal = false;
+            _showSuccessModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveRecommendation(int recommendationId)
+    {
+        // TODO: 实现移除推荐功能
+    }
+}

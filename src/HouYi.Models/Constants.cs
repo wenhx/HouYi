@@ -2,7 +2,7 @@
 
 public sealed class Constants
 {
-    public sealed class StringLengths
+    public static class StringLengths
     {
         public const int GUID = 36;
         public const int Name = 20;
@@ -16,15 +16,18 @@ public sealed class Constants
         public const int LongText = 2048;
         public const int LongerText = 4096;
     }
-    public sealed class Integers
+    public static class Integers
     {
         public const int MinimumAge = 18;
         public const int MaximumAge = 100;
         public const int MaximumPageIndex = 50;
         public const int MaximumPageSize = 50;
     }
-    public sealed class Categories
+    public static class Categories
     {
-        public static readonly string Area = "Area";
+    }
+    public static class Places
+    {
+        public const int ChinaId = 10000;
     }
 }

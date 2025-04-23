@@ -15,6 +15,6 @@ public class Position
     public required HouYiUser Consultant { get; init; }
     [StringLength(Constants.StringLengths.Text)]
     public required string Description { get; init; } = string.Empty;
-    public DateTime CreateAt { get; set; } = DateTime.Now;
-    public DateTime UpdateAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }
