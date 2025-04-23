@@ -93,7 +93,11 @@
                                     <td>@position.Id</td>
                                     <td>@position.Name</td>
                                     <td>@position.Customer.Name</td>
-                                    <td>@GetStatusString(position.Status)</td>
+                                    <td>
+                                        <span class="status-badge @GetStatusClass(position.Status)">
+                                            @GetStatusString(position.Status)
+                                        </span>
+                                    </td>
                                     <td>@position.Number</td>
                                     <td>@position.Consultant.UserName</td>
                                     <td>@position.Customer.ContactPerson</td>
@@ -203,6 +207,18 @@
             PositionStatus.Suspended => "暂停",
             PositionStatus.Completed => "完成",
             _ => "未知"
+        };
+    }
+
+    private string GetStatusClass(PositionStatus status)
+    {
+        return status switch
+        {
+            PositionStatus.Closed => "status-closed",
+            PositionStatus.Open => "status-open",
+            PositionStatus.Suspended => "status-suspended",
+            PositionStatus.Completed => "status-completed",
+            _ => ""
         };
     }
 
