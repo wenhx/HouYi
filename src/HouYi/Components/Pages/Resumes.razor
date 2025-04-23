@@ -5,13 +5,13 @@
 @inject IPlaceService PlaceService
 
 <CitySelector @ref="citySelector" OnCitySelected="HandleCitySelected" />
-<DeleteConfirmationModal @ref="deleteConfirmationModal" ShowModal="showDeleteConfirmation" ItemName="@(deletingResume == null ? "该简历" : $" {deletingResume.Name} 的简历")" OnConfirm="HandleDeleteConfirmation" />
+<DeleteConfirmationModal @ref="deleteConfirmationModal" ShowModal="showDeleteConfirmation" ItemName="@($" {deletingResume?.Name} 的简历")" OnConfirm="HandleDeleteConfirmation" />
 
 <div class="container-fluid p-0">
     <!-- 主内容区 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>人才库</h1>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+        <button class="btn btn-primary" @onclick="OpenAddModal">
             <i class="bi bi-plus-circle me-1"></i> 添加简历
         </button>
     </div>
@@ -533,6 +533,139 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+<!-- 添加简历模态框 -->
+@if (showAddModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel">添加简历</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@newResume" OnValidSubmit="AddResume">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">姓名</label>
+                                <InputText @bind-Value="newResume.Name" class="form-control" />
+                                <ValidationMessage For="@(() => newResume.Name)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">性别</label>
+                                <InputSelect @bind-Value="newResume.Gender" class="form-select">
+                                    <option value="@Gender.Male">男</option>
+                                    <option value="@Gender.Female">女</option>
+                                    <option value="@Gender.PreferNotToSay">保密</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">年龄</label>
+                                <InputNumber @bind-Value="newResumeWithIntValue.Age" class="form-control" />
+                                <ValidationMessage For="@(() => newResume.Age)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">电话</label>
+                                <InputText @bind-Value="newResume.Phone" class="form-control" />
+                                <ValidationMessage For="@(() => newResume.Phone)" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">邮箱</label>
+                                <InputText @bind-Value="newResume.Email" class="form-control" />
+                                <ValidationMessage For="@(() => newResume.Email)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">职位</label>
+                                <InputText @bind-Value="newResume.Position" class="form-control" />
+                                <ValidationMessage For="@(() => newResume.Position)" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">就业状态</label>
+                                <InputSelect @bind-Value="newResume.Status" class="form-select">
+                                    <option value="@EmploymentStatus.Unemployed">待业中</option>
+                                    <option value="@EmploymentStatus.EmployedAndNotConsideringOpportunities">在职-不考虑机会</option>
+                                    <option value="@EmploymentStatus.EmployedAndOpenToOpportunities">在职-考虑新机会</option>
+                                    <option value="@EmploymentStatus.Unknown">未知</option>
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">学历</label>
+                                <InputSelect @bind-Value="newResume.HighestEducation" class="form-select">
+                                    <option value="@EducationLevel.Doctorate">博士</option>
+                                    <option value="@EducationLevel.Master">硕士</option>
+                                    <option value="@EducationLevel.Bachelor">本科</option>
+                                    <option value="@EducationLevel.Associate">大专</option>
+                                    <option value="@EducationLevel.Other">其他</option>
+                                    <option value="@EducationLevel.Unknown">未知</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">年薪(K)</label>
+                                <InputNumber @bind-Value="newResumeWithIntValue.AnnualSalary" class="form-control" />
+                                <ValidationMessage For="@(() => newResume.AnnualSalary)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">工作经验(年)</label>
+                                <InputNumber @bind-Value="newResumeWithIntValue.YearsOfExperience" class="form-control" />
+                                <ValidationMessage For="@(() => newResume.YearsOfExperience)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">所在地</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="@(newResume?.Place?.Name ?? "请选择城市")" readonly />
+                                <button class="btn btn-outline-secondary" type="button" @onclick="OpenCitySelector">
+                                    <i class="bi bi-geo-alt"></i> 选择城市
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">简历来源</label>
+                            <InputSelect @bind-Value="newResume.Source" class="form-select">
+                                <option value="@ResumeSource.TalentPool">人才库</option>
+                                <option value="@ResumeSource.Consultant">猎头搜集</option>
+                                <option value="@ResumeSource.Company">企业推荐</option>
+                                <option value="@ResumeSource.Candidate">主动投递</option>
+                                <option value="@ResumeSource.Partner">合作伙伴</option>
+                                <option value="@ResumeSource.Others">其他</option>
+                            </InputSelect>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            <InputTextArea @bind-Value="newResume.Note" class="form-control" rows="3" />
+                            <ValidationMessage For="@(() => newResume.Note)" />
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseAddModal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     private PagedResult<Resume>? pagedResumes;
     private string? errorMessage;
@@ -544,26 +677,21 @@
     private Gender? selectedGender;
     private EmploymentStatus? selectedStatus;
     private bool showAddCommunicationModal;
-    private Communication newCommunication = new()
-        {
-            ResumeId = string.Empty,
-            Method = CommunicationMethod.Phone,
-            Reason = ContactReason.FollowUp,
-            Content = string.Empty,
-            CommunicationTime = DateTime.Now,
-            Result = CommunicatedResult.Pending
-        };
+    private Communication newCommunication = Communication.Default();
     private string? selectedResumeId;
     private List<Position>? openPositions;
     private bool showEditModal;
     private Resume? editingResume;
-    private EditingResume editingResumeWithIntValue;
+    private EditingResume? editingResumeWithIntValue;
     private CitySelector? citySelector;
     private bool showViewModal;
     private Resume? viewingResume;
     private bool showDeleteConfirmation;
     private Resume? deletingResume;
     private DeleteConfirmationModal? deleteConfirmationModal;
+    private bool showAddModal;
+    private Resume? newResume;
+    private EditingResume? newResumeWithIntValue;
 
     // InputNumber组件不支持byte、short类型，定义一个辅助类来协助。
     public class EditingResume
@@ -712,15 +840,7 @@
             StateHasChanged();
 
             // 重置表单
-            newCommunication = new()
-                {
-                    ResumeId = string.Empty,
-                    Method = CommunicationMethod.Phone,
-                    Reason = ContactReason.FollowUp,
-                    Content = string.Empty,
-                    CommunicationTime = DateTime.Now,
-                    Result = CommunicatedResult.Pending
-                };
+            newCommunication = Communication.Default();
             selectedResumeId = null;
 
             // 刷新页面
@@ -771,6 +891,7 @@
     {
         showEditModal = false;
         editingResume = null;
+        editingResumeWithIntValue = null;
         StateHasChanged();
     }
 
@@ -812,8 +933,13 @@
         {
             editingResume.PlaceId = place.Id;
             editingResume.Place = place;
-            StateHasChanged();
         }
+        else if (newResume != null)
+        {
+            newResume.PlaceId = place.Id;
+            newResume.Place = place;
+        }
+        StateHasChanged();
     }
 
     private async Task OpenViewModal(string resumeId)
@@ -879,5 +1005,40 @@
             }
         }
         deletingResume = null;
+    }
+
+    private void OpenAddModal()
+    {
+        byte defaultAge = 30;
+        newResume = Resume.Default(age: defaultAge);
+        newResumeWithIntValue = new EditingResume(age: defaultAge, 0, 0);
+        showAddModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseAddModal()
+    {
+        showAddModal = false;
+        newResume = null;
+        newResumeWithIntValue = null;
+        StateHasChanged();
+    }
+
+    private async Task AddResume()
+    {
+        try
+        {
+            newResume.Age = (byte)newResumeWithIntValue.Age;
+            newResume.AnnualSalary = (short)newResumeWithIntValue.AnnualSalary;
+            newResume.YearsOfExperience = (byte)newResumeWithIntValue.YearsOfExperience;
+            await ResumeService.CreateResumeAsync(newResume);
+            await LoadResumesAsync();
+            CloseAddModal();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"添加简历时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
     }
 }

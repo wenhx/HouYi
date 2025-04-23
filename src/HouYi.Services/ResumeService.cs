@@ -33,9 +33,9 @@ public class ResumeService : IResumeService
 
         var totalCount = await query.CountAsync();
         var items = await query
+            .OrderByDescending(r => r.UpdatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .OrderByDescending(r => r.UpdatedAt)
             .ToListAsync();
 
         return new PagedResult<Resume>(items, pageNumber, pageSize, totalCount);
@@ -112,5 +112,16 @@ public class ResumeService : IResumeService
 
         _dbContext.Resumes.Remove(resume);
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<Resume> CreateResumeAsync(Resume raw)
+    {
+        if (raw == null)
+            throw new ArgumentNullException(nameof(raw));
+
+        Resume resume = raw.Clone(); //确保必要属性不依赖输入，它们在Clone方法中被重新设值。
+        _dbContext.Resumes.Add(resume);
+        await _dbContext.SaveChangesAsync();
+        return resume;
     }
 }
