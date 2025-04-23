@@ -105,7 +105,7 @@
                                     <td>@position.CreatedAt.ToString("yyyy-MM-dd")</td>
                                     <td>
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@position.Id">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@position.Id" title="查看职位详情" @onclick="() => OpenViewModal(position.Id)">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-info btn-recommendation" data-id="position.Id" title="查看推荐" @onclick="() => ViewRecommendations(position.Id)">
@@ -184,6 +184,93 @@
     </div>
 </div>
 
+<!-- 查看职位详情模态框 -->
+@if (showViewModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewModalLabel">职位详情 - @(viewingPosition?.Name ?? "未知")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseViewModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (viewingPosition != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>基本信息</h4>
+                                <table class="table" style="border-spacing: 0 0.5rem; border-collapse: separate;">
+                                    <tr>
+                                        <th style="width: 150px; padding-bottom: 0.5rem;">职位名称：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Name</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">公司：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Customer.Name</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">状态：</th>
+                                        <td style="padding-bottom: 0.5rem;">
+                                            <span class="status-badge @GetStatusClass(viewingPosition.Status)">
+                                                @GetStatusString(viewingPosition.Status)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">招聘人数：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Number</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">顾问：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Consultant.UserName</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">创建时间：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">更新时间：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>客户信息</h4>
+                                <table class="table" style="border-spacing: 0 0.5rem; border-collapse: separate;">
+                                    <tr>
+                                        <th style="width: 150px; padding-bottom: 0.5rem;">联系人：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Customer.ContactPerson</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">联系电话：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Customer.Phone</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h4>职位描述</h4>
+                                <div class="card">
+                                    <div class="card-body">
+                                        @viewingPosition.Description
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">关闭</button>
+                    <button type="button" class="btn btn-primary" @onclick="() => EditFromViewModal()">编辑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     [Parameter]
     public EventCallback<int> OnViewRecommendation { get; set; }
@@ -196,6 +283,8 @@
     private string searchTerm = "";
     private bool isSearchMode = false;
     private PositionStatus? selectedStatus;
+    private bool showViewModal;
+    private Position? viewingPosition;
 
     // Method to map PositionStatus to Chinese
     private string GetStatusString(PositionStatus status)
@@ -295,5 +384,40 @@
     {
         Console.WriteLine(positionId);
         await OnViewRecommendation.InvokeAsync(positionId);
+    }
+
+    private async Task OpenViewModal(int positionId)
+    {
+        try
+        {
+            viewingPosition = await PositionService.GetPositionByIdAsync(positionId);
+            if (viewingPosition != null)
+            {
+                showViewModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"打开查看模态框时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseViewModal()
+    {
+        showViewModal = false;
+        viewingPosition = null;
+        StateHasChanged();
+    }
+
+    private void EditFromViewModal()
+    {
+        if (viewingPosition != null)
+        {
+            int positionId = viewingPosition.Id;
+            CloseViewModal();
+            // TODO: 实现编辑功能
+        }
     }
 }
