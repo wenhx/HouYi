@@ -33,6 +33,7 @@ public class ResumeService : IResumeService
 
         var totalCount = await query.CountAsync();
         var items = await query
+            .OrderByDescending(r => r.UpdatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -76,4 +77,51 @@ public class ResumeService : IResumeService
             return query;
         }
     }
-} 
+
+    public async Task<Resume> UpdateResumeAsync(Resume editingResume)
+    {
+        var resume = await _dbContext.Resumes.FindAsync(editingResume.Id);
+        if (resume == null)
+            throw new InvalidOperationException($"找不到ID为 {editingResume.Id} 的简历");
+
+        // 更新所有属性
+        resume.Name = editingResume.Name;
+        resume.Gender = editingResume.Gender;
+        resume.Age = editingResume.Age;
+        resume.Phone = editingResume.Phone;
+        resume.Email = editingResume.Email;
+        resume.Status = editingResume.Status;
+        resume.Position = editingResume.Position;
+        resume.HighestEducation = editingResume.HighestEducation;
+        resume.AnnualSalary = editingResume.AnnualSalary;
+        resume.YearsOfExperience = editingResume.YearsOfExperience;
+        resume.PlaceId = editingResume.PlaceId;
+        resume.Source = editingResume.Source;
+        resume.Note = editingResume.Note;
+        resume.UpdatedAt = DateTime.Now;
+
+        await _dbContext.SaveChangesAsync();
+        return resume;
+    }
+
+    public async Task DeleteResumeAsync(string resumeId)
+    {
+        var resume = await _dbContext.Resumes.FindAsync(resumeId);
+        if (resume == null)
+            throw new InvalidOperationException($"找不到ID为 {resumeId} 的简历");
+
+        _dbContext.Resumes.Remove(resume);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<Resume> CreateResumeAsync(Resume raw)
+    {
+        if (raw == null)
+            throw new ArgumentNullException(nameof(raw));
+
+        Resume resume = raw.Clone(); //确保必要属性不依赖输入，它们在Clone方法中被重新设值。
+        _dbContext.Resumes.Add(resume);
+        await _dbContext.SaveChangesAsync();
+        return resume;
+    }
+}

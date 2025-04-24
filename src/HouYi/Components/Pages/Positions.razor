@@ -1,11 +1,15 @@
-﻿@inject IPositionService PositionService
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject IPositionService PositionService
 @inject NavigationManager NavigationManager
+@inject ICustomerService CustomerService
+@inject UserManager<HouYiUser> UserManager
 
 <div class="container-fluid p-0">
     <!-- 主内容区 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>职位管理</h1>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal">
+        <button class="btn btn-primary" @onclick="OpenAddModal">
             <i class="bi bi-plus-circle me-1"></i> 添加职位
         </button>
     </div>
@@ -15,12 +19,7 @@
         <div class="col-md-8">
             <form class="search-form" @onsubmit="SearchPositions" @onsubmit:preventDefault>
                 <div class="d-flex">
-                    <select class="form-select me-2" @bind="searchField" style="width: 150px;">
-                        <option value="Name">职位名称</option>
-                        <option value="Customer">公司</option>
-                        <option value="Consultant">顾问</option>
-                    </select>
-                    <input type="search" class="form-control" placeholder="搜索..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                    <input type="search" class="form-control" placeholder="搜索职位..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
                     <button class="btn btn-primary btn-search" type="submit">
                         <i class="bi bi-search me-1"></i>搜索
                     </button>
@@ -40,7 +39,10 @@
         <div class="card-body">
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <div class="alert alert-danger">@errorMessage</div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @errorMessage
+                    <button type="button" class="btn-close" @onclick="ClearErrorMessage" aria-label="Close"></button>
+                </div>
             }
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -65,6 +67,7 @@
                                 </div>
                             </th>
                             <th data-sortable="true" data-field="recruiter" class="sorting">招聘人数</th>
+                            <th data-sortable="true" data-field="recommendations" class="sorting">推荐人数</th>
                             <th>顾问</th>
                             <th>客户联系人</th>
                             <th>联系方式</th>
@@ -93,24 +96,29 @@
                                     <td>@position.Id</td>
                                     <td>@position.Name</td>
                                     <td>@position.Customer.Name</td>
-                                    <td>@GetStatusString(position.Status)</td>
+                                    <td>
+                                        <span class="status-badge @GetStatusClass(position.Status)">
+                                            @GetStatusString(position.Status)
+                                        </span>
+                                    </td>
                                     <td>@position.Number</td>
+                                    <td>@position.RecommendationsCount</td>
                                     <td>@position.Consultant.UserName</td>
-                                    <td>@position.Customer.ContactPerson</td>
-                                    <td>@position.Customer.Phone</td>
+                                    <td>@position.ContactPerson</td>
+                                    <td>@position.ContactPhone</td>
                                     <td>@position.CreatedAt.ToString("yyyy-MM-dd")</td>
                                     <td>
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@position.Id">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@position.Id" title="查看职位详情" @onclick="() => OpenViewModal(position.Id)">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-info btn-recommendation" data-id="position.Id" title="查看推荐" @onclick="() => ViewRecommendations(position.Id)">
                                                 <i class="bi bi-people"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@position.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@position.Id" title="编辑职位" @onclick="() => OpenEditModal(position.Id)">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@position.Id">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@position.Id" title="删除职位" @onclick="() => OpenDeleteConfirmation(position.Id)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -180,7 +188,104 @@
     </div>
 </div>
 
+<!-- 查看职位详情模态框 -->
+@if (showViewModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewModalLabel">职位详情 - @(viewingPosition?.Name ?? "未知")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseViewModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (viewingPosition != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>基本信息</h4>
+                                <table class="table" style="border-spacing: 0 0.5rem; border-collapse: separate;">
+                                    <tr>
+                                        <th style="width: 150px; padding-bottom: 0.5rem;">职位名称：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Name</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">公司：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Customer.Name</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">状态：</th>
+                                        <td style="padding-bottom: 0.5rem;">
+                                            <span class="status-badge @GetStatusClass(viewingPosition.Status)">
+                                                @GetStatusString(viewingPosition.Status)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">招聘人数：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Number</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">顾问：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.Consultant.UserName</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">创建时间：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">更新时间：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>客户信息</h4>
+                                <table class="table" style="border-spacing: 0 0.5rem; border-collapse: separate;">
+                                    <tr>
+                                        <th style="width: 150px; padding-bottom: 0.5rem;">联系人：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.ContactPerson</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">联系电话：</th>
+                                        <td style="padding-bottom: 0.5rem;">@viewingPosition.ContactPhone</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h4>职位描述</h4>
+                                <div class="card">
+                                    <div class="card-body">
+                                        @viewingPosition.Description
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">关闭</button>
+                    <button type="button" class="btn btn-primary" @onclick="() => EditFromViewModal()">编辑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- 编辑职位模态框 -->
+<PositionEditForm ModalId="editModal" ModalTitle="@($"编辑职位 - {editingPosition?.Name ?? "未知"}")" Position="@editingPosition"
+                OnCancel="CloseEditModal" OnValidSubmit="UpdatePosition" ShowModal="@(editingPosition != null)" />
+<!-- 添加职位模态框 -->
+<PositionEditForm ModalId="addModal" ModalTitle="添加职位" Position="@newPosition"
+                OnCancel="CloseAddModal" OnValidSubmit="AddPosition" ShowModal="@(newPosition != null)" />
+
+<DeleteConfirmationModal @ref="deleteConfirmationModal" ShowModal="showDeleteConfirmation" ItemName="@($" {deletingPosition?.Name}-{deletingPosition?.Customer.Name} ")" OnConfirm="HandleDeleteConfirmation" />
+
 @code {
+
     [Parameter]
     public EventCallback<int> OnViewRecommendation { get; set; }
 
@@ -188,10 +293,20 @@
     private string? errorMessage;
     private int currentPage = 1;
     private int pageSize = 10;
-    private string searchField = "Name";
     private string searchTerm = "";
     private bool isSearchMode = false;
     private PositionStatus? selectedStatus;
+    private bool showViewModal;
+    private Position? viewingPosition;
+    private bool showEditModal;
+    private PositionWithIntValue? editingPosition;
+    private IReadOnlyList<Customer>? customers;
+    private IReadOnlyList<HouYiUser>? consultants;
+    private bool showDeleteConfirmation;
+    private Position? deletingPosition;
+    private DeleteConfirmationModal? deleteConfirmationModal;
+    private bool showAddModal;
+    private PositionWithIntValue? newPosition;
 
     // Method to map PositionStatus to Chinese
     private string GetStatusString(PositionStatus status)
@@ -206,6 +321,18 @@
         };
     }
 
+    private string GetStatusClass(PositionStatus status)
+    {
+        return status switch
+        {
+            PositionStatus.Closed => "status-closed",
+            PositionStatus.Open => "status-open",
+            PositionStatus.Suspended => "status-suspended",
+            PositionStatus.Completed => "status-completed",
+            _ => ""
+        };
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadPositionsAsync();
@@ -217,7 +344,7 @@
         {
             if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
             {
-                pagedPositions = await PositionService.FindPositionsAsync(searchField, searchTerm, currentPage, pageSize, selectedStatus);
+                pagedPositions = await PositionService.FindPositionsAsync(searchTerm, currentPage, pageSize, selectedStatus);
             }
             else
             {
@@ -279,5 +406,200 @@
     {
         Console.WriteLine(positionId);
         await OnViewRecommendation.InvokeAsync(positionId);
+    }
+
+    private void OpenViewModal(int positionId)
+    {
+        try
+        {
+            viewingPosition = pagedPositions?.Items.FirstOrDefault(p => p.Id == positionId);
+            if (viewingPosition != null)
+            {
+                showViewModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"打开查看模态框时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseViewModal()
+    {
+        showViewModal = false;
+        viewingPosition = null;
+        StateHasChanged();
+    }
+
+    private async Task OpenEditModal(int positionId)
+    {
+        try
+        {
+            var position = pagedPositions?.Items.FirstOrDefault(p => p.Id == positionId);
+            if (position != null)
+            {
+                editingPosition = new PositionWithIntValue(position);
+                editingPosition.CustomerId = position.CustomerId;
+                editingPosition.ConsultantId = position.ConsultantId;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"打开编辑模态框时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseEditModal()
+    {
+        editingPosition = null;
+        StateHasChanged();
+    }
+
+    private async Task UpdatePosition()
+    {
+        try
+        {
+            if (editingPosition != null)
+            {
+                await PositionService.UpdatePositionAsync(editingPosition);
+                await LoadPositionsAsync();
+                CloseEditModal();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"更新职位时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void EditFromViewModal()
+    {
+        if (viewingPosition != null)
+        {
+            int positionId = viewingPosition.Id;
+            CloseViewModal();
+            OpenEditModal(positionId);
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = (await CustomerService.GetCustomersAsync(1, 100)).Items;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载客户列表时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task LoadConsultantsAsync()
+    {
+        try
+        {
+            consultants = await UserManager.Users.AsNoTracking().OrderBy(u => u.UserName).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载顾问列表时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void OpenDeleteConfirmation(int positionId)
+    {
+        deletingPosition = pagedPositions?.Items.FirstOrDefault(p => p.Id == positionId);
+        if (deletingPosition != null)
+        {
+            showDeleteConfirmation = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        showDeleteConfirmation = false;
+        if (confirmed && deletingPosition != null)
+        {
+            try
+            {
+                await PositionService.DeletePositionAsync(deletingPosition.Id);
+                await LoadPositionsAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"删除职位时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+        deletingPosition = null;
+    }
+
+    private void ClearErrorMessage()
+    {
+        errorMessage = null;
+        StateHasChanged();
+    }
+
+    private void OpenAddModal()
+    {
+        try
+        {
+            newPosition = new PositionWithIntValue(new Position
+            {
+                Name = "",
+                Description = "",
+                Status = PositionStatus.Open,
+                Number = 1,
+                CustomerId = 0,
+                Customer = new Customer
+                {
+                    Name = "",
+                    ContactPerson = "",
+                    Phone = ""
+                },
+                ConsultantId = 0,
+                Consultant = new HouYiUser { UserName = "" },
+                ContactPerson = "",
+                ContactPhone = ""
+            });
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"打开添加模态框时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseAddModal()
+    {
+        newPosition = null;
+        StateHasChanged();
+    }
+
+    private async Task AddPosition()
+    {
+        try
+        {
+            if (newPosition != null)
+            {
+                await PositionService.CreatePositionAsync(newPosition);
+                await LoadPositionsAsync();
+                CloseAddModal();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"添加职位时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
     }
 }
