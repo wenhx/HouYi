@@ -1,5 +1,9 @@
-﻿@inject IPositionService PositionService
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject IPositionService PositionService
 @inject NavigationManager NavigationManager
+@inject ICustomerService CustomerService
+@inject UserManager<HouYiUser> UserManager
 
 <div class="container-fluid p-0">
     <!-- 主内容区 -->
@@ -111,7 +115,7 @@
                                             <button type="button" class="btn btn-sm btn-outline-info btn-recommendation" data-id="position.Id" title="查看推荐" @onclick="() => ViewRecommendations(position.Id)">
                                                 <i class="bi bi-people"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@position.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@position.Id" title="编辑职位" @onclick="() => OpenEditModal(position.Id)">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@position.Id">
@@ -271,6 +275,109 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+<!-- 编辑职位模态框 -->
+@if (showEditModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">编辑职位 - @(editingPosition?.Name ?? "未知")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (editingPosition != null)
+                    {
+                        <EditForm Model="@editingPosition" OnValidSubmit="UpdatePosition">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">职位名称</label>
+                                    <InputText @bind-Value="editingPosition.Name" class="form-control" />
+                                    <ValidationMessage For="@(() => editingPosition.Name)" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">所属客户</label>
+                                    <InputSelect @bind-Value="editingPosition.CustomerId" class="form-select">
+                                        <option value="">-- 请选择 --</option>
+                                        @if (customers != null)
+                                        {
+                                            @foreach (var customer in customers)
+                                            {
+                                                <option value="@customer.Id">@customer.Name</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => editingPosition.CustomerId)" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">招聘人数</label>
+                                    <InputNumber @bind-Value="editingPosition.IntNumber" class="form-control" min="1" max="255" />
+                                    <ValidationMessage For="@(() => editingPosition.Number)" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">状态</label>
+                                    <InputSelect @bind-Value="editingPosition.Status" class="form-select">
+                                        <option value="@PositionStatus.Closed">关闭</option>
+                                        <option value="@PositionStatus.Open">开放</option>
+                                        <option value="@PositionStatus.Suspended">暂停</option>
+                                        <option value="@PositionStatus.Completed">完成</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">顾问</label>
+                                    <InputSelect @bind-Value="editingPosition.ConsultantId" class="form-select">
+                                        <option value="">-- 请选择 --</option>
+                                        @if (consultants != null)
+                                        {
+                                            @foreach (var consultant in consultants)
+                                            {
+                                                <option value="@consultant.Id">@consultant.UserName</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => editingPosition.ConsultantId)" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">客户联系人</label>
+                                    <input type="text" class="form-control" value="@(editingPosition.Customer?.ContactPerson ?? "")" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">联系方式</label>
+                                    <input type="text" class="form-control" value="@(editingPosition.Customer?.Phone ?? "")" />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">职位描述</label>
+                                <InputTextArea @bind-Value="editingPosition.Description" class="form-control" rows="5" />
+                                <ValidationMessage For="@(() => editingPosition.Description)" />
+                            </div>
+
+                            <div class="text-end">
+                                <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">取消</button>
+                                <button type="submit" class="btn btn-primary">保存</button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     [Parameter]
     public EventCallback<int> OnViewRecommendation { get; set; }
@@ -285,6 +392,10 @@
     private PositionStatus? selectedStatus;
     private bool showViewModal;
     private Position? viewingPosition;
+    private bool showEditModal;
+    private PositionWithIntValue? editingPosition;
+    private IReadOnlyList<Customer>? customers;
+    private IReadOnlyList<HouYiUser>? consultants;
 
     // Method to map PositionStatus to Chinese
     private string GetStatusString(PositionStatus status)
@@ -386,11 +497,11 @@
         await OnViewRecommendation.InvokeAsync(positionId);
     }
 
-    private async Task OpenViewModal(int positionId)
+    private void OpenViewModal(int positionId)
     {
         try
         {
-            viewingPosition = await PositionService.GetPositionByIdAsync(positionId);
+            viewingPosition = pagedPositions?.Items.FirstOrDefault(p => p.Id == positionId);
             if (viewingPosition != null)
             {
                 showViewModal = true;
@@ -411,13 +522,87 @@
         StateHasChanged();
     }
 
+    private async Task OpenEditModal(int positionId)
+    {
+        try
+        {
+            var position = pagedPositions?.Items.FirstOrDefault(p => p.Id == positionId);
+            if (position != null)
+            {
+                editingPosition = new PositionWithIntValue(position);
+                await LoadCustomersAsync();
+                await LoadConsultantsAsync();
+                editingPosition.CustomerId = position.CustomerId;
+                editingPosition.ConsultantId = position.ConsultantId;
+                showEditModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"打开编辑模态框时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        editingPosition = null;
+        StateHasChanged();
+    }
+
+    private async Task UpdatePosition()
+    {
+        try
+        {
+            if (editingPosition != null)
+            {
+                await PositionService.UpdatePositionAsync(editingPosition);
+                await LoadPositionsAsync();
+                CloseEditModal();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"更新职位时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
     private void EditFromViewModal()
     {
         if (viewingPosition != null)
         {
             int positionId = viewingPosition.Id;
             CloseViewModal();
-            // TODO: 实现编辑功能
+            OpenEditModal(positionId);
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = (await CustomerService.GetCustomersAsync(1, 100)).Items;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载客户列表时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task LoadConsultantsAsync()
+    {
+        try
+        {
+            consultants = await UserManager.Users.AsNoTracking().OrderBy(u => u.UserName).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载顾问列表时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
         }
     }
 }

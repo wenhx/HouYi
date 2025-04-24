@@ -80,4 +80,20 @@ public class PositionService : IPositionService
             .Include(p => p.Customer)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
+
+    public async Task UpdatePositionAsync(Position position)
+    {
+        var existingPosition = await _dbContext.Positions.FindAsync(position.Id);
+        if (existingPosition != null)
+        {
+            existingPosition.Name = position.Name;
+            existingPosition.CustomerId = position.CustomerId;
+            existingPosition.Status = position.Status;
+            existingPosition.Number = position.Number;
+            existingPosition.Description = position.Description;
+            existingPosition.ConsultantId = position.ConsultantId;
+            existingPosition.UpdatedAt = DateTime.Now;
+            await _dbContext.SaveChangesAsync();
+        }
+    }
 }
