@@ -62,7 +62,7 @@ public class PositionService : IPositionService
         return await GetPositionsCoreAsync(filter: null, pageNumber, pageSize, status);
     }
 
-    public async Task<PagedResult<Position>> FindPositionsAsync(string field = "", string term = "", int pageNumber = 1, int pageSize = 10, PositionStatus? status = null)
+    public async Task<PagedResult<Position>> FindPositionsAsync(string term = "", int pageNumber = 1, int pageSize = 10, PositionStatus? status = null)
     {
         return await GetPositionsCoreAsync(filter, pageNumber, pageSize, status);
 
@@ -71,21 +71,13 @@ public class PositionService : IPositionService
             if (!string.IsNullOrWhiteSpace(term))
             {
                 term = term.Trim();
-
-                switch (field)
-                {
-                    case "Name":
-                        query = query.Where(p => p.Name.Contains(term));
-                        break;
-                    case "Customer":
-                        query = query.Where(p => p.Customer.Name.Contains(term));
-                        break;
-                    case "Consultant":
-                        query = query.Where(p => p.Consultant.UserName.Contains(term));
-                        break;
-                    default:
-                        break;
-                }
+                query = query.Where(p =>
+                    p.Name.Contains(term) ||
+                    p.Customer.Name.Contains(term) ||
+                    p.Consultant.UserName.Contains(term) ||
+                    p.ContactPerson.Contains(term) ||
+                    p.ContactPhone.Contains(term)
+                );
             }
             return query;
         }
