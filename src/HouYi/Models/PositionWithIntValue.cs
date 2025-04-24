@@ -25,6 +25,8 @@ public class PositionWithIntValue : Position
         Customer = position.Customer;
         ConsultantId = position.ConsultantId;
         Consultant = position.Consultant;
+        ContactPerson = position.ContactPerson;
+        ContactPhone = position.ContactPhone;
         CreatedAt = position.CreatedAt;
         UpdatedAt = position.UpdatedAt;
     }

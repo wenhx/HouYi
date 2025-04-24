@@ -16,6 +16,12 @@ public class Position
     public required int ConsultantId { get; set; }
     public required HouYiUser Consultant { get; set; }
 
+    [StringLength(Constants.StringLengths.Name)]
+    public string ContactPerson { get; set; } = string.Empty;
+
+    [StringLength(Constants.StringLengths.PhoneNumber)]
+    public string ContactPhone { get; set; } = string.Empty;
+
     [StringLength(Constants.StringLengths.Text)]
     public string Description { get; set; } = string.Empty;
 

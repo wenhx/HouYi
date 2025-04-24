@@ -1,6 +1,7 @@
 ﻿using HouYi.Data;
 using HouYi.Models;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace HouYi.Services;
 
@@ -30,6 +31,8 @@ public class PositionService : IPositionService
                     Number = p.Number,
                     ConsultantId = p.ConsultantId,
                     Consultant = p.Consultant,
+                    ContactPerson = p.ContactPerson,
+                    ContactPhone = p.ContactPhone,
                     Description = p.Description,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt,
@@ -106,6 +109,8 @@ public class PositionService : IPositionService
             existingPosition.Number = position.Number;
             existingPosition.Description = position.Description;
             existingPosition.ConsultantId = position.ConsultantId;
+            existingPosition.ContactPerson = position.ContactPerson;
+            existingPosition.ContactPhone = position.ContactPhone;
             existingPosition.UpdatedAt = DateTime.Now;
             await _dbContext.SaveChangesAsync();
         }
@@ -139,5 +144,29 @@ public class PositionService : IPositionService
                 throw;
             }
         }
+    }
+
+    public async Task<Position> CreatePositionAsync(Position position)
+    {
+        if (position == null)
+            throw new ArgumentNullException(nameof(position), "position不能为空");
+
+        var validationContext = new ValidationContext(position);
+        var validationResults = new List<ValidationResult>();
+        if (!Validator.TryValidateObject(position, validationContext, validationResults, true))
+        {
+            var errorMessages = validationResults.Select(r => r.ErrorMessage);
+            throw new ArgumentException(string.Join(Environment.NewLine, errorMessages));
+        }
+
+        position.CreatedAt = DateTime.Now;
+        position.UpdatedAt = DateTime.Now;
+        position.Customer = null;
+        position.Consultant = null;
+
+        _dbContext.Positions.Add(position);
+        await _dbContext.SaveChangesAsync();
+
+        return position;
     }
 }

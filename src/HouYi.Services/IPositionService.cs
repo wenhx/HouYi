@@ -9,4 +9,5 @@ public interface IPositionService
     Task<Position?> GetPositionByIdAsync(int id);
     Task UpdatePositionAsync(Position position);
     Task DeletePositionAsync(int id);
+    Task<Position> CreatePositionAsync(Position position);
 } 

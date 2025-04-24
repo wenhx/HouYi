@@ -100,6 +100,8 @@ public partial class ExampleDataInitializer
                 Number = (byte)random.Next(5),
                 Consultant = consultant,
                 ConsultantId = consultant.Id,
+                ContactPerson = customer.ContactPerson,
+                ContactPhone = customer.Phone,
                 Description = descriptions[i],
                 CreatedAt = DateTime.Now.AddDays(-daysAgo),
                 UpdatedAt = DateTime.Now.AddDays(-daysAgo)
