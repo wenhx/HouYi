@@ -44,7 +44,10 @@
         <div class="card-body">
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <div class="alert alert-danger">@errorMessage</div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @errorMessage
+                    <button type="button" class="btn-close" @onclick="ClearErrorMessage" aria-label="Close"></button>
+                </div>
             }
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -69,6 +72,7 @@
                                 </div>
                             </th>
                             <th data-sortable="true" data-field="recruiter" class="sorting">招聘人数</th>
+                            <th data-sortable="true" data-field="recommendations" class="sorting">推荐人数</th>
                             <th>顾问</th>
                             <th>客户联系人</th>
                             <th>联系方式</th>
@@ -103,6 +107,7 @@
                                         </span>
                                     </td>
                                     <td>@position.Number</td>
+                                    <td>@position.RecommendationsCount</td>
                                     <td>@position.Consultant.UserName</td>
                                     <td>@position.Customer.ContactPerson</td>
                                     <td>@position.Customer.Phone</td>
@@ -118,7 +123,7 @@
                                             <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@position.Id" title="编辑职位" @onclick="() => OpenEditModal(position.Id)">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@position.Id">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@position.Id" title="删除职位" @onclick="() => OpenDeleteConfirmation(position.Id)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -378,6 +383,9 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+<!-- 删除确认模态框 -->
+<DeleteConfirmationModal @ref="deleteConfirmationModal" ShowModal="showDeleteConfirmation" ItemName="@($" {deletingPosition?.Name}-{deletingPosition?.Customer.Name} ")" OnConfirm="HandleDeleteConfirmation" />
+
 @code {
     [Parameter]
     public EventCallback<int> OnViewRecommendation { get; set; }
@@ -396,6 +404,9 @@
     private PositionWithIntValue? editingPosition;
     private IReadOnlyList<Customer>? customers;
     private IReadOnlyList<HouYiUser>? consultants;
+    private bool showDeleteConfirmation;
+    private Position? deletingPosition;
+    private DeleteConfirmationModal? deleteConfirmationModal;
 
     // Method to map PositionStatus to Chinese
     private string GetStatusString(PositionStatus status)
@@ -604,5 +615,40 @@
             errorMessage = $"加载顾问列表时发生错误: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
+    }
+
+    private void OpenDeleteConfirmation(int positionId)
+    {
+        deletingPosition = pagedPositions?.Items.FirstOrDefault(p => p.Id == positionId);
+        if (deletingPosition != null)
+        {
+            showDeleteConfirmation = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        showDeleteConfirmation = false;
+        if (confirmed && deletingPosition != null)
+        {
+            try
+            {
+                await PositionService.DeletePositionAsync(deletingPosition.Id);
+                await LoadPositionsAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"删除职位时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+        deletingPosition = null;
+    }
+
+    private void ClearErrorMessage()
+    {
+        errorMessage = null;
+        StateHasChanged();
     }
 }

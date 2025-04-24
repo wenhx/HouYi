@@ -571,8 +571,11 @@ public partial class ExampleDataInitializer
 
         foreach (var position in positions)
         {
-            // 每个职位生成1-10条推荐记录
-            int recommendationCount = random.Next(1, 11);
+            // 每个职位生成0-10条推荐记录
+            int recommendationCount = random.Next(0, 11);
+            if (recommendationCount == 0)
+                continue;
+
             var selectedResumes = resumes.OrderBy(x => random.Next()).Take(recommendationCount).ToList();
 
             foreach (var resume in selectedResumes)

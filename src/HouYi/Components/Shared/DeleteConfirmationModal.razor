@@ -8,7 +8,7 @@
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>确定要删除@(ItemName ?? "该项记录")吗？此操作不可恢复。</p>
+                    <p>确定要删除<span class="bg-light text-primary fw-bold px-2 py-1 rounded">@(ItemName ?? "该项记录")</span>吗？此操作不可恢复。</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HouYi.Models;
 
@@ -20,4 +21,10 @@ public class Position
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+    /// <summary>
+    /// 已向本职位提交的简历数量，这是一个计算属性。
+    /// </summary>
+    [NotMapped]
+    public int RecommendationsCount { get; set; }
 }

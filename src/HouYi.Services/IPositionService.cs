@@ -8,4 +8,5 @@ public interface IPositionService
     Task<PagedResult<Position>> FindPositionsAsync(string field = "", string term = "", int pageNumber = 1, int pageSize = 10, PositionStatus? status = null);
     Task<Position?> GetPositionByIdAsync(int id);
     Task UpdatePositionAsync(Position position);
+    Task DeletePositionAsync(int id);
 } 

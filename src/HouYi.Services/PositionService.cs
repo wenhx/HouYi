@@ -18,9 +18,23 @@ public class PositionService : IPositionService
         Utils.NormalizePaginationInputs(ref pageNumber, ref pageSize);
 
         var query = _dbContext.Positions
-            .Include(p => p.Customer)
-            .Include(p => p.Consultant)
-            .AsQueryable();
+                .Include(p => p.Customer)
+                .Include(p => p.Consultant)
+                .Select(p => new Position
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    CustomerId = p.CustomerId,
+                    Customer = p.Customer,
+                    Status = p.Status,
+                    Number = p.Number,
+                    ConsultantId = p.ConsultantId,
+                    Consultant = p.Consultant,
+                    Description = p.Description,
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt,
+                    RecommendationsCount = _dbContext.Recommendations.Count(r => r.PositionId == p.Id)
+                });
 
         if (status.HasValue)
         {
@@ -94,6 +108,36 @@ public class PositionService : IPositionService
             existingPosition.ConsultantId = position.ConsultantId;
             existingPosition.UpdatedAt = DateTime.Now;
             await _dbContext.SaveChangesAsync();
+        }
+    }
+
+    public async Task DeletePositionAsync(int id)
+    {
+        var position = await _dbContext.Positions
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (position != null)
+        {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                int recommendationCount = await _dbContext.Recommendations
+                                                    .CountAsync(r => r.PositionId == id);
+                if (recommendationCount > 0)
+                    throw new InvalidOperationException($"无法删除职位，因为该职位还有 {recommendationCount} 条推荐记录。请先处理这些推荐记录后再删除职位。");
+
+                _dbContext.Communications.Where(c => c.PositionId == id)
+                            .ExecuteUpdate(c => c.SetProperty(c => c.PositionId, c => null));
+
+                _dbContext.Positions.Remove(position);
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }
