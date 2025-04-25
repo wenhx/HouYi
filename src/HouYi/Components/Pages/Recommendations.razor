@@ -1,6 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
 
-@using HouYi.Models
 @inject IPositionService PositionService
 @inject IRecommendationService RecommendationService
 @inject IInterviewService InterviewService
@@ -74,18 +73,13 @@
 
             <!-- 推荐简历列表 -->
             <div id="recommendation-container">
-                @* @if (_position == null)
+                @if (!string.IsNullOrEmpty(_errorMessage))
                 {
-                    <div class="alert alert-warning" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i> 未指定职位ID，请从职位管理页面选择一个职位进行推荐。
-                        <div class="mt-3">
-                            <a href="Positions" class="btn btn-primary">
-                                <i class="bi bi-arrow-left me-1"></i> 返回职位列表
-                            </a>
-                        </div>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @_errorMessage
+                        <button type="button" class="btn-close" @onclick="ClearErrorMessage" aria-label="Close"></button>
                     </div>
                 }
-                else *@ 
                 @if (_pagedRecommendations == null)
                 {
                     <div class="text-center">
@@ -139,7 +133,7 @@
                                                 </button>
                                             }
                                             <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveRecommendation(recommendation.Id)">
-                                                <i class="bi bi-x-circle"></i> 移除
+                                                <i class="bi bi-x-circle"></i> 删除
                                             </button>
                                         </div>
                                     </div>
@@ -245,6 +239,9 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+<!-- 删除确认模态框 -->
+<DeleteConfirmationModal ShowModal="showDeleteConfirmation" ItemName="@($" {deletingRecommendation?.Resume.Name}的推荐记录 ")" OnConfirm="HandleDeleteConfirmation" />
+
 @code {
     [Parameter]
     public int? PositionId { get; set; }
@@ -259,6 +256,8 @@
     private string? _errorMessage;
     private bool _showInterviewModal;
     private bool _showSuccessModal;
+    private bool showDeleteConfirmation;
+    private Recommendation? deletingRecommendation;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -432,8 +431,43 @@
         }
     }
 
+    private void OpenDeleteConfirmation(int recommendationId)
+    {
+        deletingRecommendation = _pagedRecommendations?.Items.FirstOrDefault(r => r.Id == recommendationId);
+        if (deletingRecommendation != null)
+        {
+            showDeleteConfirmation = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        showDeleteConfirmation = false;
+        if (confirmed && deletingRecommendation != null)
+        {
+            try
+            {
+                await RecommendationService.DeleteRecommendationAsync(deletingRecommendation.Id);
+                await LoadRecommendationsAsync();
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = $"删除推荐时发生错误: {ex.Message}";
+                StateHasChanged();
+            }
+        }
+        deletingRecommendation = null;
+    }
+
     private async Task RemoveRecommendation(int recommendationId)
     {
-        // TODO: 实现移除推荐功能
+        OpenDeleteConfirmation(recommendationId);
+    }
+
+    private void ClearErrorMessage()
+    {
+        _errorMessage = null;
+        StateHasChanged();
     }
 }

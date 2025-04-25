@@ -41,4 +41,21 @@ public class RecommendationService : IRecommendationService
 
         return new PagedResult<Recommendation>(items, pageNumber, pageSize, totalCount);
     }
+
+    public async Task DeleteRecommendationAsync(int recommendationId)
+    {
+        var recommendation = await _dbContext.Recommendations
+            .FirstOrDefaultAsync(r => r.Id == recommendationId);
+
+        if (recommendation == null)
+            throw new ArgumentException($"未找到ID为 {recommendationId} 的推荐记录");
+
+        int interviewsCount = await _dbContext.Interviews
+            .CountAsync(i => i.RecommendationId == recommendationId);
+        if (interviewsCount > 0)
+            throw new InvalidOperationException($"无法删除推荐，因为该推荐还有 {interviewsCount} 条面试记录。请先处理这些面试记录后再删除这条推荐记录。");
+
+        _dbContext.Recommendations.Remove(recommendation);
+        await _dbContext.SaveChangesAsync();
+    }
 } 
