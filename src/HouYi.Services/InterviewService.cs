@@ -121,10 +121,18 @@ public class InterviewService : IInterviewService
             .FirstOrDefaultAsync(i => i.Id == id);
 
         if (interview == null)
-        {
             throw new ArgumentException($"面试ID {id} 不存在", nameof(id));
-        }
 
         return interview;
+    }
+
+    public async Task DeleteInterviewAsync(int id)
+    {
+        var interview = await _dbContext.Interviews.FindAsync(id);
+        if (interview == null)
+            throw new ArgumentException($"面试ID {id} 不存在", nameof(id));
+
+        _dbContext.Interviews.Remove(interview);
+        await _dbContext.SaveChangesAsync();
     }
 }

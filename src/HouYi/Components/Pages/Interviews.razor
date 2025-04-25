@@ -223,6 +223,9 @@
 <InterviewDetail Interview="selectedInterview"
                  @bind-ShowModal="showInterviewDetail" />
 
+<DeleteConfirmationModal ShowModal="showDeleteConfirmation" OnConfirm="HandleDeleteConfirmation"
+                        ItemName="@($"面试记录 - {deletingInterview?.Resume.Name}-{deletingInterview?.Position.Name}")" />
+
 @code {
     private List<Interview>? todayInterviews;
     private PagedResult<Interview>? pagedInterviews;
@@ -233,6 +236,8 @@
     private bool isSearchMode = false;
     private Interview? selectedInterview;
     private bool showInterviewDetail;
+    private bool showDeleteConfirmation;
+    private Interview? deletingInterview;
 
     private string GetStatusString(InterviewStatus status)
     {
@@ -328,6 +333,31 @@
 
     private async Task DeleteInterview(int id)
     {
-        // TODO: 实现删除面试
+        deletingInterview = todayInterviews?.FirstOrDefault(i => i.Id == id) ?? 
+                          pagedInterviews?.Items.FirstOrDefault(i => i.Id == id);
+        if (deletingInterview != null)
+        {
+            showDeleteConfirmation = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        showDeleteConfirmation = false;
+        if (confirmed && deletingInterview != null)
+        {
+            try
+            {
+                await InterviewService.DeleteInterviewAsync(deletingInterview.Id);
+                await LoadInterviewsAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"删除面试时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+        deletingInterview = null;
     }
 }

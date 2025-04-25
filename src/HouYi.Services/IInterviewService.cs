@@ -9,4 +9,5 @@ public interface IInterviewService
     Task<PagedResult<Interview>> FindInterviewsAsync(string term, int pageNumber, int pageSize);
     Task<Interview> CreateInterviewAsync(Interview interview);
     Task<Interview> GetInterviewByIdAsync(int id);
+    Task DeleteInterviewAsync(int id);
 }
