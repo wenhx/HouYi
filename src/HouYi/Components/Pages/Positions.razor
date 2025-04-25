@@ -282,7 +282,7 @@
 <PositionEditForm ModalId="addModal" ModalTitle="添加职位" Position="@newPosition"
                 OnCancel="CloseAddModal" OnValidSubmit="AddPosition" ShowModal="@(newPosition != null)" />
 
-<DeleteConfirmationModal @ref="deleteConfirmationModal" ShowModal="showDeleteConfirmation" ItemName="@($" {deletingPosition?.Name}-{deletingPosition?.Customer.Name} ")" OnConfirm="HandleDeleteConfirmation" />
+<DeleteConfirmationModal ShowModal="showDeleteConfirmation" ItemName="@($" {deletingPosition?.Name}-{deletingPosition?.Customer.Name} ")" OnConfirm="HandleDeleteConfirmation" />
 
 @code {
 
@@ -304,7 +304,6 @@
     private IReadOnlyList<HouYiUser>? consultants;
     private bool showDeleteConfirmation;
     private Position? deletingPosition;
-    private DeleteConfirmationModal? deleteConfirmationModal;
     private bool showAddModal;
     private PositionWithIntValue? newPosition;
 

@@ -205,65 +205,7 @@
 <!-- 安排面试模态框 -->
 @if (_showInterviewModal)
 {
-    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="arrangeInterviewModalLabel" aria-hidden="false">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="arrangeInterviewModalLabel">安排面试</h5>
-                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
-                </div>
-                <div class="modal-body">
-                    @if (!string.IsNullOrEmpty(_errorMessage))
-                    {
-                        <div class="alert alert-danger" role="alert">
-                            <i class="bi bi-exclamation-triangle me-2"></i> @_errorMessage
-                        </div>
-                    }
-                    <EditForm Model="@_interview" OnValidSubmit="HandleValidSubmit">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">面试时间</label>
-                                <InputDate @bind-Value="_interview.InterviewTime" @bind-Value:format="yyyy-dd-MM HH:mm" Type="InputDateType.DateTimeLocal" class="form-control" />
-                                <ValidationMessage For="@(() => _interview.InterviewTime)" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">面试轮次</label>
-                                <InputNumber @bind-Value="_interviewRound" class="form-control" min="1" max="5" />
-                                <ValidationMessage For="@(() => _interview.Round)" />
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">面试地点</label>
-                            <InputText @bind-Value="_interview.Location" class="form-control" />
-                            <ValidationMessage For="@(() => _interview.Location)" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">面试官</label>
-                            <InputText @bind-Value="_interview.Interviewer" class="form-control" />
-                            <ValidationMessage For="@(() => _interview.Interviewer)" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">备注</label>
-                            <InputTextArea @bind-Value="_interview.Feedback" class="form-control" rows="3" />
-                            <ValidationMessage For="@(() => _interview.Feedback)" />
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>
-                            <button type="submit" class="btn btn-primary">保存</button>
-                        </div>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
+    <InterviewEditForm Title="安排面试" Interview="@_interview" OnSave="HandleSaveInterview" OnClose="CloseModal" />
 }
 
 <!-- 成功提示模态框 -->
@@ -285,6 +227,7 @@
                         <p><i class="bi bi-calendar-event me-2"></i> 面试时间：@_interview.InterviewTime.ToString("yyyy-MM-dd HH:mm")</p>
                         <p><i class="bi bi-geo-alt me-2"></i> 面试地点：@_interview.Location</p>
                         <p><i class="bi bi-person me-2"></i> 面试官：@_interview.Interviewer</p>
+                        <p><i class="bi bi-person me-2"></i> 备注：@_interview.Remarks</p>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-center">
@@ -308,7 +251,6 @@
     private Interview _interview;
     private string? _errorMessage;
     private bool _showInterviewModal;
-    private int _interviewRound = 1;
     private bool _showSuccessModal;
 
     protected override async Task OnParametersSetAsync()
@@ -418,16 +360,21 @@
     {
         if (_position == null) return;
 
+        var recommendation = _pagedRecommendations?.Items.FirstOrDefault(r => r.Resume.Id == resumeId);
+        if (recommendation == null) return;
+
         _interview = new Interview
         {
             ResumeId = resumeId,
             PositionId = _position.Id,
-            RecommendationId = _pagedRecommendations?.Items.FirstOrDefault(r => r.Resume.Id == resumeId)?.Id ?? 0,
+            RecommendationId = recommendation.Id,
             InterviewTime = DateTime.Today.AddDays(1).AddHours(9), // 默认明天上午9点
             Location = _position.Customer.Address ?? "待定",
             Round = 1,
             Interviewer = _position.Customer.ContactPerson,
-            Status = InterviewStatus.Scheduled
+            Status = InterviewStatus.Scheduled,
+            Resume = recommendation.Resume,
+            Position = _position
         };
 
         _showInterviewModal = true;
@@ -446,13 +393,12 @@
         StateHasChanged();
     }
 
-    private async Task HandleValidSubmit()
+    private async Task HandleSaveInterview(Interview interview)
     {
         try
         {
             _errorMessage = null;
-            _interview.Round = (byte)_interviewRound;
-            await InterviewService.CreateInterviewAsync(_interview);
+            await InterviewService.CreateInterviewAsync(interview);
             _showInterviewModal = false;
             _showSuccessModal = true;
             StateHasChanged();
