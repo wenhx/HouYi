@@ -4,9 +4,9 @@
     <!-- 主内容区 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>面试管理</h1>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInterviewModal">
+        @* <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInterviewModal">
             <i class="bi bi-plus-circle me-1"></i> 添加面试
-        </button>
+        </button> *@
     </div>
 
     <!-- 面试日历和列表 -->
@@ -60,13 +60,13 @@
                                             <td>@interview.CreatedAt.ToString("yyyy-MM-dd")</td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => ViewInterview(interview.Id)">
+                                                    <button type="button" title="面试详情" class="btn btn-sm btn-outline-primary" @onclick="() => ViewInterview(interview.Id)">
                                                         <i class="bi bi-eye"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview.Id)">
+                                                    <button type="button" title="编辑" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview.Id)">
                                                         <i class="bi bi-pencil"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview.Id)">
+                                                    <button type="button" title="删除" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview.Id)">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </div>
@@ -220,6 +220,9 @@
     </div>
 </div>
 
+<InterviewDetail Interview="selectedInterview"
+                 @bind-ShowModal="showInterviewDetail" />
+
 @code {
     private List<Interview>? todayInterviews;
     private PagedResult<Interview>? pagedInterviews;
@@ -228,6 +231,8 @@
     private int pageSize = 10;
     private string searchTerm = "";
     private bool isSearchMode = false;
+    private Interview? selectedInterview;
+    private bool showInterviewDetail;
 
     private string GetStatusString(InterviewStatus status)
     {
@@ -309,9 +314,11 @@
         await LoadInterviewsAsync();
     }
 
-    private async Task ViewInterview(int id)
+    private void ViewInterview(int id)
     {
-        // TODO: 实现查看面试详情
+        selectedInterview = todayInterviews?.FirstOrDefault(i => i.Id == id) ??
+                          pagedInterviews?.Items.FirstOrDefault(i => i.Id == id);
+        showInterviewDetail = true;
     }
 
     private async Task EditInterview(int id)

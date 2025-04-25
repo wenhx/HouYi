@@ -1,0 +1,129 @@
+﻿@if (ShowModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="interviewDetailModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="interviewDetailModalLabel">面试详情</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (Interview == null)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>基本信息</h4>
+                                <table class="table" style="border-spacing: 0 0.5rem; border-collapse: separate;">
+                                    <tr>
+                                        <th style="width: 150px; padding-bottom: 0.5rem;">面试ID：</th>
+                                        <td style="padding-bottom: 0.5rem;">@Interview.Id</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">候选人：</th>
+                                        <td style="padding-bottom: 0.5rem;">@Interview.Resume.Name</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">应聘职位：</th>
+                                        <td style="padding-bottom: 0.5rem;">@($"{Interview.Position.Name}-{Interview.Position.Customer.Name}")</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">面试时间：</th>
+                                        <td style="padding-bottom: 0.5rem;">@Interview.InterviewTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">面试地点：</th>
+                                        <td style="padding-bottom: 0.5rem;">@Interview.Location</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">面试轮次：</th>
+                                        <td style="padding-bottom: 0.5rem;">第 @Interview.Round 轮</td>
+                                    </tr>
+                                    <tr>
+                                        <th style="padding-bottom: 0.5rem;">面试状态：</th>
+                                        <td style="padding-bottom: 0.5rem;">
+                                            <span class="status-badge @GetStatusClass(Interview.Status)">
+                                                @GetStatusString(Interview.Status)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>面试评价</h4>
+                                <div class="card">
+                                    <div class="card-body">
+                                        @if (string.IsNullOrWhiteSpace(Interview.Feedback))
+                                        {
+                                            <p class="text-muted">暂无评价</p>
+                                        }
+                                        else
+                                        {
+                                            <p>@Interview.Feedback</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public Interview? Interview { get; set; }
+
+    [Parameter]
+    public bool ShowModal { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ShowModalChanged { get; set; }
+
+    private async Task CloseModal()
+    {
+        ShowModal = false;
+        await ShowModalChanged.InvokeAsync(ShowModal);
+    }
+
+    private string GetStatusString(InterviewStatus status)
+    {
+        return status switch
+        {
+            InterviewStatus.Scheduled => "已安排",
+            InterviewStatus.Completed => "已完成",
+            InterviewStatus.Postponed => "已延期",
+            InterviewStatus.Passed => "已通过",
+            InterviewStatus.Failed => "未通过",
+            InterviewStatus.Cancelled => "已取消",
+            _ => "未知"
+        };
+    }
+
+    private string GetStatusClass(InterviewStatus status)
+    {
+        return status switch
+        {
+            InterviewStatus.Scheduled => "status-scheduled",
+            InterviewStatus.Completed => "status-completed",
+            InterviewStatus.Postponed => "status-postponed",
+            InterviewStatus.Passed => "status-passed",
+            InterviewStatus.Failed => "status-failed",
+            InterviewStatus.Cancelled => "status-cancelled",
+            _ => ""
+        };
+    }
+} 

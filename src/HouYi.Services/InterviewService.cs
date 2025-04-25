@@ -111,4 +111,20 @@ public class InterviewService : IInterviewService
         await _dbContext.SaveChangesAsync();
         return interview;
     }
+
+    public async Task<Interview> GetInterviewByIdAsync(int id)
+    {
+        var interview = await _dbContext.Interviews
+            .Include(i => i.Resume)
+            .Include(i => i.Position)
+                .ThenInclude(p => p.Customer)
+            .FirstOrDefaultAsync(i => i.Id == id);
+
+        if (interview == null)
+        {
+            throw new ArgumentException($"面试ID {id} 不存在", nameof(id));
+        }
+
+        return interview;
+    }
 }
