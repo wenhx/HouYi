@@ -10,4 +10,5 @@ public interface IInterviewService
     Task<Interview> CreateInterviewAsync(Interview interview);
     Task<Interview> GetInterviewByIdAsync(int id);
     Task DeleteInterviewAsync(int id);
+    Task<Interview> UpdateInterviewAsync(Interview interview);
 }

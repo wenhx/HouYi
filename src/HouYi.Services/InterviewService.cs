@@ -103,7 +103,7 @@ public class InterviewService : IInterviewService
         var hasConflict = await _dbContext.Interviews
             .AnyAsync(i => i.ResumeId == interview.ResumeId && 
                           i.InterviewTime.Date == interview.InterviewTime.Date &&
-                          i.Status != InterviewStatus.Cancelled);
+                          i.Status == InterviewStatus.Scheduled);
         if (hasConflict)
             throw new InvalidOperationException("该候选人当天已有其他面试安排");
 
@@ -134,5 +134,50 @@ public class InterviewService : IInterviewService
 
         _dbContext.Interviews.Remove(interview);
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<Interview> UpdateInterviewAsync(Interview interview)
+    {
+        if (interview == null)
+            throw new ArgumentNullException(nameof(interview), "interview不能为空");
+
+        var validationContext = new ValidationContext(interview);
+        var validationResults = new List<ValidationResult>();
+        if (!Validator.TryValidateObject(interview, validationContext, validationResults, true))
+        {
+            var errorMessages = validationResults.Select(r => r.ErrorMessage);
+            throw new ArgumentException(string.Join(Environment.NewLine, errorMessages));
+        }
+
+        var existingInterview = await _dbContext.Interviews
+            .Include(i => i.Resume)
+            .FirstOrDefaultAsync(i => i.Id == interview.Id);
+
+        if (existingInterview == null)
+            throw new ArgumentException($"面试ID {interview.Id} 不存在", nameof(interview.Id));
+
+        // 检查同一简历在同一时间是否已有其他面试安排
+        if (existingInterview.InterviewTime.Date != interview.InterviewTime.Date)
+        {
+            var hasConflict = await _dbContext.Interviews
+                .AnyAsync(i => i.Id != interview.Id &&
+                              i.ResumeId == interview.ResumeId &&
+                              i.InterviewTime.Date == interview.InterviewTime.Date &&
+                              i.Status == InterviewStatus.Scheduled);
+            if (hasConflict)
+                throw new InvalidOperationException("该候选人当天已有其他面试安排");
+        }
+
+        // 更新可修改的字段
+        existingInterview.InterviewTime = interview.InterviewTime;
+        existingInterview.Round = interview.Round;
+        existingInterview.Location = interview.Location;
+        existingInterview.Interviewer = interview.Interviewer;
+        existingInterview.Feedback = interview.Feedback;
+        existingInterview.Status = interview.Status;
+        existingInterview.Remarks = interview.Remarks;
+
+        await _dbContext.SaveChangesAsync();
+        return existingInterview;
     }
 }

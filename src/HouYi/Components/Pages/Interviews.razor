@@ -1,4 +1,8 @@
-﻿@inject IInterviewService InterviewService
+﻿@page "/interviews"
+@using HouYi.Models
+@using HouYi.Services
+@using HouYi.Components.Shared
+@inject IInterviewService InterviewService
 
 <div class="container-fluid p-0">
     <!-- 主内容区 -->
@@ -60,13 +64,13 @@
                                             <td>@interview.CreatedAt.ToString("yyyy-MM-dd")</td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <button type="button" title="面试详情" class="btn btn-sm btn-outline-primary" @onclick="() => ViewInterview(interview.Id)">
+                                                    <button type="button" title="面试详情" class="btn btn-sm btn-outline-primary" @onclick="() => ViewInterview(interview)">
                                                         <i class="bi bi-eye"></i>
                                                     </button>
-                                                    <button type="button" title="编辑" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview.Id)">
+                                                    <button type="button" title="编辑" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview)">
                                                         <i class="bi bi-pencil"></i>
                                                     </button>
-                                                    <button type="button" title="删除" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview.Id)">
+                                                    <button type="button" title="删除" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview)">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </div>
@@ -108,6 +112,7 @@
                                     <th>应聘职位</th>
                                     <th>面试时间</th>
                                     <th>面试地点</th>
+                                    <th>面试管</th>
                                     <th>面试轮次</th>
                                     <th>面试结果</th>
                                     <th>创建时间</th>
@@ -137,18 +142,19 @@
                                             <td>@($"{interview.Position.Name}-{interview.Position.Customer.Name}")</td>
                                             <td>@interview.InterviewTime.ToString("yyyy-MM-dd HH:mm")</td>
                                             <td>@interview.Location</td>
+                                            <td>@interview.Interviewer</td>
                                             <td>第 @interview.Round 轮</td>
                                             <td>@GetStatusString(interview.Status)</td>
                                             <td>@interview.CreatedAt.ToString("yyyy-MM-dd")</td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => ViewInterview(interview.Id)">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => ViewInterview(interview)">
                                                         <i class="bi bi-eye"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview.Id)">
+                                                    <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview)">
                                                         <i class="bi bi-pencil"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview.Id)">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview)">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </div>
@@ -220,11 +226,15 @@
     </div>
 </div>
 
-<InterviewDetail Interview="selectedInterview"
-                 @bind-ShowModal="showInterviewDetail" />
+<InterviewDetail Interview="selectedInterview" ShowModal="showInterviewDetail" OnEditButtonClick="EditInterviewFromDetail" />
 
 <DeleteConfirmationModal ShowModal="showDeleteConfirmation" OnConfirm="HandleDeleteConfirmation"
-                        ItemName="@($"面试记录 - {deletingInterview?.Resume.Name}-{deletingInterview?.Position.Name}")" />
+ItemName="@($"面试记录 - {deletingInterview?.Resume.Name}-{deletingInterview?.Position.Name}")" />
+
+@if (showEditModal)
+{
+    <InterviewEditForm Title="编辑面试" Interview="@selectedInterview" OnSave="HandleSaveInterview" OnClose="CloseEditModal" />
+}
 
 @code {
     private List<Interview>? todayInterviews;
@@ -237,6 +247,7 @@
     private Interview? selectedInterview;
     private bool showInterviewDetail;
     private bool showDeleteConfirmation;
+    private bool showEditModal;
     private Interview? deletingInterview;
 
     private string GetStatusString(InterviewStatus status)
@@ -319,27 +330,49 @@
         await LoadInterviewsAsync();
     }
 
-    private void ViewInterview(int id)
+    private void ViewInterview(Interview interview)
     {
-        selectedInterview = todayInterviews?.FirstOrDefault(i => i.Id == id) ??
-                          pagedInterviews?.Items.FirstOrDefault(i => i.Id == id);
+        selectedInterview = interview;
         showInterviewDetail = true;
     }
 
-    private async Task EditInterview(int id)
+    private void EditInterview(Interview interview)
     {
-        // TODO: 实现编辑面试
+        selectedInterview = interview;
+        showEditModal = true;
     }
 
-    private async Task DeleteInterview(int id)
+    private void EditInterviewFromDetail(Interview interview)
     {
-        deletingInterview = todayInterviews?.FirstOrDefault(i => i.Id == id) ?? 
-                          pagedInterviews?.Items.FirstOrDefault(i => i.Id == id);
-        if (deletingInterview != null)
+        showInterviewDetail = false;
+        showEditModal = true;
+    }
+
+    private async Task HandleSaveInterview(Interview interview)
+    {
+        try
         {
-            showDeleteConfirmation = true;
-            StateHasChanged();
+            await InterviewService.UpdateInterviewAsync(interview);
+            await LoadInterviewsAsync();
         }
+        catch (Exception ex)
+        {
+            errorMessage = $"保存面试信息时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        selectedInterview = null;
+    }
+
+    private void DeleteInterview(Interview interview)
+    {
+        deletingInterview = interview;
+        showDeleteConfirmation = true;
+        StateHasChanged();
     }
 
     private async Task HandleDeleteConfirmation(bool confirmed)

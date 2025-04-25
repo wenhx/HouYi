@@ -47,6 +47,10 @@ public class Interview
         set => _Feedback = value ?? string.Empty;
     }
 
+    [StringLength(Constants.StringLengths.Text, ErrorMessage = "备注内容长度不能超过{1}个字符")]
+    public string Remarks { get; set; } = string.Empty;
+
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }

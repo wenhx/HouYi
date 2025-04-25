@@ -57,12 +57,12 @@
                                 </table>
                             </div>
                             <div class="col-md-6">
-                                <h4>面试评价</h4>
+                                <h4>面试反馈</h4>
                                 <div class="card">
                                     <div class="card-body">
                                         @if (string.IsNullOrWhiteSpace(Interview.Feedback))
                                         {
-                                            <p class="text-muted">暂无评价</p>
+                                            <p class="text-muted">暂无反馈</p>
                                         }
                                         else
                                         {
@@ -70,12 +70,23 @@
                                         }
                                     </div>
                                 </div>
+
+                                @if (!string.IsNullOrWhiteSpace(Interview.Remarks))
+                                {
+                                    <h4 class="mt-3">备注</h4>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <p>@Interview.Remarks</p>
+                                        </div>
+                                    </div>
+                                }
                             </div>
                         </div>
                     }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="CloseModal">关闭</button>
+                    <button type="button" class="btn btn-outline-primary me-2" @onclick="EditModal">编辑</button>
                 </div>
             </div>
         </div>
@@ -91,12 +102,21 @@
     public bool ShowModal { get; set; }
 
     [Parameter]
+    public EventCallback<Interview> OnEditButtonClick { get; set; }
+
+    [Parameter]
     public EventCallback<bool> ShowModalChanged { get; set; }
 
     private async Task CloseModal()
     {
         ShowModal = false;
         await ShowModalChanged.InvokeAsync(ShowModal);
+    }
+
+    private async Task EditModal()
+    {
+        ShowModal = false;
+        await OnEditButtonClick.InvokeAsync(Interview);
     }
 
     private string GetStatusString(InterviewStatus status)
