@@ -35,8 +35,8 @@ public class Program
             .AddIdentityCookies();
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-        builder.Services.AddDbContext<HouYiDbContext>(options =>
-            options.UseSqlServer(connectionString));
+        builder.Services.AddDbContext<HouYiDbContext>(options => options.UseSqlServer(connectionString));
+        builder.Services.AddDbContextFactory<HouYiDbContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
         builder.Services.AddIdentityCore<HouYiUser>(options => options.SignIn.RequireConfirmedAccount = true)

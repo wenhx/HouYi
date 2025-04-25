@@ -42,6 +42,17 @@
                     </div>
                 </div>
             }
+            else
+            {
+
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <i class="bi bi-info-circle-fill me-2" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">提示</h5>
+                        <p class="mb-0">当前正在显示所有职位的推荐。如果想显示指定职位的推荐记录，请从职位列表右侧点击查看推荐。</p>
+                    </div>
+                </div>
+            }
 
             <!-- 搜索和过滤 -->
             <div class="row mb-4">
@@ -243,6 +254,7 @@
 <DeleteConfirmationModal ShowModal="showDeleteConfirmation" ItemName="@($" {deletingRecommendation?.Resume.Name}的推荐记录 ")" OnConfirm="HandleDeleteConfirmation" />
 
 @code {
+
     [Parameter]
     public int? PositionId { get; set; }
 
@@ -276,7 +288,8 @@
         }
         catch (Exception ex)
         {
-            // 处理错误
+
+            _errorMessage = "加载职位数据时发生错误： " + ex.Message;
         }
     }
 
@@ -385,18 +398,18 @@
         if (recommendation == null) return;
 
         _interview = new Interview
-        {
-            ResumeId = resumeId,
-            PositionId = _position.Id,
-            RecommendationId = recommendation.Id,
-            InterviewTime = DateTime.Today.AddDays(1).AddHours(9), // 默认明天上午9点
-            Location = _position.Customer.Address ?? "待定",
-            Round = 1,
-            Interviewer = _position.Customer.ContactPerson,
-            Status = InterviewStatus.Scheduled,
-            Resume = recommendation.Resume,
-            Position = _position
-        };
+            {
+                ResumeId = resumeId,
+                PositionId = _position.Id,
+                RecommendationId = recommendation.Id,
+                InterviewTime = DateTime.Today.AddDays(1).AddHours(9), // 默认明天上午9点
+                Location = _position.Customer.Address ?? "待定",
+                Round = 1,
+                Interviewer = _position.Customer.ContactPerson,
+                Status = InterviewStatus.Scheduled,
+                Resume = recommendation.Resume,
+                Position = _position
+            };
 
         _showInterviewModal = true;
         StateHasChanged();
