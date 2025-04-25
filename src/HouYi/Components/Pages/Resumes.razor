@@ -120,16 +120,16 @@
                                     <td>@resume.Phone</td>
                                     <td>@resume.Email</td>
                                     <td>@resume.Position</td>
-                                    <td>@GetStatusString(resume.Status)</td>
+                                    <td>@DisplayHelper.GetResumeStatusText(resume.Status)</td>
                                     <td>@DisplayHelper.GetEducationText(resume.HighestEducation)</td>
                                     <td>@resume.AnnualSalary</td>
                                     <td>
                                         <span data-bs-toggle="tooltip" data-bs-placement="top" title="@($"{resume.YearsOfExperience}年")">
-                                            @DisplayHelper.GetExperienceText(resume.YearsOfExperience)
+                                            @DisplayHelper.GetResumeExperienceText(resume.YearsOfExperience)
                                         </span>
                                     </td>
                                     <td>@resume.Place.Name</td>
-                                    <td>@GetSourceString(resume.Source)</td>
+                                    <td>@DisplayHelper.GetResumeSourceText(resume.Source)</td>
                                     <td>@resume.UpdatedAt.ToString("yyyy-MM-dd")</td>
                                     <td>
                                         <div class="btn-group">
@@ -292,112 +292,8 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-
-<!-- 查看简历详情模态框 -->
-@if (showViewModal)
-{
-    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="false">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewModalLabel">简历详情 - @(viewingResume?.Name ?? "未知")</h5>
-                    <button type="button" class="btn-close" @onclick="CloseViewModal"></button>
-                </div>
-                <div class="modal-body">
-                    @if (viewingResume != null)
-                    {
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">姓名</label>
-                                <p>@viewingResume.Name</p>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">性别</label>
-                                <p>@DisplayHelper.GetGenderText(viewingResume.Gender)</p>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">年龄</label>
-                                <p>@viewingResume.Age 岁</p>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">电话</label>
-                                <p>@viewingResume.Phone</p>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">邮箱</label>
-                                <p>@viewingResume.Email</p>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">职位</label>
-                                <p>@viewingResume.Position</p>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">就业状态</label>
-                                <p>@GetStatusString(viewingResume.Status)</p>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">学历</label>
-                                <p>@DisplayHelper.GetEducationText(viewingResume.HighestEducation)</p>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">年薪(K)</label>
-                                <p>@viewingResume.AnnualSalary</p>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">工作经验</label>
-                                <p>@(viewingResume.YearsOfExperience)年</p>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">所在地</label>
-                                <p>@viewingResume.Place.Name</p>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">简历来源</label>
-                                <p>@GetSourceString(viewingResume.Source)</p>
-                            </div>
-                        </div>
-
-                        <div class="mb-2">
-                            <label class="form-label fw-bold">备注</label>
-                            <p class="text-muted">@(string.IsNullOrEmpty(viewingResume.Note) ? "无" : viewingResume.Note)</p>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">创建时间</label>
-                                <p>@viewingResume.CreatedAt.ToString("yyyy-MM-dd HH:mm")</p>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold">更新时间</label>
-                                <p>@viewingResume.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</p>
-                            </div>
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">关闭</button>
-                    <button type="button" class="btn btn-primary" @onclick="() => EditFromViewModal()">编辑</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+<!-- 简历查看模态框 -->
+<ResumeViewModal Resume="@viewingResume" ShowModal="@showViewModal" CloseModal="CloseViewModal" OnEdit="EditFromViewModal" />
 
 <!-- 添加简历模态框 -->
 <ResumeEditForm ModalId="addModal" ModalTitle="添加简历" Resume="@newResume" 
@@ -519,30 +415,6 @@
         selectedStatus = status;
         currentPage = 1;
         await LoadResumesAsync();
-    }
-
-    private string GetStatusString(EmploymentStatus status)
-    {
-        return status switch
-        {
-            EmploymentStatus.Unemployed => "待业中",
-            EmploymentStatus.EmployedAndNotConsideringOpportunities => "在职-不考虑机会",
-            EmploymentStatus.EmployedAndOpenToOpportunities => "在职-考虑新机会",
-            _ => "未知"
-        };
-    }
-
-    private string GetSourceString(ResumeSource source)
-    {
-        return source switch
-        {
-            ResumeSource.TalentPool => "人才库",
-            ResumeSource.Consultant => "猎头搜集",
-            ResumeSource.Company => "企业推荐",
-            ResumeSource.Candidate => "主动投递",
-            ResumeSource.Partner => "合作伙伴",
-            _ => "其他"
-        };
     }
 
     private async Task AddCommunication()

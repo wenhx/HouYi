@@ -1,0 +1,126 @@
+﻿@using HouYi.Models
+
+@if (ShowModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewModalLabel">简历详情 - @(Resume?.Name ?? "未知")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (Resume != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">姓名</label>
+                                <p>@Resume.Name</p>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">性别</label>
+                                <p>@DisplayHelper.GetGenderText(Resume.Gender)</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">年龄</label>
+                                <p>@Resume.Age 岁</p>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">电话</label>
+                                <p>@Resume.Phone</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">邮箱</label>
+                                <p>@Resume.Email</p>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">职位</label>
+                                <p>@Resume.Position</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">就业状态</label>
+                                <p>@DisplayHelper.GetResumeStatusText(Resume.Status)</p>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">学历</label>
+                                <p>@DisplayHelper.GetEducationText(Resume.HighestEducation)</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">年薪(K)</label>
+                                <p>@Resume.AnnualSalary</p>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">工作经验</label>
+                                <p>@(Resume.YearsOfExperience)年</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">所在地</label>
+                                <p>@Resume.Place.Name</p>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">简历来源</label>
+                                <p>@DisplayHelper.GetResumeSourceText(Resume.Source)</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">备注</label>
+                            <p class="text-muted">@(string.IsNullOrEmpty(Resume.Note) ? "无" : Resume.Note)</p>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">创建时间</label>
+                                <p>@Resume.CreatedAt.ToString("yyyy-MM-dd HH:mm")</p>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">更新时间</label>
+                                <p>@Resume.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">关闭</button>
+                    @if (ShowEditButton)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="OnEdit">编辑</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public Resume? Resume { get; set; }
+
+    [Parameter]
+    public bool ShowModal { get; set; }
+
+    [Parameter]
+    public bool ShowEditButton { get; set; } = true;
+
+    [Parameter]
+    public EventCallback CloseModal { get; set; }
+
+    [Parameter]
+    public EventCallback OnEdit { get; set; }
+} 
