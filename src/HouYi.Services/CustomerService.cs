@@ -55,4 +55,33 @@ public class CustomerService : ICustomerService
             return query;
         }
     }
+
+    public async Task DeleteCustomerAsync(int id)
+    {
+        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var customer = await _dbContext.Customers
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (customer != null)
+            {
+                // 检查是否有相关的职位
+                int positionCount = await _dbContext.Positions
+                    .CountAsync(p => p.CustomerId == id);
+
+                if (positionCount > 0)
+                    throw new InvalidOperationException($"无法删除该客户，因为客户 {customer.Name} 还有 {positionCount} 个职位。请先处理这些职位后再进行删除。");
+
+                _dbContext.Customers.Remove(customer);
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
 }

@@ -35,7 +35,10 @@
             <div class="card-body">
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
-                    <div class="alert alert-danger">@errorMessage</div>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @errorMessage
+                        <button type="button" class="btn-close" @onclick="ClearErrorMessage"></button>
+                    </div>
                 }
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -84,7 +87,7 @@
                                                 <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@customer.Id" data-bs-toggle="modal" data-bs-target="#editModal">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@customer.Id">
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" @onclick="() => ShowDeleteModal(customer)">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
@@ -155,6 +158,8 @@
     </div>
 </div>
 
+<DeleteConfirmationModal ShowModal="@showDeleteModal" ItemName="@selectedCustomerName" OnConfirm="@HandleDeleteConfirmation" />
+
 @code {
     private PagedResult<Customer>? pagedCustomers;
     private string? errorMessage;
@@ -162,6 +167,9 @@
     private int pageSize = 10;
     private string searchTerm = "";
     private bool isSearchMode = false;
+    private bool showDeleteModal;
+    private string? selectedCustomerName;
+    private int? customerIdToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -225,5 +233,37 @@
         isSearchMode = false;
         currentPage = 1;
         await LoadCustomersAsync();
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        if (confirmed && customerIdToDelete.HasValue)
+        {
+            try
+            {
+                await CustomerService.DeleteCustomerAsync(customerIdToDelete.Value);
+                await LoadCustomersAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"删除客户时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+        showDeleteModal = false;
+        customerIdToDelete = null;
+        selectedCustomerName = null;
+    }
+
+    private void ShowDeleteModal(Customer customer)
+    {
+        customerIdToDelete = customer.Id;
+        selectedCustomerName = customer.Name;
+        showDeleteModal = true;
+    }
+
+    private void ClearErrorMessage()
+    {
+        errorMessage = null;
     }
 }
