@@ -81,13 +81,13 @@
                                         <td>@customer.UpdatedAt.ToString("yyyy-MM-dd")</td>
                                         <td>
                                             <div class="btn-group">
-                                                <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@customer.Id">
+                                                <button type="button" title="查看详情" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@customer.Id" @onclick="() => ShowCustomerDetails(customer)" data-bs-toggle="modal" data-bs-target="#viewModal">
                                                     <i class="bi bi-eye"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@customer.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                                <button type="button" title="编辑" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@customer.Id" data-bs-toggle="modal" data-bs-target="#editModal">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" @onclick="() => ShowDeleteModal(customer)">
+                                                <button type="button" title="删除" class="btn btn-sm btn-outline-danger btn-delete btn-operation" @onclick="() => ShowDeleteModal(customer)">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
@@ -160,6 +160,64 @@
 
 <DeleteConfirmationModal ShowModal="@showDeleteModal" ItemName="@selectedCustomerName" OnConfirm="@HandleDeleteConfirmation" />
 
+<!-- 客户详情模态框 -->
+@if (showViewModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewModalLabel">客户详情</h5>
+                    <button type="button" class="btn-close" @onclick="CloseViewModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (selectedCustomer != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">客户名称</label>
+                                <p>@selectedCustomer.Name</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">联系人</label>
+                                <p>@selectedCustomer.ContactPerson</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">联系电话</label>
+                                <p>@selectedCustomer.Phone</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">邮箱</label>
+                                <p>@selectedCustomer.Email</p>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">地址</label>
+                                <p>@selectedCustomer.Address</p>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">备注</label>
+                                <p>@(string.IsNullOrEmpty(selectedCustomer.Description) ? "无" : selectedCustomer.Description)</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">创建时间</label>
+                                <p>@selectedCustomer.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">更新时间</label>
+                                <p>@selectedCustomer.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     private PagedResult<Customer>? pagedCustomers;
     private string? errorMessage;
@@ -168,8 +226,10 @@
     private string searchTerm = "";
     private bool isSearchMode = false;
     private bool showDeleteModal;
+    private bool showViewModal;
     private string? selectedCustomerName;
     private int? customerIdToDelete;
+    private Customer? selectedCustomer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -265,5 +325,19 @@
     private void ClearErrorMessage()
     {
         errorMessage = null;
+    }
+
+    private void ShowCustomerDetails(Customer customer)
+    {
+        selectedCustomer = customer;
+        showViewModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseViewModal()
+    {
+        showViewModal = false;
+        selectedCustomer = null;
+        StateHasChanged();
     }
 }

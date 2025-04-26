@@ -23,6 +23,7 @@ public class CustomerService : ICustomerService
         var totalCount = await query.CountAsync();
         Console.WriteLine("Total Count: " + totalCount);
         var items = await query
+            .OrderByDescending(c => c.UpdatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
