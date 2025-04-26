@@ -1,0 +1,95 @@
+﻿@using HouYi.Models
+
+@if (ShowModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="@ModalId" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="@ModalId">@ModalTitle</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@Customer" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">客户名称</label>
+                                <InputText @bind-Value="Customer.Name" class="form-control" />
+                                <ValidationMessage For="@(() => Customer.Name)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">联系人</label>
+                                <InputText @bind-Value="Customer.ContactPerson" class="form-control" />
+                                <ValidationMessage For="@(() => Customer.ContactPerson)" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">联系电话</label>
+                                <InputText @bind-Value="Customer.Phone" class="form-control" />
+                                <ValidationMessage For="@(() => Customer.Phone)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">邮箱</label>
+                                <InputText @bind-Value="Customer.Email" class="form-control" />
+                                <ValidationMessage For="@(() => Customer.Email)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">地址</label>
+                            <InputText @bind-Value="Customer.Address" class="form-control" />
+                            <ValidationMessage For="@(() => Customer.Address)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            <InputTextArea @bind-Value="Customer.Description" class="form-control" rows="3" />
+                            <ValidationMessage For="@(() => Customer.Description)" />
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public Customer Customer { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public bool ShowModal { get; set; }
+
+    [Parameter]
+    public string ModalId { get; set; } = "customerEditModal";
+
+    [Parameter]
+    public string ModalTitle { get; set; } = "编辑客户";
+
+    private async Task HandleValidSubmit()
+    {
+        await OnValidSubmit.InvokeAsync();
+    }
+
+    private async Task CloseModal()
+    {
+        await OnCancel.InvokeAsync();
+    }
+} 

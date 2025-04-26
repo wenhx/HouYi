@@ -104,4 +104,19 @@ public class CustomerService : ICustomerService
 
         await _dbContext.SaveChangesAsync();
     }
+
+    public async Task<Customer> CreateCustomerAsync(Customer customer)
+    {
+        if (customer == null)
+            throw new ArgumentNullException(nameof(customer));
+        if (customer.Id != 0)
+            throw new ArgumentException("参数的Id属性值必须为0.");
+
+        customer.CreatedAt = DateTime.Now;
+        customer.UpdatedAt = DateTime.Now;
+
+        _dbContext.Customers.Add(customer);
+        await _dbContext.SaveChangesAsync();
+        return customer;
+    }
 }

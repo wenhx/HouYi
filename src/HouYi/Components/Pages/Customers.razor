@@ -5,7 +5,7 @@
     <div class="p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>客户管理</h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            <button class="btn btn-primary" @onclick="OpenAddModal">
                 <i class="bi bi-plus-circle me-1"></i> 添加客户
             </button>
         </div>
@@ -220,64 +220,12 @@
 }
 
 <!-- 编辑客户模态框 -->
-@if (showEditModal)
-{
-    <div class="modal fade show" style="display: block; padding-right: 17px;" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">编辑客户</h5>
-                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
-                </div>
-                <div class="modal-body">
-                    @if (editCustomer != null)
-                    {
-                        <EditForm Model="@editCustomer" OnValidSubmit="HandleEditSubmit">
-                            <DataAnnotationsValidator />
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">客户名称</label>
-                                    <InputText class="form-control" @bind-Value="editCustomer.Name" />
-                                    <ValidationMessage For="@(() => editCustomer.Name)" />
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">联系人</label>
-                                    <InputText class="form-control" @bind-Value="editCustomer.ContactPerson" />
-                                    <ValidationMessage For="@(() => editCustomer.ContactPerson)" />
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">联系电话</label>
-                                    <InputText class="form-control" @bind-Value="editCustomer.Phone" />
-                                    <ValidationMessage For="@(() => editCustomer.Phone)" />
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">邮箱</label>
-                                    <InputText class="form-control" @bind-Value="editCustomer.Email" />
-                                    <ValidationMessage For="@(() => editCustomer.Email)" />
-                                </div>
-                                <div class="col-12 mb-3">
-                                    <label class="form-label">地址</label>
-                                    <InputText class="form-control" @bind-Value="editCustomer.Address" />
-                                    <ValidationMessage For="@(() => editCustomer.Address)" />
-                                </div>
-                                <div class="col-12 mb-3">
-                                    <label class="form-label">备注</label>
-                                    <InputTextArea class="form-control" @bind-Value="editCustomer.Description" />
-                                    <ValidationMessage For="@(() => editCustomer.Description)" />
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">取消</button>
-                                <button type="submit" class="btn btn-primary">保存</button>
-                            </div>
-                        </EditForm>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+<CustomerEditForm ModalId="editModal" ModalTitle="@($"编辑客户 - {editCustomer?.Name ?? "未知"}")" Customer="@editCustomer"
+                OnCancel="CloseEditModal" OnValidSubmit="UpdateCustomer" ShowModal="@(editCustomer != null)" />
+
+<!-- 添加客户模态框 -->
+<CustomerEditForm ModalId="addModal" ModalTitle="添加客户" Customer="@newCustomer"
+                OnCancel="CloseAddModal" OnValidSubmit="AddCustomer" ShowModal="@(newCustomer != null)" />
 
 @code {
     private PagedResult<Customer>? pagedCustomers;
@@ -293,6 +241,7 @@
     private Customer? selectedCustomer;
     private bool showEditModal;
     private Customer? editCustomer;
+    private Customer? newCustomer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -404,6 +353,33 @@
         StateHasChanged();
     }
 
+    private void OpenAddModal()
+    {
+        newCustomer = new Customer();
+        StateHasChanged();
+    }
+
+    private void CloseAddModal()
+    {
+        newCustomer = null;
+        StateHasChanged();
+    }
+
+    private async Task AddCustomer()
+    {
+        try
+        {
+            await CustomerService.CreateCustomerAsync(newCustomer);
+            await LoadCustomersAsync();
+            CloseAddModal();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"添加客户时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
     private void ShowEditModal(Customer customer)
     {
         editCustomer = new Customer
@@ -427,7 +403,7 @@
         StateHasChanged();
     }
 
-    private async Task HandleEditSubmit()
+    private async Task UpdateCustomer()
     {
         if (editCustomer != null)
         {

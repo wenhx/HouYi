@@ -24,6 +24,6 @@ public class Customer
     [StringLength(Constants.StringLengths.Description)]
     public string Description { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; init; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }
