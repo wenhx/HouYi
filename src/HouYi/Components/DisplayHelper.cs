@@ -4,7 +4,7 @@ namespace HouYi.Components;
 
 public static class DisplayHelper
 {
-    internal static string GetExperienceText(int years)
+    internal static string GetResumeExperienceText(int years)
     {
         return years switch
         {
@@ -37,6 +37,30 @@ public static class DisplayHelper
             Gender.Female => "女",
             Gender.PreferNotToSay => "保密",
             _ => "未知"
+        };
+    }
+
+    internal static string GetResumeStatusText(EmploymentStatus status)
+    {
+        return status switch
+        {
+            EmploymentStatus.Unemployed => "待业中",
+            EmploymentStatus.EmployedAndNotConsideringOpportunities => "在职-不考虑机会",
+            EmploymentStatus.EmployedAndOpenToOpportunities => "在职-考虑新机会",
+            _ => "未知"
+        };
+    }
+
+    internal static string GetResumeSourceText(ResumeSource source)
+    {
+        return source switch
+        {
+            ResumeSource.TalentPool => "人才库",
+            ResumeSource.Consultant => "猎头搜集",
+            ResumeSource.Company => "企业推荐",
+            ResumeSource.Candidate => "主动投递",
+            ResumeSource.Partner => "合作伙伴",
+            _ => "其他"
         };
     }
 }

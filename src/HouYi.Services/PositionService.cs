@@ -1,24 +1,26 @@
 ﻿using HouYi.Data;
 using HouYi.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using System.ComponentModel.DataAnnotations;
 
 namespace HouYi.Services;
 
 public class PositionService : IPositionService
 {
-    private readonly HouYiDbContext _dbContext;
+    private readonly IDbContextFactory<HouYiDbContext> _dbContextFactory;
 
-    public PositionService(HouYiDbContext dbContext)
+    public PositionService(IDbContextFactory<HouYiDbContext> dbContextFactory)
     {
-        _dbContext = dbContext;
+        _dbContextFactory = dbContextFactory;
     }
 
     public async Task<PagedResult<Position>> GetPositionsCoreAsync(Func<IQueryable<Position>, IQueryable<Position>>? filter, int pageNumber = 1, int pageSize = 10, PositionStatus? status = null)
     {
         Utils.NormalizePaginationInputs(ref pageNumber, ref pageSize);
 
-        var query = _dbContext.Positions
+        using HouYiDbContext dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var query = dbContext.Positions
                 .Include(p => p.Customer)
                 .Include(p => p.Consultant)
                 .Select(p => new Position
@@ -36,7 +38,7 @@ public class PositionService : IPositionService
                     Description = p.Description,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt,
-                    RecommendationsCount = _dbContext.Recommendations.Count(r => r.PositionId == p.Id)
+                    RecommendationsCount = dbContext.Recommendations.Count(r => r.PositionId == p.Id)
                 });
 
         if (status.HasValue)
@@ -85,14 +87,16 @@ public class PositionService : IPositionService
 
     public async Task<Position?> GetPositionByIdAsync(int id)
     {
-        return await _dbContext.Positions
+        using HouYiDbContext dbContext = await _dbContextFactory.CreateDbContextAsync();
+        return await dbContext.Positions
             .Include(p => p.Customer)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task UpdatePositionAsync(Position position)
     {
-        var existingPosition = await _dbContext.Positions.FindAsync(position.Id);
+        using HouYiDbContext dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var existingPosition = await dbContext.Positions.FindAsync(position.Id);
         if (existingPosition != null)
         {
             existingPosition.Name = position.Name;
@@ -104,30 +108,31 @@ public class PositionService : IPositionService
             existingPosition.ContactPerson = position.ContactPerson;
             existingPosition.ContactPhone = position.ContactPhone;
             existingPosition.UpdatedAt = DateTime.Now;
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
         }
     }
 
     public async Task DeletePositionAsync(int id)
     {
-        var position = await _dbContext.Positions
+        using HouYiDbContext dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var position = await dbContext.Positions
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (position != null)
         {
-            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            using var transaction = await dbContext.Database.BeginTransactionAsync();
             try
             {
-                int recommendationCount = await _dbContext.Recommendations
+                int recommendationCount = await dbContext.Recommendations
                                                     .CountAsync(r => r.PositionId == id);
                 if (recommendationCount > 0)
                     throw new InvalidOperationException($"无法删除职位，因为该职位还有 {recommendationCount} 条推荐记录。请先处理这些推荐记录后再删除职位。");
 
-                _dbContext.Communications.Where(c => c.PositionId == id)
+                dbContext.Communications.Where(c => c.PositionId == id)
                             .ExecuteUpdate(c => c.SetProperty(c => c.PositionId, c => null));
 
-                _dbContext.Positions.Remove(position);
-                await _dbContext.SaveChangesAsync();
+                dbContext.Positions.Remove(position);
+                await dbContext.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch
@@ -156,8 +161,9 @@ public class PositionService : IPositionService
         position.Customer = null;
         position.Consultant = null;
 
-        _dbContext.Positions.Add(position);
-        await _dbContext.SaveChangesAsync();
+        using HouYiDbContext dbContext = await _dbContextFactory.CreateDbContextAsync();
+        dbContext.Positions.Add(position);
+        await dbContext.SaveChangesAsync();
 
         return position;
     }
