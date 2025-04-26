@@ -15,14 +15,7 @@
             <div class="col-md-8">
                 <form class="search-form" @onsubmit="SearchCustomers" @onsubmit:preventDefault>
                     <div class="d-flex">
-                        <select class="form-select me-2" @bind="searchField" style="width: 150px;">
-                            <option value="Name">客户名称</option>
-                            <option value="ContactPerson">联系人</option>
-                            <option value="Phone">联系电话</option>
-                            <option value="Email">邮箱</option>
-                            <option value="Address">地址</option>
-                        </select>
-                        <input type="search" class="form-control" placeholder="搜索..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                        <input type="search" class="form-control" placeholder="搜索客户名称、联系人、电话、邮箱或地址..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
                         <button class="btn btn-primary btn-search" type="submit">
                             <i class="bi bi-search me-1"></i>搜索
                         </button>
@@ -167,7 +160,6 @@
     private string? errorMessage;
     private int currentPage = 1;
     private int pageSize = 10;
-    private string searchField = "Name";
     private string searchTerm = "";
     private bool isSearchMode = false;
 
@@ -182,8 +174,8 @@
         {
             if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
             {
-                Console.WriteLine($"开始搜索：{searchField}, {searchTerm}。");
-                pagedCustomers = await CustomerService.FindCustomersAsync(searchField, searchTerm, currentPage, pageSize);
+                Console.WriteLine($"开始搜索：{searchTerm}。");
+                pagedCustomers = await CustomerService.FindCustomersAsync(searchTerm, currentPage, pageSize);
             }
             else
             {

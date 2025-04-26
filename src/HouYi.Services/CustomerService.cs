@@ -35,37 +35,22 @@ public class CustomerService : ICustomerService
         return await GetCustomersCoreAsync(filter: null, pageNumber, pageSize);
     }
 
-    public async Task<PagedResult<Customer>> FindCustomersAsync(string field = "", string term = "", int pageNumber = 1, int pageSize = 10)
+    public async Task<PagedResult<Customer>> FindCustomersAsync(string term = "", int pageNumber = 1, int pageSize = 10)
     {
         return await GetCustomersCoreAsync(filter, pageNumber, pageSize);
 
         IQueryable<Customer> filter(IQueryable<Customer> query)
         {
-
             if (!string.IsNullOrWhiteSpace(term))
             {
                 term = term.Trim();
-
-                switch (field)
-                {
-                    case "Name":
-                        query = query.Where(c => c.Name.Contains(term));
-                        break;
-                    case "ContactPerson":
-                        query = query.Where(c => c.ContactPerson.Contains(term));
-                        break;
-                    case "Phone":
-                        query = query.Where(c => c.Phone.Contains(term));
-                        break;
-                    case "Email":
-                        query = query.Where(c => c.Email.Contains(term));
-                        break;
-                    case "Address":
-                        query = query.Where(c => c.Address.Contains(term));
-                        break;
-                    default:
-                        break;
-                }
+                query = query.Where(c =>
+                    c.Name.Contains(term) ||
+                    c.ContactPerson.Contains(term) ||
+                    c.Phone.Contains(term) ||
+                    c.Email.Contains(term) ||
+                    c.Address.Contains(term)
+                );
             }
             return query;
         }
