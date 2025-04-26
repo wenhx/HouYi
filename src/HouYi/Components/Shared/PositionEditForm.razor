@@ -1,0 +1,192 @@
+﻿@using HouYi.Models
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject ICustomerService CustomerService
+@inject UserManager<HouYiUser> UserManager
+
+@if (ShowModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="@ModalId" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="@ModalId">@ModalTitle</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@Position" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">职位名称</label>
+                                <InputText @bind-Value="Position.Name" class="form-control" />
+                                <ValidationMessage For="@(() => Position.Name)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">所属客户</label>
+                                <InputSelect @bind-Value="Position.CustomerId" @bind-Value:after="OnCustomerSelected" class="form-select">
+                                    <option value="">-- 请选择 --</option>
+                                    @if (customers != null)
+                                    {
+                                        @foreach (var customer in customers)
+                                        {
+                                            <option value="@customer.Id">@customer.Name</option>
+                                        }
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => Position.CustomerId)" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">招聘人数</label>
+                                <InputNumber @bind-Value="Position.IntNumber" class="form-control" min="1" max="255" />
+                                <ValidationMessage For="@(() => Position.Number)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">状态</label>
+                                <InputSelect @bind-Value="Position.Status" class="form-select">
+                                    <option value="@PositionStatus.Closed">关闭</option>
+                                    <option value="@PositionStatus.Open">开放</option>
+                                    <option value="@PositionStatus.Suspended">暂停</option>
+                                    <option value="@PositionStatus.Completed">完成</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">顾问</label>
+                                <InputSelect @bind-Value="Position.ConsultantId" class="form-select">
+                                    <option value="">-- 请选择 --</option>
+                                    @if (consultants != null)
+                                    {
+                                        @foreach (var consultant in consultants)
+                                        {
+                                            <option value="@consultant.Id">@consultant.UserName</option>
+                                        }
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => Position.ConsultantId)" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">客户联系人</label>
+                                <InputText @bind-Value="Position.ContactPerson" class="form-control" />
+                                <ValidationMessage For="@(() => Position.ContactPerson)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">联系方式</label>
+                                <InputText @bind-Value="Position.ContactPhone" class="form-control" />
+                                <ValidationMessage For="@(() => Position.ContactPhone)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">职位描述</label>
+                            <InputTextArea @bind-Value="Position.Description" class="form-control" rows="5" />
+                            <ValidationMessage For="@(() => Position.Description)" />
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public PositionWithIntValue Position { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public bool ShowModal { get; set; }
+
+    [Parameter]
+    public string ModalId { get; set; } = "positionEditModal";
+
+    [Parameter]
+    public string ModalTitle { get; set; } = "编辑职位";
+
+    private IReadOnlyList<Customer>? customers;
+    private IReadOnlyList<HouYiUser>? consultants;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+        await LoadConsultantsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ShowModal)
+        {
+            await LoadCustomersAsync();
+            await LoadConsultantsAsync();
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = (await CustomerService.GetCustomersAsync(1, 100)).Items;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"加载客户列表时发生错误: {ex.Message}");
+        }
+    }
+
+    private async Task LoadConsultantsAsync()
+    {
+        try
+        {
+            consultants = await UserManager.Users.AsNoTracking().OrderBy(u => u.UserName).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"加载顾问列表时发生错误: {ex.Message}");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await OnValidSubmit.InvokeAsync();
+    }
+
+    private async Task OnCustomerSelected()
+    {
+        if (Position?.CustomerId > 0)
+        {
+            var selectedCustomer = customers?.FirstOrDefault(c => c.Id == Position.CustomerId);
+            if (selectedCustomer != null)
+            {
+                Position.ContactPerson = selectedCustomer.ContactPerson;
+                Position.ContactPhone = selectedCustomer.Phone;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await OnCancel.InvokeAsync();
+    }
+} 

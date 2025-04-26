@@ -8,7 +8,7 @@ public static class Utils
         {
             pageNumber = 1;
         }
-        if (pageSize != 10 && pageSize != 20 && pageSize != 50)
+        if (pageSize != 10 && pageSize != 20 && pageSize != 50 && pageSize != 100)
         {
             pageSize = 10;
         }

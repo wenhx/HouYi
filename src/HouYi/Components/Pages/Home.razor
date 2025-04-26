@@ -22,17 +22,17 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "resume" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("resume", "人才库")'>
+                    <a class="nav-link @(currentPage == "resume" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Resumes), "人才库")'>
                         <i class="bi bi-file-earmark-person me-2"></i> 人才库
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "position" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("position", "职位管理")'>
+                    <a class="nav-link @(currentPage == "position" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Positions), "职位管理")'>
                         <i class="bi bi-briefcase me-2"></i> 职位管理
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "interview" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("interview", "面试记录")'>
+                    <a class="nav-link @(currentPage == "interview" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Interviews), "面试记录")'>
                         <i class="bi bi-calendar-event me-2"></i> 面试记录
                     </a>
                 </li>
@@ -42,17 +42,17 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "recommendation" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("recommendation", "人才推荐")'>
+                    <a class="nav-link @(currentPage == "recommendation" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Recommendations), "人才推荐")'>
                         <i class="bi bi-person-plus me-2"></i> 人才推荐
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "communication" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("communication", "沟通管理")'>
+                    <a class="nav-link @(currentPage == "communication" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Communications), "沟通管理")'>
                         <i class="bi bi-chat-dots me-2"></i> 沟通管理
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "customers" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("customers", "客户管理")'>
+                    <a class="nav-link @(currentPage == "customers" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Customers), "客户管理")'>
                         <i class="bi bi-building me-2"></i> 客户管理
                     </a>
                 </li>
@@ -71,14 +71,14 @@
                 @foreach (var tab in openTabs)
                 {
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link @(tab.Id == activeTabId ? "active" : "")" 
-                                id="@tab.Id-tab" 
-                                @onclick="() => ActivateTab(tab.Id)"
-                                type="button" role="tab">
+                        <button class="nav-link @(tab.Name == activeTabId ? "active" : "")"
+                        id="@tab.Name-tab"
+                        @onclick="() => ActivateTab(tab.Name)"
+                        type="button" role="tab">
                             @tab.Title
-                            <span class="close-tab @(openTabs.Count > 1 ? "" : "d-none")" 
-                                  @onclick="() => CloseTab(tab.Id)" 
-                                  @onclick:stopPropagation="true">✕</span>
+                            <span class="close-tab @(openTabs.Count > 1 ? "" : "d-none")"
+                            @onclick="() => CloseTab(tab.Name)"
+                            @onclick:stopPropagation="true">✕</span>
                         </button>
                     </li>
                 }
@@ -88,16 +88,31 @@
             <div class="tab-content" id="mainTabContent">
                 @foreach (var tab in openTabs)
                 {
-                    <div class="tab-pane fade @(tab.Id == activeTabId ? "show active" : "")" 
-                         id="@tab.Id-content" role="tabpanel">
-                        @switch (tab.Id)
+                    <div class="tab-pane fade @(tab.Name == activeTabId ? "show active" : "")"
+                    id="@tab.Name-content" role="tabpanel">
+                        @switch (tab.Name)
                         {
                             case "dashboard":
                                 <h1 class="mb-4">数据看板</h1>
                                 <p>数据看板内容...</p>
                                 break;
-                            case "customers":
-                                <HouYi.Components.Pages.Customers />
+                            case nameof(Resumes):
+                                <Resumes />
+                                break;
+                            case nameof(Customers):
+                                <Customers />
+                                break;
+                            case nameof(Positions):
+                                <Positions OnViewRecommendation="OnViewRecommendation" />
+                                break;
+                            case nameof(Recommendations):
+                                <Recommendations PositionId="@tab.IntEntityId" />
+                                break;
+                            case nameof(Interviews):
+                                <Interviews />
+                                break;
+                            case nameof(Communications):
+                                <Communications />
                                 break;
                             default:
                                 <h1 class="mb-4">@tab.Title</h1>
@@ -112,6 +127,7 @@
 </div>
 
 @code {
+
     private string currentPage = "dashboard";
     private string activeTabId = "dashboard";
     private List<TabItem> openTabs = new List<TabItem>();
@@ -119,51 +135,65 @@
     protected override void OnInitialized()
     {
         // 初始化默认标签页
-        openTabs.Add(new TabItem { Id = "dashboard", Title = "数据看板" });
+        openTabs.Add(new TabItem { Name = "dashboard", Title = "数据看板" });
     }
 
-    private void ChangePage(string pageId, string pageTitle)
+    public void ChangePage(string pageName, string pageTitle, object eneityId = null)
     {
-        currentPage = pageId;
-        
+        currentPage = pageName;
+
         // 检查标签页是否已经打开
-        var existingTab = openTabs.FirstOrDefault(t => t.Id == pageId);
+        var existingTab = openTabs.FirstOrDefault(t => t.Name == pageName);
         if (existingTab == null)
         {
             // 如果标签页不存在，添加新标签页
-            openTabs.Add(new TabItem { Id = pageId, Title = pageTitle });
+            openTabs.Add(new TabItem { Name = pageName, Title = pageTitle, EntityId = eneityId });
         }
-        
+        else
+        {
+            // 如果标签页已经打开，更新标题和实体ID
+            existingTab.Title = pageTitle;
+            existingTab.EntityId = eneityId;
+        }
+
         // 激活对应的标签页
-        ActivateTab(pageId);
+        ActivateTab(pageName);
     }
 
-    private void ActivateTab(string tabId)
+    private void ActivateTab(string tabName)
     {
-        activeTabId = tabId;
+        activeTabId = tabName;
     }
 
-    private void CloseTab(string tabId)
+    private void CloseTab(string tabName)
     {
         // 使用@onclick:stopPropagation="true"已经处理了事件冒泡问题
-        
+
         if (openTabs.Count > 1)
         {
-            int index = openTabs.FindIndex(t => t.Id == tabId);
+            int index = openTabs.FindIndex(t => t.Name == tabName);
             openTabs.RemoveAt(index);
-            
+
             // 如果关闭的是当前激活的标签页，则激活其他标签页
-            if (tabId == activeTabId)
+            if (tabName == activeTabId)
             {
                 int newIndex = Math.Min(index, openTabs.Count - 1);
-                activeTabId = openTabs[newIndex].Id;
+                activeTabId = openTabs[newIndex].Name;
             }
         }
     }
 
+    private void OnViewRecommendation(int positionId)
+    {
+        Console.WriteLine("OnViewRecommendation: {0}", positionId);
+        ChangePage(nameof(Recommendations), "人才推荐", positionId);
+    }
+
     private class TabItem
     {
-        public required string Id { get; set; }
+        public required string Name { get; set; }
         public required string Title { get; set; }
+        public object? EntityId { get; set; }
+        public int? IntEntityId => EntityId != null ? Convert.ToInt32(EntityId) : null;
     }
 }

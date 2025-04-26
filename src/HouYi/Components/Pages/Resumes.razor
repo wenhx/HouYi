@@ -1,0 +1,613 @@
+﻿@using HouYi.Components.Shared
+@inject IResumeService ResumeService
+@inject ICommunicationService CommunicationService
+@inject IPositionService PositionService
+@inject IPlaceService PlaceService
+
+
+<div class="container-fluid p-0">
+    <!-- 主内容区 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>人才库</h1>
+        <button class="btn btn-primary" @onclick="OpenAddModal">
+            <i class="bi bi-plus-circle me-1"></i> 添加简历
+        </button>
+    </div>
+
+    <!-- 搜索和过滤 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form class="search-form" @onsubmit="SearchResumes" @onsubmit:preventDefault>
+                <div class="d-flex">
+                    <select class="form-select me-2" @bind="searchField" style="width: 150px;">
+                        <option value="Name">姓名</option>
+                        <option value="Phone">电话</option>
+                        <option value="Email">邮箱</option>
+                        <option value="Position">职位</option>
+                    </select>
+                    <input type="search" class="form-control" placeholder="搜索简历..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                    <button class="btn btn-primary btn-search" type="submit">
+                        <i class="bi bi-search me-1"></i>搜索
+                    </button>
+                    @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
+                    {
+                        <button class="btn btn-outline-secondary ms-2" @onclick:preventDefault @onclick="ClearSearch" style="min-width: 100px;">
+                            <i class="bi bi-x-circle me-1"></i>清除
+                        </button>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 简历列表 -->
+    <div class="card">
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th data-sortable="true" data-field="id" class="sorting d-none">ID</th>
+                            <th data-sortable="true" data-field="name" class="sorting">姓名</th>
+                            <th data-sortable="true" data-field="gender" class="sorting">
+                                <span>性别</span>
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item @(selectedGender == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByGender(null)">所有性别</a></li>
+                                        <li><a class="dropdown-item @(selectedGender == Gender.Male ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByGender(Gender.Male)">男</a></li>
+                                        <li><a class="dropdown-item @(selectedGender == Gender.Female ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByGender(Gender.Female)">女</a></li>
+                                        <li><a class="dropdown-item @(selectedGender == Gender.PreferNotToSay ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByGender(Gender.PreferNotToSay)">保密</a></li>
+                                    </ul>
+                                </div>
+                            </th>
+                            <th data-sortable="true" data-field="age" class="sorting">年龄</th>
+                            <th data-sortable="true" data-field="phone" class="sorting">电话</th>
+                            <th data-sortable="true" data-field="email" class="sorting">邮箱</th>
+                            <th data-sortable="true" data-field="position" class="sorting">职位</th>
+                            <th data-sortable="true" data-field="status" class="sorting">
+                                <span>状态</span>
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item @(selectedStatus == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(null)">所有状态</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == EmploymentStatus.Unemployed ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(EmploymentStatus.Unemployed)">待业中</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == EmploymentStatus.EmployedAndNotConsideringOpportunities ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(EmploymentStatus.EmployedAndNotConsideringOpportunities)">在职-不考虑机会</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == EmploymentStatus.EmployedAndOpenToOpportunities ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(EmploymentStatus.EmployedAndOpenToOpportunities)">在职-考虑新机会</a></li>
+                                        <li><a class="dropdown-item @(selectedStatus == EmploymentStatus.Unknown ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByStatus(EmploymentStatus.Unknown)">未知</a></li>
+                                    </ul>
+                                </div>
+                            </th>
+                            <th data-sortable="true" data-field="degree" class="sorting">学历</th>
+                            <th data-sortable="true" data-field="salary" class="sorting">年薪(K)</th>
+                            <th data-sortable="true" data-field="experience" class="sorting">工作经验</th>
+                            <th data-sortable="true" data-field="city" class="sorting">所在地</th>
+                            <th data-sortable="true" data-field="source" class="sorting">简历来源</th>
+                            <th data-sortable="true" data-field="updateTime" class="sorting-desc">更新时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resumeTableBody">
+                        @if (pagedResumes == null)
+                        {
+                            <tr>
+                                <td colspan="14" class="text-center">加载中...</td>
+                            </tr>
+                        }
+                        else if (!pagedResumes.Items.Any())
+                        {
+                            <tr>
+                                <td colspan="14" class="text-center">没有简历数据</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var resume in pagedResumes.Items)
+                            {
+                                <tr>
+                                    <td class="d-none">@resume.Id</td>
+                                    <td>@resume.Name</td>
+                                    <td>@DisplayHelper.GetGenderText(resume.Gender)</td>
+                                    <td>@resume.Age</td>
+                                    <td>@resume.Phone</td>
+                                    <td>@resume.Email</td>
+                                    <td>@resume.Position</td>
+                                    <td>@DisplayHelper.GetResumeStatusText(resume.Status)</td>
+                                    <td>@DisplayHelper.GetEducationText(resume.HighestEducation)</td>
+                                    <td>@resume.AnnualSalary</td>
+                                    <td>
+                                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="@($"{resume.YearsOfExperience}年")">
+                                            @DisplayHelper.GetResumeExperienceText(resume.YearsOfExperience)
+                                        </span>
+                                    </td>
+                                    <td>@resume.Place.Name</td>
+                                    <td>@DisplayHelper.GetResumeSourceText(resume.Source)</td>
+                                    <td>@resume.UpdatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@resume.Id" title="查看简历详情" @onclick="() => OpenViewModal(resume.Id)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-info btn-communication" @onclick="() => OpenAddCommunicationModal(resume.Id)" title="添加沟通记录" style="padding: 0.25rem 0.4rem;">
+                                                <i class="bi bi-telephone"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" @onclick="() => OpenEditModal(resume.Id)" title="编辑简历">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete btn-operation" data-id="@resume.Id" title="删除简历" @onclick="() => OpenDeleteConfirmation(resume.Id)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex align-items-center">
+                    <span class="me-2">每页显示：</span>
+                    <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
+                        <option value="10" selected="@(pageSize == 10)">10</option>
+                        <option value="20" selected="@(pageSize == 20)">20</option>
+                        <option value="50" selected="@(pageSize == 50)">50</option>
+                    </select>
+                    @if (pagedResumes != null)
+                    {
+                        <span class="pagination-info">
+                            显示 @((pagedResumes.PageNumber - 1) * pagedResumes.PageSize + 1)-@(Math.Min(pagedResumes.PageNumber * pagedResumes.PageSize, pagedResumes.TotalCount)) 条，
+                            共 @pagedResumes.TotalCount 条记录
+                        </span>
+                    }
+                </div>
+                @if (pagedResumes != null && pagedResumes.TotalPages > 0)
+                {
+                    <ul class="pagination mb-0">
+                        <li class="page-item @(pagedResumes.PageNumber == 1 ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                        </li>
+                        <li class="page-item @(!pagedResumes.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedResumes.PageNumber - 1)">上一页</a>
+                        </li>
+
+                        @{
+                            int startPage = Math.Max(1, pagedResumes.PageNumber - 2);
+                            int endPage = Math.Min(pagedResumes.TotalPages, startPage + 4);
+
+                            if (endPage - startPage < 4 && startPage > 1)
+                            {
+                                startPage = Math.Max(1, endPage - 4);
+                            }
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            int pageNumber = i;
+                            <li class="page-item @(pageNumber == pagedResumes.PageNumber ? "active" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(!pagedResumes.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedResumes.PageNumber + 1)">下一页</a>
+                        </li>
+                        <li class="page-item @(pagedResumes.PageNumber == pagedResumes.TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedResumes.TotalPages)">末页</a>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加沟通记录模态框 -->
+@if (showAddCommunicationModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="addCommunicationModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCommunicationModalLabel">正在添加 @(pagedResumes?.Items.FirstOrDefault(r => r.Id == selectedResumeId)?.Name ?? "未知") 的沟通记录</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddCommunicationModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@newCommunication" OnValidSubmit="AddCommunication">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">沟通方式</label>
+                            <InputSelect @bind-Value="newCommunication.Method" class="form-select">
+                                <option value="@CommunicationMethod.Phone">电话</option>
+                                <option value="@CommunicationMethod.Email">邮件</option>
+                                <option value="@CommunicationMethod.IM">即时消息</option>
+                                <option value="@CommunicationMethod.Video">视频</option>
+                                <option value="@CommunicationMethod.FaceToFace">面对面</option>
+                                <option value="@CommunicationMethod.Other">其他</option>
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">沟通原因</label>
+                            <InputSelect @bind-Value="newCommunication.Reason" class="form-select">
+                                <option value="@ContactReason.FollowUp">流程跟进</option>
+                                <option value="@ContactReason.Notification">通知</option>
+                                <option value="@ContactReason.Opportunity">机会推荐</option>
+                                <option value="@ContactReason.Relationship">关系维护</option>
+                                <option value="@ContactReason.Other">其他</option>
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">意向职位</label>
+                            <InputSelect @bind-Value="newCommunication.PositionId" class="form-select">
+                                <option value="">-- 请选择 --</option>
+                                @if (openPositions != null)
+                                {
+                                    @foreach (var position in openPositions)
+                                    {
+                                        <option value="@position.Id">@($"{position.Name} - {position.Customer.Name}")</option>
+                                    }
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">沟通内容</label>
+                            <InputTextArea @bind-Value="newCommunication.Content" class="form-control" rows="4" />
+                            <ValidationMessage For="@(() => newCommunication.Content)" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">沟通结果</label>
+                            <InputSelect @bind-Value="newCommunication.Result" class="form-select">
+                                <option value="@CommunicatedResult.NoResponse">未响应</option>
+                                <option value="@CommunicatedResult.Interested">有意向</option>
+                                <option value="@CommunicatedResult.NotInterested">无意向</option>
+                                <option value="@CommunicatedResult.Pending">待定</option>
+                                <option value="@CommunicatedResult.Further">进一步沟通</option>
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">沟通时间</label>
+                            <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="newCommunication.CommunicationTime" class="form-control" />
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseAddCommunicationModal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- 简历查看模态框 -->
+<ResumeViewModal Resume="@viewingResume" ShowModal="@showViewModal" CloseModal="CloseViewModal" OnEdit="EditFromViewModal" />
+
+<!-- 添加简历模态框 -->
+<ResumeEditForm ModalId="addModal" ModalTitle="添加简历" Resume="@newResume" 
+                OnCancel="CloseAddModal" OnValidSubmit="AddResume" ShowModal="@(newResume != null)" />
+
+<!-- 编辑简历模态框 -->
+<ResumeEditForm ModalId="editModal" ModalTitle="@($"编辑简历 - {editingResume?.Name ?? "未知"}")" Resume="@editingResume"
+                OnCancel="CloseEditModal" OnValidSubmit="UpdateResume" ShowModal="@(editingResume != null)" />
+
+<DeleteConfirmationModal @ref="deleteConfirmationModal" ShowModal="showDeleteConfirmation" ItemName="@($" {deletingResume?.Name} 的简历")" OnConfirm="HandleDeleteConfirmation" />
+
+@code {
+    private PagedResult<Resume>? pagedResumes;
+    private string? errorMessage;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private string searchField = "Name";
+    private string searchTerm = "";
+    private bool isSearchMode = false;
+    private Gender? selectedGender;
+    private EmploymentStatus? selectedStatus;
+    private bool showAddCommunicationModal;
+    private Communication newCommunication = Communication.Default();
+    private string? selectedResumeId;
+    private List<Position>? openPositions;
+    private ResumeWithIntValue? editingResume;
+    private bool showViewModal;
+    private Resume? viewingResume;
+    private bool showDeleteConfirmation;
+    private Resume? deletingResume;
+    private DeleteConfirmationModal? deleteConfirmationModal;
+    private ResumeWithIntValue? newResume;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadResumesAsync();
+    }
+
+    private async Task LoadResumesAsync()
+    {
+        try
+        {
+            if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
+            {
+                pagedResumes = await ResumeService.FindResumesAsync(searchField, searchTerm, currentPage, pageSize, selectedGender, selectedStatus);
+            }
+            else
+            {
+                pagedResumes = await ResumeService.GetResumesAsync(currentPage, pageSize, selectedGender, selectedStatus);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载简历数据时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task LoadOpenPositionsAsync()
+    {
+        try
+        {
+            var result = await PositionService.GetPositionsAsync(status: PositionStatus.Open);
+            openPositions = result.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载职位数据时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task NavigateToPage(int page)
+    {
+        currentPage = page;
+        await LoadResumesAsync();
+    }
+
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newPageSize))
+        {
+            pageSize = newPageSize;
+            currentPage = 1;
+            await LoadResumesAsync();
+        }
+    }
+
+    private async Task SearchResumes()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await ClearSearch();
+            return;
+        }
+
+        isSearchMode = true;
+        currentPage = 1;
+        await LoadResumesAsync();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = "";
+        isSearchMode = false;
+        currentPage = 1;
+        await LoadResumesAsync();
+    }
+
+    private async Task FilterByGender(Gender? gender)
+    {
+        selectedGender = gender;
+        currentPage = 1;
+        await LoadResumesAsync();
+    }
+
+    private async Task FilterByStatus(EmploymentStatus? status)
+    {
+        selectedStatus = status;
+        currentPage = 1;
+        await LoadResumesAsync();
+    }
+
+    private async Task AddCommunication()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(selectedResumeId))
+            {
+                errorMessage = "请选择简历";
+                return;
+            }
+
+            newCommunication.ResumeId = selectedResumeId;
+            await CommunicationService.CreateCommunicationAsync(newCommunication);
+
+            // 关闭模态框
+            showAddCommunicationModal = false;
+            StateHasChanged();
+
+            // 重置表单
+            newCommunication = Communication.Default();
+            selectedResumeId = null;
+
+            // 刷新页面
+            await LoadResumesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"添加沟通记录时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task OpenAddCommunicationModal(string resumeId)
+    {
+        selectedResumeId = resumeId;
+        await LoadOpenPositionsAsync();
+        showAddCommunicationModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseAddCommunicationModal()
+    {
+        showAddCommunicationModal = false;
+        StateHasChanged();
+    }
+
+    private void OpenEditModal(string resumeId)
+    {
+        try
+        {
+            var resume = pagedResumes?.Items.FirstOrDefault(r => r.Id == resumeId);
+            if (resume != null)
+            {
+                editingResume = new ResumeWithIntValue(resume);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"打开编辑模态框时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseEditModal()
+    {
+        editingResume = null;
+        StateHasChanged();
+    }
+
+    private async Task UpdateResume()
+    {
+        try
+        {
+            if (editingResume != null)
+            {
+                await ResumeService.UpdateResumeAsync(editingResume);
+                await LoadResumesAsync();
+                CloseEditModal();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"更新简历时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void HandleCitySelected(Place place)
+    {
+        if (editingResume != null)
+        {
+            editingResume.PlaceId = place.Id;
+            editingResume.Place = place;
+        }
+        else if (newResume != null)
+        {
+            newResume.PlaceId = place.Id;
+            newResume.Place = place;
+        }
+        StateHasChanged();
+    }
+
+    private async Task OpenViewModal(string resumeId)
+    {
+        try
+        {
+            var resume = pagedResumes?.Items.FirstOrDefault(r => r.Id == resumeId);
+            if (resume != null)
+            {
+                viewingResume = resume;
+                showViewModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"打开查看模态框时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void CloseViewModal()
+    {
+        showViewModal = false;
+        viewingResume = null;
+        StateHasChanged();
+    }
+
+    private void EditFromViewModal()
+    {
+        if (viewingResume != null)
+        {
+            string resumeId = viewingResume.Id;
+            CloseViewModal();
+            OpenEditModal(resumeId);
+        }
+    }
+
+    private void OpenDeleteConfirmation(string resumeId)
+    {
+        deletingResume = pagedResumes?.Items.FirstOrDefault(r => r.Id == resumeId);
+        if (deletingResume != null)
+        {
+            showDeleteConfirmation = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        showDeleteConfirmation = false;
+        if (confirmed && deletingResume != null)
+        {
+            try
+            {
+                await ResumeService.DeleteResumeAsync(deletingResume.Id);
+                await LoadResumesAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"删除简历时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+        deletingResume = null;
+    }
+
+    private void OpenAddModal()
+    {
+        newResume = new ResumeWithIntValue(Resume.Default(30));
+        StateHasChanged();
+    }
+
+    private void CloseAddModal()
+    {
+        newResume = null;
+        StateHasChanged();
+    }
+
+    private async Task AddResume()
+    {
+        try
+        {
+            await ResumeService.CreateResumeAsync(newResume);
+            await LoadResumesAsync();
+            CloseAddModal();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"添加简历时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+}

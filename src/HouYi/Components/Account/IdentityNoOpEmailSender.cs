@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using HouYi.Data;
+using HouYi.Models;
 
 namespace HouYi.Components.Account;
 

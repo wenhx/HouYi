@@ -1,0 +1,129 @@
+﻿@using HouYi.Models
+@using HouYi.Services
+
+<div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="interviewModalLabel" aria-hidden="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="interviewModalLabel">@Title</h5>
+                <button type="button" class="btn-close" @onclick="CloseModal"></button>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i> @ErrorMessage
+                    </div>
+                }
+                <EditForm Model="@interviewWrapper" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 1.2rem; font-weight: bold; color: #007bff;">候选人：</label>
+                            <label style="font-size: 1.2rem; font-weight: bold; color: #343a40;">@Interview?.Resume.Name</label>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 1.2rem; font-weight: bold; color: #007bff;">应聘职位：</label>
+                            <label style="font-size: 1.2rem; font-weight: bold; color: #343a40;">@Interview?.Position.Name - @Interview?.Position.Customer.Name</label>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">面试时间</label>
+                            <InputDate @bind-Value="interviewWrapper.InterviewTime" @bind-Value:format="yyyy-dd-MM HH:mm" Type="InputDateType.DateTimeLocal" class="form-control" />
+                            <ValidationMessage For="@(() => interviewWrapper.InterviewTime)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">面试轮次</label>
+                            <InputNumber @bind-Value="interviewWrapper.IntRound" class="form-control" min="1" max="5" />
+                            <ValidationMessage For="@(() => interviewWrapper.IntRound)" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">面试地点</label>
+                        <InputText @bind-Value="interviewWrapper.Location" class="form-control" />
+                        <ValidationMessage For="@(() => interviewWrapper.Location)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">面试官</label>
+                        <InputText @bind-Value="interviewWrapper.Interviewer" class="form-control" />
+                        <ValidationMessage For="@(() => interviewWrapper.Interviewer)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">面试反馈</label>
+                        <InputTextArea @bind-Value="interviewWrapper.Feedback" class="form-control" rows="3" />
+                        <ValidationMessage For="@(() => interviewWrapper.Feedback)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">备注</label>
+                        <InputTextArea @bind-Value="interviewWrapper.Remarks" class="form-control" rows="3" />
+                        <ValidationMessage For="@(() => interviewWrapper.Remarks)" />
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop fade show"></div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "编辑面试";
+
+    [Parameter]
+    public Interview Interview { get; set; }
+
+    [Parameter]
+    public EventCallback<Interview> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    public string ErrorMessage { get; set; }
+
+    private InterviewWithIntValue interviewWrapper;
+
+    protected override void OnParametersSet()
+    {
+        interviewWrapper = new InterviewWithIntValue(Interview);
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            // 将 wrapper 中的数据同步回 Interview
+            Interview.InterviewTime = interviewWrapper.InterviewTime;
+            Interview.Round = interviewWrapper.Round;
+            Interview.Location = interviewWrapper.Location;
+            Interview.Interviewer = interviewWrapper.Interviewer;
+            Interview.Feedback = interviewWrapper.Feedback;
+            Interview.Status = interviewWrapper.Status;
+            Interview.Remarks = interviewWrapper.Remarks;
+
+            await OnSave.InvokeAsync(Interview);
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await OnClose.InvokeAsync();
+    }
+} 
