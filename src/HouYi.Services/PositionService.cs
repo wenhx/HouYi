@@ -126,7 +126,7 @@ public class PositionService : IPositionService
                 int recommendationCount = await dbContext.Recommendations
                                                     .CountAsync(r => r.PositionId == id);
                 if (recommendationCount > 0)
-                    throw new InvalidOperationException($"无法删除职位，因为该职位还有 {recommendationCount} 条推荐记录。请先处理这些推荐记录后再删除职位。");
+                    throw new InvalidOperationException($"无法删除职位，因为职位 {position.Name} 还有 {recommendationCount} 条推荐记录。请先处理这些推荐记录后再删除职位。");
 
                 dbContext.Communications.Where(c => c.PositionId == id)
                             .ExecuteUpdate(c => c.SetProperty(c => c.PositionId, c => null));

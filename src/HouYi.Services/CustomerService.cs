@@ -23,6 +23,7 @@ public class CustomerService : ICustomerService
         var totalCount = await query.CountAsync();
         Console.WriteLine("Total Count: " + totalCount);
         var items = await query
+            .OrderByDescending(c => c.UpdatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -35,39 +36,87 @@ public class CustomerService : ICustomerService
         return await GetCustomersCoreAsync(filter: null, pageNumber, pageSize);
     }
 
-    public async Task<PagedResult<Customer>> FindCustomersAsync(string field = "", string term = "", int pageNumber = 1, int pageSize = 10)
+    public async Task<PagedResult<Customer>> FindCustomersAsync(string term = "", int pageNumber = 1, int pageSize = 10)
     {
         return await GetCustomersCoreAsync(filter, pageNumber, pageSize);
 
         IQueryable<Customer> filter(IQueryable<Customer> query)
         {
-
             if (!string.IsNullOrWhiteSpace(term))
             {
                 term = term.Trim();
-
-                switch (field)
-                {
-                    case "Name":
-                        query = query.Where(c => c.Name.Contains(term));
-                        break;
-                    case "ContactPerson":
-                        query = query.Where(c => c.ContactPerson.Contains(term));
-                        break;
-                    case "Phone":
-                        query = query.Where(c => c.Phone.Contains(term));
-                        break;
-                    case "Email":
-                        query = query.Where(c => c.Email.Contains(term));
-                        break;
-                    case "Address":
-                        query = query.Where(c => c.Address.Contains(term));
-                        break;
-                    default:
-                        break;
-                }
+                query = query.Where(c =>
+                    c.Name.Contains(term) ||
+                    c.ContactPerson.Contains(term) ||
+                    c.Phone.Contains(term) ||
+                    c.Email.Contains(term) ||
+                    c.Address.Contains(term)
+                );
             }
             return query;
         }
+    }
+
+    public async Task DeleteCustomerAsync(int id)
+    {
+        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var customer = await _dbContext.Customers
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (customer != null)
+            {
+                // 检查是否有相关的职位
+                int positionCount = await _dbContext.Positions
+                    .CountAsync(p => p.CustomerId == id);
+
+                if (positionCount > 0)
+                    throw new InvalidOperationException($"无法删除该客户，因为客户 {customer.Name} 还有 {positionCount} 个职位。请先处理这些职位后再进行删除。");
+
+                _dbContext.Customers.Remove(customer);
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task UpdateCustomerAsync(Customer customer)
+    {
+        var existingCustomer = await _dbContext.Customers
+            .FirstOrDefaultAsync(c => c.Id == customer.Id);
+
+        if (existingCustomer == null)
+            throw new InvalidOperationException($"找不到ID为 {customer.Id} 的客户。");
+
+        existingCustomer.Name = customer.Name;
+        existingCustomer.ContactPerson = customer.ContactPerson;
+        existingCustomer.Phone = customer.Phone;
+        existingCustomer.Email = customer.Email;
+        existingCustomer.Address = customer.Address;
+        existingCustomer.Description = customer.Description;
+        existingCustomer.UpdatedAt = DateTime.Now;
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<Customer> CreateCustomerAsync(Customer customer)
+    {
+        if (customer == null)
+            throw new ArgumentNullException(nameof(customer));
+        if (customer.Id != 0)
+            throw new ArgumentException("参数的Id属性值必须为0.");
+
+        customer.CreatedAt = DateTime.Now;
+        customer.UpdatedAt = DateTime.Now;
+
+        _dbContext.Customers.Add(customer);
+        await _dbContext.SaveChangesAsync();
+        return customer;
     }
 }
