@@ -85,4 +85,23 @@ public class CustomerService : ICustomerService
             throw;
         }
     }
+
+    public async Task UpdateCustomerAsync(Customer customer)
+    {
+        var existingCustomer = await _dbContext.Customers
+            .FirstOrDefaultAsync(c => c.Id == customer.Id);
+
+        if (existingCustomer == null)
+            throw new InvalidOperationException($"找不到ID为 {customer.Id} 的客户。");
+
+        existingCustomer.Name = customer.Name;
+        existingCustomer.ContactPerson = customer.ContactPerson;
+        existingCustomer.Phone = customer.Phone;
+        existingCustomer.Email = customer.Email;
+        existingCustomer.Address = customer.Address;
+        existingCustomer.Description = customer.Description;
+        existingCustomer.UpdatedAt = DateTime.Now;
+
+        await _dbContext.SaveChangesAsync();
+    }
 }

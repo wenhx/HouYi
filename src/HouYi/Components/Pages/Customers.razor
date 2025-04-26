@@ -84,7 +84,7 @@
                                                 <button type="button" title="查看详情" class="btn btn-sm btn-outline-primary btn-view btn-operation" data-id="@customer.Id" @onclick="() => ShowCustomerDetails(customer)" data-bs-toggle="modal" data-bs-target="#viewModal">
                                                     <i class="bi bi-eye"></i>
                                                 </button>
-                                                <button type="button" title="编辑" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@customer.Id" data-bs-toggle="modal" data-bs-target="#editModal">
+                                                <button type="button" title="编辑" class="btn btn-sm btn-outline-success btn-edit btn-operation" data-id="@customer.Id" @onclick="() => ShowEditModal(customer)">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
                                                 <button type="button" title="删除" class="btn btn-sm btn-outline-danger btn-delete btn-operation" @onclick="() => ShowDeleteModal(customer)">
@@ -211,6 +211,67 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">关闭</button>
+                    <button type="button" class="btn btn-primary" @onclick="SwitchToEditMode">编辑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- 编辑客户模态框 -->
+@if (showEditModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">编辑客户</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (editCustomer != null)
+                    {
+                        <EditForm Model="@editCustomer" OnValidSubmit="HandleEditSubmit">
+                            <DataAnnotationsValidator />
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">客户名称</label>
+                                    <InputText class="form-control" @bind-Value="editCustomer.Name" />
+                                    <ValidationMessage For="@(() => editCustomer.Name)" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">联系人</label>
+                                    <InputText class="form-control" @bind-Value="editCustomer.ContactPerson" />
+                                    <ValidationMessage For="@(() => editCustomer.ContactPerson)" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">联系电话</label>
+                                    <InputText class="form-control" @bind-Value="editCustomer.Phone" />
+                                    <ValidationMessage For="@(() => editCustomer.Phone)" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">邮箱</label>
+                                    <InputText class="form-control" @bind-Value="editCustomer.Email" />
+                                    <ValidationMessage For="@(() => editCustomer.Email)" />
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">地址</label>
+                                    <InputText class="form-control" @bind-Value="editCustomer.Address" />
+                                    <ValidationMessage For="@(() => editCustomer.Address)" />
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">备注</label>
+                                    <InputTextArea class="form-control" @bind-Value="editCustomer.Description" />
+                                    <ValidationMessage For="@(() => editCustomer.Description)" />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">取消</button>
+                                <button type="submit" class="btn btn-primary">保存</button>
+                            </div>
+                        </EditForm>
+                    }
                 </div>
             </div>
         </div>
@@ -230,6 +291,8 @@
     private string? selectedCustomerName;
     private int? customerIdToDelete;
     private Customer? selectedCustomer;
+    private bool showEditModal;
+    private Customer? editCustomer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -339,5 +402,66 @@
         showViewModal = false;
         selectedCustomer = null;
         StateHasChanged();
+    }
+
+    private void ShowEditModal(Customer customer)
+    {
+        editCustomer = new Customer
+        {
+            Id = customer.Id,
+            Name = customer.Name,
+            ContactPerson = customer.ContactPerson,
+            Phone = customer.Phone,
+            Email = customer.Email,
+            Address = customer.Address,
+            Description = customer.Description
+        };
+        showEditModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        editCustomer = null;
+        StateHasChanged();
+    }
+
+    private async Task HandleEditSubmit()
+    {
+        if (editCustomer != null)
+        {
+            try
+            {
+                await CustomerService.UpdateCustomerAsync(editCustomer);
+                await LoadCustomersAsync();
+                CloseEditModal();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"更新客户信息时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+    }
+
+    private void SwitchToEditMode()
+    {
+        if (selectedCustomer != null)
+        {
+            editCustomer = new Customer
+            {
+                Id = selectedCustomer.Id,
+                Name = selectedCustomer.Name,
+                ContactPerson = selectedCustomer.ContactPerson,
+                Phone = selectedCustomer.Phone,
+                Email = selectedCustomer.Email,
+                Address = selectedCustomer.Address,
+                Description = selectedCustomer.Description
+            };
+            showViewModal = false;
+            showEditModal = true;
+            StateHasChanged();
+        }
     }
 }
