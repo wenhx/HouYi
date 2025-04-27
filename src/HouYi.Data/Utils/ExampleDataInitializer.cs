@@ -113,6 +113,7 @@ public partial class ExampleDataInitializer
         logger.LogInformation("Position data seeded successfully. [{0}]", positions.Count);
     }
 
+    #region User
     private static async Task SeedUserData(HouYiDbContext dbContext, UserManager<HouYiUser> userManager, RoleManager<IdentityRole<int>> roleManager)
     {
         string password = "1@34abcD";
@@ -143,7 +144,9 @@ public partial class ExampleDataInitializer
             }
         }
     }
+    #endregion
 
+    #region Customer
     private static void SeedCustomersData(HouYiDbContext dbContext)
     {
         if (dbContext.Customers.Any()) return;
@@ -355,6 +358,7 @@ public partial class ExampleDataInitializer
         dbContext.Customers.AddRange(customers);
         dbContext.SaveChanges();
     }
+    #endregion
 
     #region Resume
     public static void SeedResumeData(HouYiDbContext db, ILogger<ExampleDataInitializer> logger)
@@ -678,6 +682,7 @@ public partial class ExampleDataInitializer
         };
     }
     #endregion
+    #region Interview
     private static void SeedInterviewsData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
     {
         if (dbContext.Interviews.Any()) return;
@@ -779,7 +784,7 @@ public partial class ExampleDataInitializer
         dbContext.SaveChanges();
         logger.LogInformation("Interview data seeded successfully. [{0}]", interviews.Count);
     }
-
+    #endregion
     #region Communications
     private static void SeedCommunicationData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
     {
