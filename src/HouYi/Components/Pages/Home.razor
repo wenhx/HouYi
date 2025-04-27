@@ -63,7 +63,7 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "user" ? "active" : "") text-white" href="/account/manage/" target="_blank">
+                    <a class="nav-link @(currentPage == "user" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Users), "用户管理")'>
                         <i class="bi bi-people me-2"></i> 用户管理
                     </a>
                 </li>
@@ -78,13 +78,13 @@
                 {
                     <li class="nav-item" role="presentation">
                         <button class="nav-link @(tab.Name == activeTabId ? "active" : "")"
-                                id="@tab.Name-tab"
-                                @onclick="() => ActivateTab(tab.Name)"
-                                type="button" role="tab">
+                        id="@tab.Name-tab"
+                        @onclick="() => ActivateTab(tab.Name)"
+                        type="button" role="tab">
                             @tab.Title
                             <span class="close-tab @(openTabs.Count > 1 ? "" : "d-none")"
-                                  @onclick="() => CloseTab(tab.Name)"
-                                  @onclick:stopPropagation="true">✕</span>
+                            @onclick="() => CloseTab(tab.Name)"
+                            @onclick:stopPropagation="true">✕</span>
                         </button>
                     </li>
                 }
@@ -95,7 +95,7 @@
                 @foreach (var tab in openTabs)
                 {
                     <div class="tab-pane fade @(tab.Name == activeTabId ? "show active" : "")"
-                         id="@tab.Name-content" role="tabpanel">
+                    id="@tab.Name-content" role="tabpanel">
                         @switch (tab.Name)
                         {
                             case "dashboard":
@@ -119,6 +119,9 @@
                                 break;
                             case nameof(Communications):
                                 <Communications />
+                                break;
+                            case nameof(Users):
+                                <Users />
                                 break;
                             default:
                                 <h1 class="mb-4">@tab.Title</h1>

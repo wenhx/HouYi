@@ -1,0 +1,491 @@
+﻿@attribute [Authorize]
+@inject IUserService UserService
+
+<div class="container-fluid">
+    <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>用户管理</h1>
+        </div>
+
+        <!-- 搜索 -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <form class="search-form" @onsubmit="SearchUsers" @onsubmit:preventDefault>
+                    <div class="d-flex">
+                        <input type="search" class="form-control" placeholder="搜索用户名、邮箱或电话..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                        <button class="btn btn-primary btn-search" type="submit">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
+                        @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
+                        {
+                            <button class="btn btn-outline-secondary ms-2" @onclick:preventDefault @onclick="ClearSearch" style="min-width: 100px;">
+                                <i class="bi bi-x-circle me-1"></i>清除
+                            </button>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 用户列表 -->
+        <div class="card">
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @errorMessage
+                        <button type="button" class="btn-close" @onclick="ClearErrorMessage"></button>
+                    </div>
+                }
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>角色</th>
+                                <th>邮箱</th>
+                                <th>邮箱确认</th>
+                                <th>电话</th>
+                                <th>电话确认</th>
+                                <th>登录失败次数</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (pagedUsers == null)
+                            {
+                                <tr>
+                                    <td colspan="9" class="text-center">加载中...</td>
+                                </tr>
+                            }
+                            else if (!pagedUsers.Items.Any())
+                            {
+                                <tr>
+                                    <td colspan="9" class="text-center">没有用户数据</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var user in pagedUsers.Items)
+                                {
+                                    <tr>
+                                        <td>@user.UserName</td>
+                                        <td>@(userRoles.ContainsKey(user.Id) ? userRoles[user.Id] : "加载中...")</td>
+                                        <td>@user.Email</td>
+                                        <td>
+                                            @if (user.EmailConfirmed)
+                                            {
+                                                <span class="badge bg-success">已确认</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">未确认</span>
+                                            }
+                                        </td>
+                                        <td>@user.PhoneNumber</td>
+                                        <td>
+                                            @if (user.PhoneNumberConfirmed)
+                                            {
+                                                <span class="badge bg-success">已确认</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">未确认</span>
+                                            }
+                                        </td>
+                                        <td>@user.AccessFailedCount</td>
+                                        <td>@user.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" title="查看详情" class="btn btn-sm btn-outline-primary btn-view btn-operation" @onclick="() => ShowUserDetails(user)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button type="button" title="编辑" class="btn btn-sm btn-outline-success btn-edit btn-operation" @onclick="() => ShowEditModal(user)">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button type="button" title="删除" class="btn btn-sm btn-outline-danger btn-delete btn-operation" @onclick="() => ShowDeleteModal(user)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">每页显示：</span>
+                        <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
+                            <option value="10" selected="@(pageSize == 10)">10</option>
+                            <option value="20" selected="@(pageSize == 20)">20</option>
+                            <option value="50" selected="@(pageSize == 50)">50</option>
+                        </select>
+                        @if (pagedUsers != null)
+                        {
+                            <span class="pagination-info">
+                                显示 @((pagedUsers.PageNumber - 1) * pagedUsers.PageSize + 1)-@(Math.Min(pagedUsers.PageNumber * pagedUsers.PageSize, pagedUsers.TotalCount)) 条，
+                                共 @pagedUsers.TotalCount 条记录
+                            </span>
+                        }
+                    </div>
+                    @if (pagedUsers != null && pagedUsers.TotalPages > 0)
+                    {
+                        <ul class="pagination mb-0">
+                            <li class="page-item @(pagedUsers.PageNumber == 1 ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                            </li>
+                            <li class="page-item @(!pagedUsers.HasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedUsers.PageNumber - 1)">上一页</a>
+                            </li>
+
+                            @{
+                                int startPage = Math.Max(1, pagedUsers.PageNumber - 2);
+                                int endPage = Math.Min(pagedUsers.TotalPages, startPage + 4);
+
+                                if (endPage - startPage < 4 && startPage > 1)
+                                {
+                                    startPage = Math.Max(1, endPage - 4);
+                                }
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                int pageNumber = i;
+                                <li class="page-item @(pageNumber == pagedUsers.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(!pagedUsers.HasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedUsers.PageNumber + 1)">下一页</a>
+                            </li>
+                            <li class="page-item @(pagedUsers.PageNumber == pagedUsers.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedUsers.TotalPages)">末页</a>
+                            </li>
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户详情模态框 -->
+@if (showViewModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewModalLabel">用户详情</h5>
+                    <button type="button" class="btn-close" @onclick="CloseViewModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (selectedUser != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">用户名</label>
+                                <p>@selectedUser.UserName</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">角色</label>
+                                <p>@(userRoles.ContainsKey(selectedUser.Id) ? userRoles[selectedUser.Id] : "加载中...")</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">邮箱</label>
+                                <p>@selectedUser.Email</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">邮箱确认</label>
+                                <p>
+                                    @if (selectedUser.EmailConfirmed)
+                                    {
+                                        <span class="badge bg-success">已确认</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">未确认</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">电话</label>
+                                <p>@selectedUser.PhoneNumber</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">电话确认</label>
+                                <p>
+                                    @if (selectedUser.PhoneNumberConfirmed)
+                                    {
+                                        <span class="badge bg-success">已确认</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">未确认</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">ID</label>
+                                <p>@selectedUser.Id</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">创建时间</label>
+                                <p>@selectedUser.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">登录失败次数</label>
+                                <p>@selectedUser.AccessFailedCount</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">更新时间</label>
+                                <p>@selectedUser.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">锁定状态</label>
+                                <p>
+                                    @if (selectedUser.LockoutEnabled)
+                                    {
+                                        if (selectedUser.LockoutEnd.HasValue && selectedUser.LockoutEnd.Value > DateTimeOffset.Now)
+                                        {
+                                            <span class="badge bg-danger">已锁定 (到 @selectedUser.LockoutEnd.Value.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss"))</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">未锁定</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">未启用锁定</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">锁定时间</label>
+                                <p>@selectedUser.LockoutEnd?.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">关闭</button>
+                    <button type="button" class="btn btn-primary" @onclick="SwitchToEditMode">编辑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<DeleteConfirmationModal ShowModal="@showDeleteModal" ItemName="@selectedUserName" OnConfirm="@HandleDeleteConfirmation" />
+
+<!-- 编辑用户模态框 -->
+<UserEditForm ModalId="editModal" ModalTitle="@($"编辑用户 - {editUser?.UserName ?? "未知"}")" User="@editUser"
+OnCancel="CloseEditModal" OnValidSubmit="UpdateUser" ShowModal="@(editUser != null)" />
+
+@code {
+    private PagedResult<HouYiUser>? pagedUsers;
+    private string? errorMessage;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private Dictionary<int, string> userRoles = new Dictionary<int, string>();
+    private bool showViewModal;
+    private HouYiUser? selectedUser;
+    private bool showDeleteModal;
+    private string? selectedUserName;
+    private int? userIdToDelete;
+    private HouYiUser? editUser;
+    private string searchTerm = "";
+    private bool isSearchMode = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        try
+        {
+            if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
+            {
+                Console.WriteLine($"开始搜索：{searchTerm}。");
+                pagedUsers = await UserService.FindUsersAsync(searchTerm, currentPage, pageSize);
+            }
+            else
+            {
+                Console.WriteLine($"开始加载列表数据。");
+                pagedUsers = await UserService.GetUsersAsync(currentPage, pageSize);
+            }
+            await LoadUserRolesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"加载用户数据时发生错误: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task LoadUserRolesAsync()
+    {
+        if (pagedUsers?.Items != null)
+        {
+            foreach (var user in pagedUsers.Items)
+            {
+                var roles = await UserService.GetUserRolesAsync(user);
+                if (roles != null && roles.Any())
+                {
+                    userRoles[user.Id] = string.Join(", ", roles);
+                }
+                else
+                {
+                    userRoles[user.Id] = string.Empty;
+                }
+            }
+        }
+    }
+
+    private async Task NavigateToPage(int page)
+    {
+        currentPage = page;
+        await LoadUsersAsync();
+    }
+
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newPageSize))
+        {
+            pageSize = newPageSize;
+            currentPage = 1;
+            await LoadUsersAsync();
+        }
+    }
+
+    private void ClearErrorMessage()
+    {
+        errorMessage = null;
+    }
+
+    private void ShowUserDetails(HouYiUser user)
+    {
+        selectedUser = user;
+        showViewModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseViewModal()
+    {
+        showViewModal = false;
+        selectedUser = null;
+        StateHasChanged();
+    }
+
+    private void ShowDeleteModal(HouYiUser user)
+    {
+        userIdToDelete = user.Id;
+        selectedUserName = user.UserName;
+        showDeleteModal = true;
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        if (confirmed && userIdToDelete.HasValue)
+        {
+            try
+            {
+                await UserService.DeleteUserAsync(userIdToDelete.Value);
+                await LoadUsersAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"删除用户时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+        showDeleteModal = false;
+        userIdToDelete = null;
+        selectedUserName = null;
+    }
+
+    private void ShowEditModal(HouYiUser user)
+    {
+        editUser = new HouYiUser
+        {
+            Id = user.Id,
+            UserName = user.UserName,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            LockoutEnabled = user.LockoutEnabled
+        };
+        StateHasChanged();
+    }
+
+    private void CloseEditModal()
+    {
+        editUser = null;
+        StateHasChanged();
+    }
+
+    private async Task UpdateUser(string userRole)
+    {
+        if (editUser != null)
+        {
+            try
+            {
+                await UserService.UpdateUserAsync(editUser, userRole);
+                await LoadUsersAsync();
+                CloseEditModal();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"更新用户信息时发生错误: {ex.Message}";
+                Console.WriteLine(errorMessage);
+            }
+        }
+    }
+
+    private void SwitchToEditMode()
+    {
+        if (selectedUser != null)
+        {
+            editUser = new HouYiUser
+            {
+                Id = selectedUser.Id,
+                UserName = selectedUser.UserName,
+                Email = selectedUser.Email,
+                PhoneNumber = selectedUser.PhoneNumber,
+                LockoutEnabled = selectedUser.LockoutEnabled
+            };
+            showViewModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SearchUsers()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await ClearSearch();
+            return;
+        }
+
+        isSearchMode = true;
+        currentPage = 1; // 搜索时重置到第一页
+        await LoadUsersAsync();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = "";
+        isSearchMode = false;
+        currentPage = 1;
+        await LoadUsersAsync();
+    }
+}
