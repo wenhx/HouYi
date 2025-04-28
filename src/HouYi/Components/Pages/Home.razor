@@ -23,7 +23,7 @@
             </div>
             <ul class="nav flex-column">
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "dashboard" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("dashboard", "数据看板")'>
+                    <a class="nav-link @(currentPage == "dashboard" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Dashboard), "数据看板")'>
                         <i class="bi bi-speedometer2 me-2"></i> 数据看板
                     </a>
                 </li>
@@ -98,9 +98,8 @@
                     id="@tab.Name-content" role="tabpanel">
                         @switch (tab.Name)
                         {
-                            case "dashboard":
-                                <h1 class="mb-4">数据看板</h1>
-                                <p>数据看板内容...</p>
+                            case nameof(Dashboard):
+                                <Dashboard />
                                 break;
                             case nameof(Resumes):
                                 <Resumes />

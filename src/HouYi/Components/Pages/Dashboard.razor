@@ -1,0 +1,90 @@
+﻿@using HouYi.Services
+@using HouYi.Models
+@inject IDashboardService DashboardService
+
+<div class="container-fluid p-0">
+    <div class="tab-pane fade show active" id="dashboard-content" role="tabpanel" aria-labelledby="dashboard-tab">
+        <h1 class="mb-4">数据看板</h1>
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月简历</h6>
+                                <h2 class="mb-0">@_stats?.TotalResumes</h2>
+                            </div>
+                            <i class="bi bi-file-earmark-person fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月沟通</h6>
+                                <h2 class="mb-0">@_stats?.TotalCommunications</h2>
+                            </div>
+                            <i class="bi bi-briefcase fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-danger">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月推荐</h6>
+                                <h2 class="mb-0">@_stats?.TotalRecommendations</h2>
+                            </div>
+                            <i class="bi bi-person-plus fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月面试</h6>
+                                <h2 class="mb-0">@_stats?.TotalInterviews</h2>
+                            </div>
+                            <i class="bi bi-calendar-event fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月成单</h6>
+                                <h2 class="mb-0">@_stats?.TotalSuccessDeals</h2>
+                            </div>
+                            <i class="bi bi-check-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DashboardStats? _stats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var now = DateTime.Now;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+        _stats = await DashboardService.GetDashboardStatsAsync(startOfMonth, endOfMonth);
+    }
+}
