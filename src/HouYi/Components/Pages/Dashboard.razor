@@ -1,0 +1,215 @@
+﻿@using HouYi.Services
+@using HouYi.Models
+@inject IDashboardService DashboardService
+
+<div class="container-fluid p-0">
+    <div class="tab-pane fade show active" id="dashboard-content" role="tabpanel" aria-labelledby="dashboard-tab">
+        <h1 class="mb-4">数据看板</h1>
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月简历</h6>
+                                <h2 class="mb-0">@_stats?.TotalResumes</h2>
+                            </div>
+                            <i class="bi bi-file-earmark-person fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月沟通</h6>
+                                <h2 class="mb-0">@_stats?.TotalCommunications</h2>
+                            </div>
+                            <i class="bi bi-briefcase fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-danger">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月推荐</h6>
+                                <h2 class="mb-0">@_stats?.TotalRecommendations</h2>
+                            </div>
+                            <i class="bi bi-person-plus fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月面试</h6>
+                                <h2 class="mb-0">@_stats?.TotalInterviews</h2>
+                            </div>
+                            <i class="bi bi-calendar-event fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto col-lg mb-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">本月成单</h6>
+                                <h2 class="mb-0">@_stats?.TotalSuccessDeals</h2>
+                            </div>
+                            <i class="bi bi-check-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近活动 -->
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        面试安排
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var interview in _recentActivities?.RecentInterviews ?? new List<RecentInterview>())
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">@interview.CandidateName - @interview.Position</h6>
+                                        <small class="text-muted">@interview.InterviewTime.ToString("HH:mm") - @interview.Location</small>
+                                    </div>
+                                    <span class="badge @DisplayHelper.GetInterviewStatusClass(interview.Status) rounded-pill">
+                                        @DisplayHelper.GetInterviewStatusText(interview.Status)
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        最新推荐
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var recommendation in _recentActivities?.RecentRecommendations ?? new List<RecentRecommendation>())
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">@recommendation.CandidateName</h6>
+                                        <small class="text-muted">推荐时间: @recommendation.RecommendationTime.ToString("MM-dd HH:mm")</small>
+                                    </div>
+                                    <span class="badge @GetRecommendationStatusBadgeClass(recommendation.Status) rounded-pill">
+                                        @GetRecommendationStatusText(recommendation.Status)
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        最近沟通
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var communication in _recentActivities?.RecentCommunications ?? new List<RecentCommunication>())
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">@communication.CandidateName</h6>
+                                        <small class="text-muted">沟通时间: @communication.CommunicationTime.ToString("MM-dd HH:mm")</small>
+                                    </div>
+                                    <span class="badge @DisplayHelper.GetCommunicatedResultBadgeClass(communication.Result) rounded-pill">
+                                        @DisplayHelper.GetCommunicatedResultText(communication.Result)
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        最新简历
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var resume in _recentActivities?.RecentResumes ?? new List<RecentResume>())
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">@resume.CandidateName</h6>
+                                        <small class="text-muted">录入时间: @resume.SubmitTime.ToString("MM-dd HH:mm")</small>
+                                    </div>
+                                    <span class="badge @GetEmploymentStatusBadgeClass(resume.Status) rounded-pill">
+                                        @DisplayHelper.GetEmploymentStatusText(resume.Status)
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DashboardStats? _stats;
+    private DashboardRecentActivity? _recentActivities;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var now = DateTime.Now;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+        _stats = await DashboardService.GetDashboardStatsAsync(startOfMonth, endOfMonth);
+        _recentActivities = await DashboardService.GetRecentActivitiesAsync();
+    }
+
+    private string GetRecommendationStatusBadgeClass(RecommendationStatus status) => status switch
+    {
+        RecommendationStatus.Recommended => "bg-info",
+        RecommendationStatus.Pending => "bg-warning",
+        RecommendationStatus.Accepted => "bg-success",
+        RecommendationStatus.Rejected => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private string GetRecommendationStatusText(RecommendationStatus status) => status switch
+    {
+        RecommendationStatus.Recommended => "新推荐",
+        RecommendationStatus.Pending => "待处理",
+        RecommendationStatus.Accepted => "已接受",
+        RecommendationStatus.Rejected => "已拒绝",
+        _ => "未知"
+    };
+
+    private string GetEmploymentStatusBadgeClass(EmploymentStatus status) => status switch
+    {
+        EmploymentStatus.Unknown => "bg-secondary",
+        EmploymentStatus.Unemployed => "bg-primary",
+        EmploymentStatus.EmployedAndNotConsideringOpportunities => "bg-danger",
+        EmploymentStatus.EmployedAndOpenToOpportunities => "bg-success",
+        _ => "bg-secondary"
+    };
+}

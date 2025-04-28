@@ -49,8 +49,8 @@
                                     <tr>
                                         <th style="padding-bottom: 0.5rem;">面试状态：</th>
                                         <td style="padding-bottom: 0.5rem;">
-                                            <span class="status-badge @GetStatusClass(Interview.Status)">
-                                                @GetStatusString(Interview.Status)
+                                            <span class="status-badge @DisplayHelper.GetInterviewStatusClass(Interview.Status)">
+                                                @DisplayHelper.GetInterviewStatusText(Interview.Status)
                                             </span>
                                         </td>
                                     </tr>
@@ -118,32 +118,4 @@
         ShowModal = false;
         await OnEditButtonClick.InvokeAsync(Interview);
     }
-
-    private string GetStatusString(InterviewStatus status)
-    {
-        return status switch
-        {
-            InterviewStatus.Scheduled => "已安排",
-            InterviewStatus.Completed => "已完成",
-            InterviewStatus.Postponed => "已延期",
-            InterviewStatus.Passed => "已通过",
-            InterviewStatus.Failed => "未通过",
-            InterviewStatus.Cancelled => "已取消",
-            _ => "未知"
-        };
-    }
-
-    private string GetStatusClass(InterviewStatus status)
-    {
-        return status switch
-        {
-            InterviewStatus.Scheduled => "status-scheduled",
-            InterviewStatus.Completed => "status-completed",
-            InterviewStatus.Postponed => "status-postponed",
-            InterviewStatus.Passed => "status-passed",
-            InterviewStatus.Failed => "status-failed",
-            InterviewStatus.Cancelled => "status-cancelled",
-            _ => ""
-        };
-    }
-} 
+}

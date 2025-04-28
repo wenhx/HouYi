@@ -55,6 +55,7 @@ public class Program
         builder.Services.AddScoped<ICommunicationService, CommunicationService>();
         builder.Services.AddScoped<IPlaceService, PlaceService>();
         builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IDashboardService, DashboardService>();
 
         var app = builder.Build();
 

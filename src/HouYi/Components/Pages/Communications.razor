@@ -135,8 +135,8 @@
                                         <td>@GetMethodText(communication.Method)</td>
                                         <td>@GetReasonText(communication.Reason)</td>
                                         <td>
-                                            <span class="badge @GetResultBadgeClass(communication.Result)">
-                                                @GetResultText(communication.Result)
+                                            <span class="badge @DisplayHelper.GetCommunicatedResultBadgeClass(communication.Result)">
+                                                @DisplayHelper.GetCommunicatedResultText(communication.Result)
                                             </span>
                                         </td>
                                         <td>
@@ -253,8 +253,8 @@
                                 <p><strong>沟通原因：</strong>@GetReasonText(selectedCommunication.Reason)</p>
                                 <p>
                                     <strong>沟通结果：</strong>
-                                    <span class="badge @GetResultBadgeClass(selectedCommunication.Result)">
-                                        @GetResultText(selectedCommunication.Result)
+                                    <span class="badge @DisplayHelper.GetCommunicatedResultBadgeClass(selectedCommunication.Result)">
+                                        @DisplayHelper.GetCommunicatedResultText(selectedCommunication.Result)
                                     </span>
                                 </p>
                             </div>
@@ -500,32 +500,6 @@
             ContactReason.Opportunity => "机会推荐",
             ContactReason.Relationship => "关系维护",
             _ => "其他"
-        };
-    }
-
-    private string GetResultText(CommunicatedResult result)
-    {
-        return result switch
-        {
-            CommunicatedResult.NoResponse => "未响应",
-            CommunicatedResult.Interested => "有意向",
-            CommunicatedResult.NotInterested => "无意向",
-            CommunicatedResult.Pending => "待定",
-            CommunicatedResult.Further => "进一步沟通",
-            _ => "未知"
-        };
-    }
-
-    private string GetResultBadgeClass(CommunicatedResult result)
-    {
-        return result switch
-        {
-            CommunicatedResult.Interested => "bg-success",
-            CommunicatedResult.NotInterested => "bg-danger",
-            CommunicatedResult.Pending => "bg-warning",
-            CommunicatedResult.Further => "bg-info",
-            CommunicatedResult.NoResponse => "bg-secondary",
-            _ => "bg-secondary"
         };
     }
 
