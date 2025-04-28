@@ -145,9 +145,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // 初始化默认标签页
-        openTabs.Add(new TabItem { Name = "dashboard", Title = "数据看板" });
-
         // 获取当前用户
         var authState = await AuthenticationStateTask;
         var user = authState.User;
@@ -160,6 +157,8 @@
         {
             currentUserName = "未登录用户";
         }
+
+        ChangePage(nameof(Dashboard), "数据看板");
     }
 
     public void ChangePage(string pageName, string pageTitle, object eneityId = null)

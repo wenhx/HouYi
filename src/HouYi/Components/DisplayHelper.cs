@@ -40,7 +40,7 @@ public static class DisplayHelper
         };
     }
 
-    internal static string GetResumeStatusText(EmploymentStatus status)
+    internal static string GetEmploymentStatusText(EmploymentStatus status)
     {
         return status switch
         {
@@ -61,6 +61,60 @@ public static class DisplayHelper
             ResumeSource.Candidate => "主动投递",
             ResumeSource.Partner => "合作伙伴",
             _ => "其他"
+        };
+    }
+
+    internal static string GetInterviewStatusText(InterviewStatus status)
+    {
+        return status switch
+        {
+            InterviewStatus.Scheduled => "已安排",
+            InterviewStatus.Completed => "已完成",
+            InterviewStatus.Postponed => "已延期",
+            InterviewStatus.Passed => "已通过",
+            InterviewStatus.Failed => "未通过",
+            InterviewStatus.Cancelled => "已取消",
+            _ => "未知"
+        };
+    }
+
+    internal static string GetInterviewStatusClass(InterviewStatus status)
+    {
+        return status switch
+        {
+            InterviewStatus.Scheduled => "status-scheduled",
+            InterviewStatus.Completed => "status-completed",
+            InterviewStatus.Postponed => "status-postponed",
+            InterviewStatus.Passed => "status-passed",
+            InterviewStatus.Failed => "status-failed",
+            InterviewStatus.Cancelled => "status-cancelled",
+            _ => ""
+        };
+    }
+
+    internal static string GetCommunicatedResultText(CommunicatedResult result)
+    {
+        return result switch
+        {
+            CommunicatedResult.NoResponse => "未响应",
+            CommunicatedResult.Interested => "有意向",
+            CommunicatedResult.NotInterested => "无意向",
+            CommunicatedResult.Pending => "待定",
+            CommunicatedResult.Further => "进一步沟通",
+            _ => "未知"
+        };
+    }
+
+    internal static string GetCommunicatedResultBadgeClass(CommunicatedResult result)
+    {
+        return result switch
+        {
+            CommunicatedResult.Interested => "bg-success",
+            CommunicatedResult.NotInterested => "bg-danger",
+            CommunicatedResult.Pending => "bg-warning",
+            CommunicatedResult.Further => "bg-info",
+            CommunicatedResult.NoResponse => "bg-secondary",
+            _ => "bg-secondary"
         };
     }
 }
