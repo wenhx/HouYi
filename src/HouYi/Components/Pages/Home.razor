@@ -23,47 +23,47 @@
             </div>
             <ul class="nav flex-column">
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "dashboard" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Dashboard), "数据看板")'>
+                    <a class="nav-link @(currentPage == nameof(Dashboard) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Dashboard), "数据看板")'>
                         <i class="bi bi-speedometer2 me-2"></i> 数据看板
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "resume" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Resumes), "人才库")'>
+                    <a class="nav-link @(currentPage == nameof(Resumes) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Resumes), "人才库")'>
                         <i class="bi bi-file-earmark-person me-2"></i> 人才库
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "position" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Positions), "职位管理")'>
-                        <i class="bi bi-briefcase me-2"></i> 职位管理
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "interview" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Interviews), "面试记录")'>
-                        <i class="bi bi-calendar-event me-2"></i> 面试记录
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "statistics" ? "active" : "") text-white" href="#" @onclick='() => ChangePage("statistics", "统计分析")'>
-                        <i class="bi bi-graph-up me-2"></i> 统计分析
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "recommendation" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Recommendations), "人才推荐")'>
-                        <i class="bi bi-person-plus me-2"></i> 人才推荐
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "communication" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Communications), "沟通管理")'>
+                    <a class="nav-link @(currentPage == nameof(Communications) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Communications), "沟通管理")'>
                         <i class="bi bi-chat-dots me-2"></i> 沟通管理
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "customers" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Customers), "客户管理")'>
+                    <a class="nav-link @(currentPage == nameof(Recommendations) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Recommendations), "人才推荐")'>
+                        <i class="bi bi-person-plus me-2"></i> 人才推荐
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == nameof(Interviews) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Interviews), "面试记录")'>
+                        <i class="bi bi-calendar-event me-2"></i> 面试记录
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == nameof(Position) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Positions), "职位管理")'>
+                        <i class="bi bi-briefcase me-2"></i> 职位管理
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == nameof(Statistics) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Statistics), "统计分析")'>
+                        <i class="bi bi-graph-up me-2"></i> 统计分析
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(currentPage == nameof(Customers) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Customers), "客户管理")'>
                         <i class="bi bi-building me-2"></i> 客户管理
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == "user" ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Users), "用户管理")'>
+                    <a class="nav-link @(currentPage == nameof(Users) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Users), "用户管理")'>
                         <i class="bi bi-people me-2"></i> 用户管理
                     </a>
                 </li>
@@ -104,9 +104,6 @@
                             case nameof(Resumes):
                                 <Resumes />
                                 break;
-                            case nameof(Customers):
-                                <Customers />
-                                break;
                             case nameof(Positions):
                                 <Positions OnViewRecommendation="OnViewRecommendation" />
                                 break;
@@ -118,6 +115,12 @@
                                 break;
                             case nameof(Communications):
                                 <Communications />
+                                break;
+                            case nameof(Statistics):
+                                <Statistics />
+                                break;
+                            case nameof(Customers):
+                                <Customers />
                                 break;
                             case nameof(Users):
                                 <Users />

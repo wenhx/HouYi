@@ -1,0 +1,416 @@
+﻿@page "/statistics"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject IStatisticsService StatisticsService
+@inject UserManager<HouYiUser> UserManager
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- 主内容区 -->
+        <div class="col p-4">
+            <h1 class="mb-4">统计分析</h1>
+
+            <!-- 筛选条件卡片 -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">查询条件</h5>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="@_query" OnValidSubmit="HandleSubmit">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="startDate" class="form-label">开始日期</label>
+                                <InputDate @bind-Value="_query.StartDate" class="form-control" id="startDate" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label for="endDate" class="form-label">结束日期</label>
+                                <InputDate @bind-Value="_query.EndDate" class="form-control" id="endDate" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label for="groupBy" class="form-label">统计维度</label>
+                                <InputSelect @bind-Value="_query.GroupBy" class="form-select" id="groupBy">
+                                    <option value="day">按日</option>
+                                    <option value="week">按周</option>
+                                    <option value="month">按月</option>
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="consultant" class="form-label">顾问</label>
+                                <InputSelect @bind-Value="_query.ConsultantId" class="form-select" id="consultant">
+                                    <option value="all">全部顾问</option>
+                                    @if (_consultants != null)
+                                    {
+                                        @foreach (var consultant in _consultants)
+                                        {
+                                            <option value="@consultant.Id">@consultant.UserName</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-12 text-end">
+                                <button type="button" class="btn btn-outline-secondary me-2" @onclick="HandleReset">重置</button>
+                                <button type="submit" class="btn btn-primary">查询</button>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+
+            <!-- 快捷时间范围选择 -->
+            <div class="mb-4">
+                <div class="btn-group" role="group" aria-label="时间范围选择">
+                    @foreach (var range in _timeRanges)
+                    {
+                        <button type="button"
+                                class="btn @(_selectedRange == range.Key ? "btn-primary" : "btn-outline-primary")"
+                                @onclick="() => HandleTimeRange(range.Key)">
+                            @range.Value
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @if (_isLoading)
+            {
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- 统计摘要卡片 -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">新增简历</h6>
+                                        <h3 class="mb-0">@_summary.TotalResumeCount</h3>
+                                    </div>
+                                    <i class="bi bi-file-earmark-person fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">新增职位</h6>
+                                        <h3 class="mb-0">@_summary.TotalPositionCount</h3>
+                                    </div>
+                                    <i class="bi bi-briefcase fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-secondary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">沟通</h6>
+                                        <h3 class="mb-0">@_summary.TotalCommunicationCount</h3>
+                                    </div>
+                                    <i class="bi bi-chat-dots fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">成单总数</h6>
+                                        <h3 class="mb-0">@_summary.TotalDealCount</h3>
+                                    </div>
+                                    <i class="bi bi-check-circle fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">推荐</h6>
+                                        <h3 class="mb-0">@_summary.TotalRecommendationCount</h3>
+                                    </div>
+                                    <i class="bi bi-person-plus fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">推荐接受率</h6>
+                                        <h3 class="mb-0">@_summary.RecommendationAcceptRate.ToString("F2")%</h3>
+                                    </div>
+                                    <i class="bi bi-graph-up-arrow fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">面试总数</h6>
+                                        <h3 class="mb-0">@_summary.TotalInterviewCount</h3>
+                                    </div>
+                                    <i class="bi bi-calendar-event fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">面试通过率</h6>
+                                        <h3 class="mb-0">@_summary.InterviewPassRate.ToString("F2")%</h3>
+                                    </div>
+                                    <i class="bi bi-bar-chart-line fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 表格数据区域 -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">详细数据</h5>
+                        @* <div>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="ExportToExcel">
+                                <i class="bi bi-file-earmark-excel me-1"></i>导出Excel
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger ms-2" @onclick="ExportToPdf">
+                                <i class="bi bi-file-earmark-pdf me-1"></i>导出PDF
+                            </button>
+                        </div> *@
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <colgroup>
+                                    <col style="width: 12%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                    <col style="width: 8%">
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>日期</th>
+                                        <th>新增简历</th>
+                                        <th>新增职位</th>
+                                        <th>沟通</th>
+                                        <th>推荐</th>
+                                        <th>成单</th>
+                                        <th>面试</th>
+                                        <th>面试通过</th>
+                                        <th>面试未通过</th>
+                                        <th>面试取消</th>
+                                        <th>通过率</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var stat in _statistics)
+                                    {
+                                        <tr>
+                                            <td>@stat.Date.ToString("yyyy-MM-dd")</td>
+                                            <td>@stat.ResumeCount</td>
+                                            <td>@stat.PositionCount</td>
+                                            <td>@stat.CommunicationCount</td>
+                                            <td>@stat.RecommendationCount</td>
+                                            <td>@stat.DealCount</td>
+                                            <td>@stat.InterviewCount</td>
+                                            <td>@stat.PassCount</td>
+                                            <td>@stat.FailCount</td>
+                                            <td>@stat.CancelCount</td>
+                                            <td>@stat.PassRate.ToString("F2")%</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-dark fw-bold">
+                                        <td>合计</td>
+                                        <td>@_summary.TotalResumeCount</td>
+                                        <td>@_summary.TotalPositionCount</td>
+                                        <td>@_summary.TotalCommunicationCount</td>
+                                        <td>@_summary.TotalRecommendationCount</td>
+                                        <td>@_summary.TotalDealCount</td>
+                                        <td>@_summary.TotalInterviewCount</td>
+                                        <td>@_summary.TotalPassCount</td>
+                                        <td>@_summary.TotalFailCount</td>
+                                        <td>@_summary.TotalCancelCount</td>
+                                        <td>@_summary.InterviewPassRate.ToString("F2")%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private StatisticsQuery _query = new();
+    private IReadOnlyCollection<Models.Statistics> _statistics = Array.Empty<Models.Statistics>();
+    private StatisticsSummary _summary = new();
+    private bool _isLoading;
+    private string _selectedRange = "thisMonth";
+    private IReadOnlyList<HouYiUser>? _consultants;
+
+    private readonly Dictionary<string, string> _timeRanges = new()
+    {
+        { "today", "今日" },
+        { "yesterday", "昨日" },
+        { "thisWeek", "本周" },
+        { "lastWeek", "上周" },
+        { "thisMonth", "本月" },
+        { "lastMonth", "上月" },
+        { "last3Months", "近3个月" },
+        { "thisYear", "今年" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _query.StartDate = DateTime.Today.AddMonths(-1);
+        _query.EndDate = DateTime.Today;
+        await LoadConsultantsAsync();
+        await LoadDataAsync();
+    }
+
+    private async Task LoadConsultantsAsync()
+    {
+        try
+        {
+            _consultants = await UserManager.Users.AsNoTracking().OrderBy(u => u.UserName).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"加载顾问列表时发生错误: {ex.Message}");
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _statistics = await StatisticsService.GetStatisticsAsync(_query);
+            _summary = await StatisticsService.GetStatisticsSummaryAsync(_query);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task HandleReset()
+    {
+        _query = new StatisticsQuery
+            {
+                StartDate = DateTime.Today.AddMonths(-1),
+                EndDate = DateTime.Today
+            };
+        _selectedRange = "thisMonth";
+        await LoadDataAsync();
+    }
+
+    private async Task HandleTimeRange(string range)
+    {
+        _selectedRange = range;
+        var today = DateTime.Today;
+        _query.StartDate = range switch
+        {
+            "today" => today,
+            "yesterday" => today.AddDays(-1),
+            "thisWeek" => today.AddDays(-(int)today.DayOfWeek),
+            "lastWeek" => today.AddDays(-(int)today.DayOfWeek - 7),
+            "thisMonth" => new DateTime(today.Year, today.Month, 1),
+            "lastMonth" => new DateTime(today.Year, today.Month, 1).AddMonths(-1),
+            "last3Months" => today.AddMonths(-3),
+            "thisYear" => new DateTime(today.Year, 1, 1),
+            _ => _query.StartDate
+        };
+
+        _query.EndDate = range switch
+        {
+            "today" => today.AddDays(1).AddSeconds(-1),
+            "yesterday" => today.AddSeconds(-1),
+            "thisWeek" => today.AddDays(7 - (int)today.DayOfWeek).AddSeconds(-1),
+            "lastWeek" => today.AddDays(-(int)today.DayOfWeek).AddSeconds(-1),
+            "thisMonth" => new DateTime(today.Year, today.Month, 1).AddMonths(1).AddSeconds(-1),
+            "lastMonth" => new DateTime(today.Year, today.Month, 1).AddSeconds(-1),
+            "last3Months" => today.AddSeconds(-1),
+            "thisYear" => new DateTime(today.Year + 1, 1, 1).AddSeconds(-1),
+            _ => _query.EndDate
+        };
+
+        await LoadDataAsync();
+    }
+
+    // private async Task ExportToExcel()
+    // {
+    //     try
+    //     {
+    //         var fileBytes = await StatisticsService.ExportToExcelAsync(_query);
+    //         await JSRuntime.InvokeVoidAsync("downloadFile",
+    //             fileBytes,
+    //             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    //             $"统计数据_{DateTime.Now:yyyyMMdd}.xlsx");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         await JSRuntime.InvokeVoidAsync("alert", "导出Excel失败：" + ex.Message);
+    //     }
+    // }
+
+    // private async Task ExportToPdf()
+    // {
+    //     try
+    //     {
+    //         var fileBytes = await StatisticsService.ExportToPdfAsync(_query);
+    //         await JSRuntime.InvokeVoidAsync("downloadFile",
+    //             fileBytes,
+    //             "application/pdf",
+    //             $"统计数据_{DateTime.Now:yyyyMMdd}.pdf");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         await JSRuntime.InvokeVoidAsync("alert", "导出PDF失败：" + ex.Message);
+    //     }
+    // }
+}
