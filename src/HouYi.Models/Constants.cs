@@ -30,4 +30,8 @@ public sealed class Constants
     {
         public const int ChinaId = 10000;
     }
+    public static class Users
+    {
+        public const string DefaultAdminName = "admin";
+    }
 }

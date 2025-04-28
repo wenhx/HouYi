@@ -1,0 +1,50 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using HouYi.Data
+
+@inject UserManager<HouYiUser> UserManager
+
+<div class="user-avatar rounded-circle d-flex align-items-center justify-content-center @SizeClass" style="background-color: @GetRandomColor();">
+    @if (UserName != null)
+    {
+        @GetInitials()
+    }
+    else
+    {
+        <i class="bi bi-person"></i>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? UserName { get; set; }
+
+    [Parameter]
+    public string Size { get; set; } = "md";
+
+    private string SizeClass => Size switch
+    {
+        "sm" => "small-avatar",
+        "md" => "medium-avatar",
+        "lg" => "large-avatar",
+        _ => "medium-avatar"
+    };
+
+    private string GetInitials()
+    {
+        if (string.IsNullOrWhiteSpace(UserName))
+            return "?";
+
+        return UserName[0].ToString().ToUpper();
+    }
+
+    private string GetRandomColor()
+    {
+        var colors = new[]
+        {
+            "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEEAD",
+            "#D4A5A5", "#9B59B6", "#3498DB", "#1ABC9C", "#F1C40F"
+        };
+        var index = Math.Abs(UserName?.GetHashCode() ?? 0) % colors.Length;
+        return colors[index];
+    }
+} 

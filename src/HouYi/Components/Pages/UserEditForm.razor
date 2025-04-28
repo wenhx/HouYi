@@ -1,0 +1,145 @@
+﻿@using HouYi.Models
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject IUserService UserService
+@inject RoleManager<IdentityRole<int>> RoleManager
+
+@if (ShowModal)
+{
+    <div class="modal fade @(ShowModal ? "show" : "")" style="display: @(ShowModal ? "block" : "none"); padding-right: 17px;" id="@ModalId" tabindex="-1" aria-labelledby="@($"{ModalId}Label")" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="@($"{ModalId}Label")">@ModalTitle</h5>
+                    <button type="button" class="btn-close" @onclick="OnCancel"></button>
+                </div>
+                <EditForm Model="@User" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">用户名</label>
+                                <InputText @bind-Value="User.UserName" class="form-control" />
+                                <ValidationMessage For="@(() => User.UserName)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">邮箱</label>
+                                <InputText @bind-Value="User.Email" class="form-control" />
+                                <ValidationMessage For="@(() => User.Email)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">电话</label>
+                                <InputText @bind-Value="User.PhoneNumber" class="form-control" />
+                                <ValidationMessage For="@(() => User.PhoneNumber)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">角色</label>
+                                <InputSelect @bind-Value="selectedRole" class="form-select">
+                                    <option value="">请选择角色</option>
+                                    @foreach (var role in roles)
+                                    {
+                                        <option value="@role.Name">@role.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">锁定状态</label>
+                                <div class="form-check form-switch">
+                                    <InputCheckbox @bind-Value="User.LockoutEnabled" class="form-check-input" />
+                                    <label class="form-check-label">启用锁定</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">当前锁定状态</label>
+                                <div class="input-group">
+                                    <select class="form-select" @bind="lockoutStatus">
+                                        <option value="unlocked">未锁定</option>
+                                        <option value="locked">已锁定</option>
+                                    </select>
+                                </div>
+                            </div>
+                            @if (User.LockoutEnabled && lockoutStatus == "locked")
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">锁定至</label>
+                                    <InputDate @bind-Value="lockoutDate" Type="InputDateType.DateTimeLocal" class="form-control" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="OnCancel">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public string ModalId { get; set; } = "editModal";
+
+    [Parameter]
+    public string ModalTitle { get; set; } = "编辑用户";
+
+    [Parameter]
+    public HouYiUser User { get; set; } = new();
+
+    [Parameter]
+    public bool ShowModal { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnValidSubmit { get; set; }
+
+    private DateTime lockoutDate = DateTime.Now;
+    private string lockoutStatus = "unlocked";
+    private List<IdentityRole<int>> roles = new();
+    private string selectedRole = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        roles = await RoleManager.Roles.ToListAsync();
+        if (User != null && User.Id > 0)
+        {
+            var userRoles = await UserService.GetUserRolesAsync(User);
+            if (userRoles.Any())
+            {
+                selectedRole = userRoles.First();
+            }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (User != null && User.Id > 0)
+        {
+            var userRoles = await UserService.GetUserRolesAsync(User);
+            if (userRoles.Any())
+            {
+                selectedRole = userRoles.First();
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (User.LockoutEnabled && lockoutStatus == "locked")
+        {
+            User.LockoutEnd = new DateTimeOffset(lockoutDate);
+        }
+        else
+        {
+            User.LockoutEnd = null;
+        }
+
+        await OnValidSubmit.InvokeAsync(selectedRole);
+    }
+} 
