@@ -133,7 +133,7 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-<CitySelector @ref="citySelector" OnCitySelected="HandleCitySelected" />
+<CitySelector @ref="_citySelector" OnCitySelected="HandleCitySelected" />
 
 @code {
     [Parameter]
@@ -154,7 +154,7 @@
     [Parameter]
     public string ModalTitle { get; set; } = "编辑简历";
 
-    private CitySelector? citySelector;
+    private CitySelector? _citySelector;
 
     private async Task HandleValidSubmit()
     {
@@ -163,13 +163,13 @@
 
     private async Task OpenCitySelector()
     {
-        if (citySelector != null)
+        if (_citySelector != null)
         {
-            await citySelector.Show();
+            await _citySelector.Show();
         }
     }
 
-    private async Task HandleCitySelected(Place place)
+    private void HandleCitySelected(Place place)
     {
         Resume.PlaceId = place.Id;
         Resume.Place = place;

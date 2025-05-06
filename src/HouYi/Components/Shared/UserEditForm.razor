@@ -36,9 +36,9 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">角色</label>
-                                <InputSelect @bind-Value="selectedRole" class="form-select">
+                                <InputSelect @bind-Value="_selectedRole" class="form-select">
                                     <option value="">请选择角色</option>
-                                    @foreach (var role in roles)
+                                    @foreach (var role in _roles)
                                     {
                                         <option value="@role.Name">@role.Name</option>
                                     }
@@ -54,17 +54,17 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">当前锁定状态</label>
                                 <div class="input-group">
-                                    <select class="form-select" @bind="lockoutStatus">
+                                    <select class="form-select" @bind="_lockoutStatus">
                                         <option value="unlocked">未锁定</option>
                                         <option value="locked">已锁定</option>
                                     </select>
                                 </div>
                             </div>
-                            @if (User.LockoutEnabled && lockoutStatus == "locked")
+                            @if (User.LockoutEnabled && _lockoutStatus == "locked")
                             {
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">锁定至</label>
-                                    <InputDate @bind-Value="lockoutDate" Type="InputDateType.DateTimeLocal" class="form-control" />
+                                    <InputDate @bind-Value="_lockoutDate" Type="InputDateType.DateTimeLocal" class="form-control" />
                                 </div>
                             }
                         </div>
@@ -99,20 +99,20 @@
     [Parameter]
     public EventCallback<string> OnValidSubmit { get; set; }
 
-    private DateTime lockoutDate = DateTime.Now;
-    private string lockoutStatus = "unlocked";
-    private List<IdentityRole<int>> roles = new();
-    private string selectedRole = "";
+    private DateTime _lockoutDate = DateTime.Now;
+    private string _lockoutStatus = "unlocked";
+    private List<IdentityRole<int>> _roles = new();
+    private string _selectedRole = "";
 
     protected override async Task OnInitializedAsync()
     {
-        roles = await RoleManager.Roles.ToListAsync();
+        _roles = await RoleManager.Roles.ToListAsync();
         if (User != null && User.Id > 0)
         {
             var userRoles = await UserService.GetUserRolesAsync(User);
             if (userRoles.Any())
             {
-                selectedRole = userRoles.First();
+                _selectedRole = userRoles.First();
             }
         }
     }
@@ -124,22 +124,22 @@
             var userRoles = await UserService.GetUserRolesAsync(User);
             if (userRoles.Any())
             {
-                selectedRole = userRoles.First();
+                _selectedRole = userRoles.First();
             }
         }
     }
 
     private async Task HandleValidSubmit()
     {
-        if (User.LockoutEnabled && lockoutStatus == "locked")
+        if (User.LockoutEnabled && _lockoutStatus == "locked")
         {
-            User.LockoutEnd = new DateTimeOffset(lockoutDate);
+            User.LockoutEnd = new DateTimeOffset(_lockoutDate);
         }
         else
         {
             User.LockoutEnd = null;
         }
 
-        await OnValidSubmit.InvokeAsync(selectedRole);
+        await OnValidSubmit.InvokeAsync(_selectedRole);
     }
 } 

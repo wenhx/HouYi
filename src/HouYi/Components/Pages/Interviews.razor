@@ -37,13 +37,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (todayInterviews == null)
+                                @if (_todayInterviews == null)
                                 {
                                     <tr>
                                         <td colspan="9" class="text-center">加载中...</td>
                                     </tr>
                                 }
-                                else if (!todayInterviews.Any())
+                                else if (!_todayInterviews.Any())
                                 {
                                     <tr>
                                         <td colspan="9" class="text-center">今日暂无面试安排</td>
@@ -51,7 +51,7 @@
                                 }
                                 else
                                 {
-                                    @foreach (var interview in todayInterviews)
+                                    @foreach (var interview in _todayInterviews)
                                     {
                                         <tr>
                                             <td>@interview.Id</td>
@@ -90,11 +90,11 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">所有面试记录</h5>
                     <form class="d-flex" @onsubmit="SearchInterviews" @onsubmit:preventDefault>
-                        <input type="search" class="form-control me-2" placeholder="搜索面试..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                        <input type="search" class="form-control me-2" placeholder="搜索面试..." aria-label="搜索" @bind="_searchTerm" @bind:event="oninput">
                         <button class="btn btn-outline-primary" type="submit">
                             <i class="bi bi-search"></i>
                         </button>
-                        @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
+                        @if (_isSearchMode && !string.IsNullOrEmpty(_searchTerm))
                         {
                             <button class="btn btn-outline-secondary ms-2" style="min-width: 100px;" @onclick:preventDefault @onclick="ClearSearch">
                                 <i class="bi bi-x-circle me-1"></i>清除
@@ -120,13 +120,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (pagedInterviews == null)
+                                @if (_pagedInterviews == null)
                                 {
                                     <tr>
                                         <td colspan="9" class="text-center">加载中...</td>
                                     </tr>
                                 }
-                                else if (!pagedInterviews.Items.Any())
+                                else if (!_pagedInterviews.Items.Any())
                                 {
                                     <tr>
                                         <td colspan="9" class="text-center">没有面试数据</td>
@@ -134,7 +134,7 @@
                                 }
                                 else
                                 {
-                                    @foreach (var interview in pagedInterviews.Items)
+                                    @foreach (var interview in _pagedInterviews.Items)
                                     {
                                         <tr>
                                             <td>@interview.Id</td>
@@ -171,31 +171,31 @@
                         <div class="d-flex align-items-center">
                             <span class="me-2">每页显示：</span>
                             <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
-                                <option value="10" selected="@(pageSize == 10)">10</option>
-                                <option value="20" selected="@(pageSize == 20)">20</option>
-                                <option value="50" selected="@(pageSize == 50)">50</option>
+                                <option value="10" selected="@(_pageSize == 10)">10</option>
+                                <option value="20" selected="@(_pageSize == 20)">20</option>
+                                <option value="50" selected="@(_pageSize == 50)">50</option>
                             </select>
-                            @if (pagedInterviews != null)
+                            @if (_pagedInterviews != null)
                             {
                                 <span class="pagination-info">
-                                    显示 @((pagedInterviews.PageNumber - 1) * pagedInterviews.PageSize + 1)-@(Math.Min(pagedInterviews.PageNumber * pagedInterviews.PageSize, pagedInterviews.TotalCount)) 条，
-                                    共 @pagedInterviews.TotalCount 条记录
+                                    显示 @((_pagedInterviews.PageNumber - 1) * _pagedInterviews.PageSize + 1)-@(Math.Min(_pagedInterviews.PageNumber * _pagedInterviews.PageSize, _pagedInterviews.TotalCount)) 条，
+                                    共 @_pagedInterviews.TotalCount 条记录
                                 </span>
                             }
                         </div>
-                        @if (pagedInterviews != null && pagedInterviews.TotalPages > 0)
+                        @if (_pagedInterviews != null && _pagedInterviews.TotalPages > 0)
                         {
                             <ul class="pagination mb-0">
-                                <li class="page-item @(pagedInterviews.PageNumber == 1 ? "disabled" : "")">
+                                <li class="page-item @(_pagedInterviews.PageNumber == 1 ? "disabled" : "")">
                                     <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
                                 </li>
-                                <li class="page-item @(!pagedInterviews.HasPreviousPage ? "disabled" : "")">
-                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedInterviews.PageNumber - 1)">上一页</a>
+                                <li class="page-item @(!_pagedInterviews.HasPreviousPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedInterviews.PageNumber - 1)">上一页</a>
                                 </li>
 
                                 @{
-                                    int startPage = Math.Max(1, pagedInterviews.PageNumber - 2);
-                                    int endPage = Math.Min(pagedInterviews.TotalPages, startPage + 4);
+                                    int startPage = Math.Max(1, _pagedInterviews.PageNumber - 2);
+                                    int endPage = Math.Min(_pagedInterviews.TotalPages, startPage + 4);
 
                                     if (endPage - startPage < 4 && startPage > 1)
                                     {
@@ -206,16 +206,16 @@
                                 @for (int i = startPage; i <= endPage; i++)
                                 {
                                     int pageNumber = i;
-                                    <li class="page-item @(pageNumber == pagedInterviews.PageNumber ? "active" : "")">
+                                    <li class="page-item @(pageNumber == _pagedInterviews.PageNumber ? "active" : "")">
                                         <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
                                     </li>
                                 }
 
-                                <li class="page-item @(!pagedInterviews.HasNextPage ? "disabled" : "")">
-                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedInterviews.PageNumber + 1)">下一页</a>
+                                <li class="page-item @(!_pagedInterviews.HasNextPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedInterviews.PageNumber + 1)">下一页</a>
                                 </li>
-                                <li class="page-item @(pagedInterviews.PageNumber == pagedInterviews.TotalPages ? "disabled" : "")">
-                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedInterviews.TotalPages)">末页</a>
+                                <li class="page-item @(_pagedInterviews.PageNumber == _pagedInterviews.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedInterviews.TotalPages)">末页</a>
                                 </li>
                             </ul>
                         }
@@ -226,29 +226,29 @@
     </div>
 </div>
 
-<InterviewDetail Interview="selectedInterview" ShowModal="showInterviewDetail" OnEditButtonClick="EditInterviewFromDetail" />
+<InterviewDetail Interview="_selectedInterview" ShowModal="_showInterviewDetail" OnEditButtonClick="EditInterviewFromDetail" />
 
-<DeleteConfirmationModal ShowModal="showDeleteConfirmation" OnConfirm="HandleDeleteConfirmation"
-ItemName="@($"面试记录 - {deletingInterview?.Resume.Name}-{deletingInterview?.Position.Name}")" />
+<DeleteConfirmationModal ShowModal="_showDeleteConfirmation" OnConfirm="HandleDeleteConfirmation"
+ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingInterview?.Position.Name}")" />
 
-@if (showEditModal)
+@if (_showEditModal)
 {
-    <InterviewEditForm Title="编辑面试" Interview="@selectedInterview" OnSave="HandleSaveInterview" OnClose="CloseEditModal" />
+    <InterviewEditForm Title="编辑面试" Interview="@_selectedInterview" OnSave="HandleSaveInterview" OnClose="CloseEditModal" />
 }
 
 @code {
-    private List<Interview>? todayInterviews;
-    private PagedResult<Interview>? pagedInterviews;
-    private string? errorMessage;
-    private int currentPage = 1;
-    private int pageSize = 10;
-    private string searchTerm = "";
-    private bool isSearchMode = false;
-    private Interview? selectedInterview;
-    private bool showInterviewDetail;
-    private bool showDeleteConfirmation;
-    private bool showEditModal;
-    private Interview? deletingInterview;
+    private List<Interview>? _todayInterviews;
+    private PagedResult<Interview>? _pagedInterviews;
+    private string? _errorMessage;
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private string _searchTerm = "";
+    private bool _isSearchMode = false;
+    private Interview? _selectedInterview;
+    private bool _showInterviewDetail;
+    private bool _showDeleteConfirmation;
+    private bool _showEditModal;
+    private Interview? _deletingInterview;
 
     private string GetStatusString(InterviewStatus status)
     {
@@ -274,28 +274,28 @@ ItemName="@($"面试记录 - {deletingInterview?.Resume.Name}-{deletingInterview
         try
         {
             // 加载今日面试
-            todayInterviews = await InterviewService.GetTodayInterviewsAsync();
+            _todayInterviews = await InterviewService.GetTodayInterviewsAsync();
 
             // 加载所有面试
-            if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
+            if (_isSearchMode && !string.IsNullOrWhiteSpace(_searchTerm))
             {
-                pagedInterviews = await InterviewService.FindInterviewsAsync(searchTerm, currentPage, pageSize);
+                _pagedInterviews = await InterviewService.FindInterviewsAsync(_searchTerm, _currentPage, _pageSize);
             }
             else
             {
-                pagedInterviews = await InterviewService.GetInterviewsAsync(currentPage, pageSize);
+                _pagedInterviews = await InterviewService.GetInterviewsAsync(_currentPage, _pageSize);
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"加载面试数据时发生错误: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            _errorMessage = $"加载面试数据时发生错误: {ex.Message}";
+            Console.WriteLine(_errorMessage);
         }
     }
 
     private async Task NavigateToPage(int page)
     {
-        currentPage = page;
+        _currentPage = page;
         await LoadInterviewsAsync();
     }
 
@@ -303,49 +303,49 @@ ItemName="@($"面试记录 - {deletingInterview?.Resume.Name}-{deletingInterview
     {
         if (int.TryParse(e.Value?.ToString(), out int newPageSize))
         {
-            pageSize = newPageSize;
-            currentPage = 1;
+            _pageSize = newPageSize;
+            _currentPage = 1;
             await LoadInterviewsAsync();
         }
     }
 
     private async Task SearchInterviews()
     {
-        if (string.IsNullOrWhiteSpace(searchTerm))
+        if (string.IsNullOrWhiteSpace(_searchTerm))
         {
             await ClearSearch();
             return;
         }
 
-        isSearchMode = true;
-        currentPage = 1;
+        _isSearchMode = true;
+        _currentPage = 1;
         await LoadInterviewsAsync();
     }
 
     private async Task ClearSearch()
     {
-        searchTerm = "";
-        isSearchMode = false;
-        currentPage = 1;
+        _searchTerm = "";
+        _isSearchMode = false;
+        _currentPage = 1;
         await LoadInterviewsAsync();
     }
 
     private void ViewInterview(Interview interview)
     {
-        selectedInterview = interview;
-        showInterviewDetail = true;
+        _selectedInterview = interview;
+        _showInterviewDetail = true;
     }
 
     private void EditInterview(Interview interview)
     {
-        selectedInterview = interview;
-        showEditModal = true;
+        _selectedInterview = interview;
+        _showEditModal = true;
     }
 
     private void EditInterviewFromDetail(Interview interview)
     {
-        showInterviewDetail = false;
-        showEditModal = true;
+        _showInterviewDetail = false;
+        _showEditModal = true;
     }
 
     private async Task HandleSaveInterview(Interview interview)
@@ -357,40 +357,40 @@ ItemName="@($"面试记录 - {deletingInterview?.Resume.Name}-{deletingInterview
         }
         catch (Exception ex)
         {
-            errorMessage = $"保存面试信息时发生错误: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            _errorMessage = $"保存面试信息时发生错误: {ex.Message}";
+            Console.WriteLine(_errorMessage);
         }
     }
 
     private void CloseEditModal()
     {
-        showEditModal = false;
-        selectedInterview = null;
+        _showEditModal = false;
+        _selectedInterview = null;
     }
 
     private void DeleteInterview(Interview interview)
     {
-        deletingInterview = interview;
-        showDeleteConfirmation = true;
+        _deletingInterview = interview;
+        _showDeleteConfirmation = true;
         StateHasChanged();
     }
 
     private async Task HandleDeleteConfirmation(bool confirmed)
     {
-        showDeleteConfirmation = false;
-        if (confirmed && deletingInterview != null)
+        _showDeleteConfirmation = false;
+        if (confirmed && _deletingInterview != null)
         {
             try
             {
-                await InterviewService.DeleteInterviewAsync(deletingInterview.Id);
+                await InterviewService.DeleteInterviewAsync(_deletingInterview.Id);
                 await LoadInterviewsAsync();
             }
             catch (Exception ex)
             {
-                errorMessage = $"删除面试时发生错误: {ex.Message}";
-                Console.WriteLine(errorMessage);
+                _errorMessage = $"删除面试时发生错误: {ex.Message}";
+                Console.WriteLine(_errorMessage);
             }
         }
-        deletingInterview = null;
+        _deletingInterview = null;
     }
 }

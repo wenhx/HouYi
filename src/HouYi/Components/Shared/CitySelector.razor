@@ -1,7 +1,7 @@
 ﻿@namespace HouYi.Components.Shared
 @inject IPlaceService PlaceService
 
-@if (showModal)
+@if (_showModal)
 {
     <div class="modal fade show" style="display: block; padding-right: 17px; z-index: 10500;" tabindex="-1" aria-labelledby="citySelectorModalLabel" aria-hidden="false">
         <div class="modal-dialog modal-dialog-centered" style="max-height: 80vh; margin: 1.75rem auto;">
@@ -14,14 +14,14 @@
                     <div class="row" style="height: 60vh;">
                         <div class="col-md-6" style="height: 100%; overflow-y: auto;">
                             <div class="list-group">
-                                <div class="list-group-item list-group-item-action @(selectedProvince == null ? "active" : "")"
+                                <div class="list-group-item list-group-item-action @(_selectedProvince == null ? "active" : "")"
                                      style="cursor: pointer; user-select: none;"
                                      @onclick="() => SelectProvince(null)">
                                     所有省份
                                 </div>
-                                @foreach (var province in provinces)
+                                @foreach (var province in _provinces)
                                 {
-                                    <div class="list-group-item list-group-item-action @(selectedProvince?.Id == province.Id ? "active" : "")"
+                                    <div class="list-group-item list-group-item-action @(_selectedProvince?.Id == province.Id ? "active" : "")"
                                          style="cursor: pointer; user-select: none;"
                                          @onclick="() => SelectProvince(province)">
                                         @province.Name
@@ -31,15 +31,15 @@
                         </div>
                         <div class="col-md-6" style="height: 100%; overflow-y: auto;">
                             <div class="list-group">
-                                @if (selectedProvince == null)
+                                @if (_selectedProvince == null)
                                 {
                                     <div class="list-group-item">请选择省份</div>
                                 }
                                 else
                                 {
-                                    @foreach (var city in cities)
+                                    @foreach (var city in _cities)
                                     {
-                                        <div class="list-group-item list-group-item-action @(selectedCity?.Id == city.Id ? "active" : "")"
+                                        <div class="list-group-item list-group-item-action @(_selectedCity?.Id == city.Id ? "active" : "")"
                                              style="cursor: pointer; user-select: none;"
                                              @onclick="() => SelectCity(city)">
                                             @city.Name
@@ -64,20 +64,20 @@
     [Parameter]
     public EventCallback<Place> OnCitySelected { get; set; }
 
-    private IReadOnlyCollection<Place> provinces = Array.Empty<Place>();
-    private IList<Place> cities = Array.Empty<Place>();
-    private Place? selectedProvince;
-    private Place? selectedCity;
-    private bool showModal;
+    private IReadOnlyCollection<Place> _provinces = Array.Empty<Place>();
+    private IList<Place> _cities = Array.Empty<Place>();
+    private Place? _selectedProvince;
+    private Place? _selectedCity;
+    private bool _showModal;
 
     private async Task LoadProvincesAsync()
     {
-        provinces = await PlaceService.GetChineseProvincesAsync();
+        _provinces = await PlaceService.GetChineseProvincesAsync();
     }
 
     private async Task LoadCitiesAsync(short provinceId)
     {
-        cities = new List<Place>(await PlaceService.GetCitiesOfProvinceAsync(provinceId));
+        _cities = new List<Place>(await PlaceService.GetCitiesOfProvinceAsync(provinceId));
     }
 
     private async Task SelectProvince(Place? province)
@@ -88,24 +88,24 @@
         }
         else
         {
-            cities.Clear();
+            _cities.Clear();
         }
-        selectedProvince = province;
-        selectedCity = null;
+        _selectedProvince = province;
+        _selectedCity = null;
         StateHasChanged();
     }
 
     private void SelectCity(Place city)
     {
-        selectedCity = city;
+        _selectedCity = city;
         StateHasChanged();
     }
 
     private async Task ConfirmSelection()
     {
-        if (selectedCity != null)
+        if (_selectedCity != null)
         {
-            await OnCitySelected.InvokeAsync(selectedCity);
+            await OnCitySelected.InvokeAsync(_selectedCity);
         }
         CloseModal();
     }
@@ -113,16 +113,16 @@
     public async Task Show()
     {
         await LoadProvincesAsync();
-        showModal = true;
+        _showModal = true;
         StateHasChanged();
     }
 
     private void CloseModal()
     {
-        showModal = false;
-        selectedProvince = null;
-        selectedCity = null;
-        cities.Clear();
+        _showModal = false;
+        _selectedProvince = null;
+        _selectedCity = null;
+        _cities.Clear();
         StateHasChanged();
     }
 } 

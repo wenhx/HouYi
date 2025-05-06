@@ -15,7 +15,7 @@
                         <i class="bi bi-exclamation-triangle me-2"></i> @ErrorMessage
                     </div>
                 }
-                <EditForm Model="@interviewWrapper" OnValidSubmit="HandleValidSubmit">
+                <EditForm Model="@_interviewWrapper" OnValidSubmit="HandleValidSubmit">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
@@ -33,38 +33,38 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">面试时间</label>
-                            <InputDate @bind-Value="interviewWrapper.InterviewTime" @bind-Value:format="yyyy-dd-MM HH:mm" Type="InputDateType.DateTimeLocal" class="form-control" />
-                            <ValidationMessage For="@(() => interviewWrapper.InterviewTime)" />
+                            <InputDate @bind-Value="_interviewWrapper.InterviewTime" @bind-Value:format="yyyy-dd-MM HH:mm" Type="InputDateType.DateTimeLocal" class="form-control" />
+                            <ValidationMessage For="@(() => _interviewWrapper.InterviewTime)" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">面试轮次</label>
-                            <InputNumber @bind-Value="interviewWrapper.IntRound" class="form-control" min="1" max="5" />
-                            <ValidationMessage For="@(() => interviewWrapper.IntRound)" />
+                            <InputNumber @bind-Value="_interviewWrapper.IntRound" class="form-control" min="1" max="5" />
+                            <ValidationMessage For="@(() => _interviewWrapper.IntRound)" />
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">面试地点</label>
-                        <InputText @bind-Value="interviewWrapper.Location" class="form-control" />
-                        <ValidationMessage For="@(() => interviewWrapper.Location)" />
+                        <InputText @bind-Value="_interviewWrapper.Location" class="form-control" />
+                        <ValidationMessage For="@(() => _interviewWrapper.Location)" />
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">面试官</label>
-                        <InputText @bind-Value="interviewWrapper.Interviewer" class="form-control" />
-                        <ValidationMessage For="@(() => interviewWrapper.Interviewer)" />
+                        <InputText @bind-Value="_interviewWrapper.Interviewer" class="form-control" />
+                        <ValidationMessage For="@(() => _interviewWrapper.Interviewer)" />
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">面试反馈</label>
-                        <InputTextArea @bind-Value="interviewWrapper.Feedback" class="form-control" rows="3" />
-                        <ValidationMessage For="@(() => interviewWrapper.Feedback)" />
+                        <InputTextArea @bind-Value="_interviewWrapper.Feedback" class="form-control" rows="3" />
+                        <ValidationMessage For="@(() => _interviewWrapper.Feedback)" />
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">备注</label>
-                        <InputTextArea @bind-Value="interviewWrapper.Remarks" class="form-control" rows="3" />
-                        <ValidationMessage For="@(() => interviewWrapper.Remarks)" />
+                        <InputTextArea @bind-Value="_interviewWrapper.Remarks" class="form-control" rows="3" />
+                        <ValidationMessage For="@(() => _interviewWrapper.Remarks)" />
                     </div>
 
                     <div class="modal-footer">
@@ -83,7 +83,7 @@
     public string Title { get; set; } = "编辑面试";
 
     [Parameter]
-    public Interview Interview { get; set; }
+    public Interview Interview { get; set; } = null!;
 
     [Parameter]
     public EventCallback<Interview> OnSave { get; set; }
@@ -91,13 +91,13 @@
     [Parameter]
     public EventCallback OnClose { get; set; }
 
-    public string ErrorMessage { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
 
-    private InterviewWithIntValue interviewWrapper;
+    private InterviewWithIntValue _interviewWrapper = null!;
 
     protected override void OnParametersSet()
     {
-        interviewWrapper = new InterviewWithIntValue(Interview);
+        _interviewWrapper = new InterviewWithIntValue(Interview);
     }
 
     private async Task HandleValidSubmit()
@@ -105,13 +105,13 @@
         try
         {
             // 将 wrapper 中的数据同步回 Interview
-            Interview.InterviewTime = interviewWrapper.InterviewTime;
-            Interview.Round = interviewWrapper.Round;
-            Interview.Location = interviewWrapper.Location;
-            Interview.Interviewer = interviewWrapper.Interviewer;
-            Interview.Feedback = interviewWrapper.Feedback;
-            Interview.Status = interviewWrapper.Status;
-            Interview.Remarks = interviewWrapper.Remarks;
+            Interview.InterviewTime = _interviewWrapper.InterviewTime;
+            Interview.Round = _interviewWrapper.Round;
+            Interview.Location = _interviewWrapper.Location;
+            Interview.Interviewer = _interviewWrapper.Interviewer;
+            Interview.Feedback = _interviewWrapper.Feedback;
+            Interview.Status = _interviewWrapper.Status;
+            Interview.Remarks = _interviewWrapper.Remarks;
 
             await OnSave.InvokeAsync(Interview);
             await CloseModal();

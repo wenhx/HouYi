@@ -16,11 +16,11 @@
             <div class="col-md-8">
                 <form class="search-form" @onsubmit="SearchCustomers" @onsubmit:preventDefault>
                     <div class="d-flex">
-                        <input type="search" class="form-control" placeholder="搜索客户名称、联系人、电话、邮箱或地址..." aria-label="搜索" @bind="searchTerm" @bind:event="oninput">
+                        <input type="search" class="form-control" placeholder="搜索客户名称、联系人、电话、邮箱或地址..." aria-label="搜索" @bind="_searchTerm" @bind:event="oninput">
                         <button class="btn btn-primary btn-search" type="submit">
                             <i class="bi bi-search me-1"></i>搜索
                         </button>
-                        @if (isSearchMode && !string.IsNullOrEmpty(searchTerm))
+                        @if (_isSearchMode && !string.IsNullOrEmpty(_searchTerm))
                         {
                             <button class="btn btn-outline-secondary ms-2" @onclick:preventDefault @onclick="ClearSearch" style="min-width: 100px;">
                                 <i class="bi bi-x-circle me-1"></i>清除
@@ -34,10 +34,10 @@
         <!-- 客户列表 -->
         <div class="card">
             <div class="card-body">
-                @if (!string.IsNullOrEmpty(errorMessage))
+                @if (!string.IsNullOrEmpty(_errorMessage))
                 {
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        @errorMessage
+                        @_errorMessage
                         <button type="button" class="btn-close" @onclick="ClearErrorMessage"></button>
                     </div>
                 }
@@ -56,13 +56,13 @@
                             </tr>
                         </thead>
                         <tbody id="customerTableBody">
-                            @if (pagedCustomers == null)
+                            @if (_pagedCustomers == null)
                             {
                                 <tr>
                                     <td colspan="8" class="text-center">加载中...</td>
                                 </tr>
                             }
-                            else if (!pagedCustomers.Items.Any())
+                            else if (!_pagedCustomers.Items.Any())
                             {
                                 <tr>
                                     <td colspan="8" class="text-center">没有客户数据</td>
@@ -70,7 +70,7 @@
                             }
                             else
                             {
-                                @foreach (var customer in pagedCustomers.Items)
+                                @foreach (var customer in _pagedCustomers.Items)
                                 {
                                     <tr>
                                         <td>@customer.Id</td>
@@ -105,31 +105,31 @@
                     <div class="d-flex align-items-center">
                         <span class="me-2">每页显示：</span>
                         <select class="form-select me-2" @onchange="PageSizeChanged" style="width: 70px;">
-                            <option value="10" selected="@(pageSize == 10)">10</option>
-                            <option value="20" selected="@(pageSize == 20)">20</option>
-                            <option value="50" selected="@(pageSize == 50)">50</option>
+                            <option value="10" selected="@(_pageSize == 10)">10</option>
+                            <option value="20" selected="@(_pageSize == 20)">20</option>
+                            <option value="50" selected="@(_pageSize == 50)">50</option>
                         </select>
-                        @if (pagedCustomers != null)
+                        @if (_pagedCustomers != null)
                         {
                             <span class="pagination-info">
-                                显示 @((pagedCustomers.PageNumber - 1) * pagedCustomers.PageSize + 1)-@(Math.Min(pagedCustomers.PageNumber * pagedCustomers.PageSize, pagedCustomers.TotalCount)) 条，
-                                共 @pagedCustomers.TotalCount 条记录
+                                显示 @((_pagedCustomers.PageNumber - 1) * _pagedCustomers.PageSize + 1)-@(Math.Min(_pagedCustomers.PageNumber * _pagedCustomers.PageSize, _pagedCustomers.TotalCount)) 条，
+                                共 @_pagedCustomers.TotalCount 条记录
                             </span>
                         }
                     </div>
-                    @if (pagedCustomers != null && pagedCustomers.TotalPages > 0)
+                    @if (_pagedCustomers != null && _pagedCustomers.TotalPages > 0)
                     {
                         <ul class="pagination mb-0">
-                            <li class="page-item @(pagedCustomers.PageNumber == 1 ? "disabled" : "")">
+                            <li class="page-item @(_pagedCustomers.PageNumber == 1 ? "disabled" : "")">
                                 <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
                             </li>
-                            <li class="page-item @(!pagedCustomers.HasPreviousPage ? "disabled" : "")">
-                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCustomers.PageNumber - 1)">上一页</a>
+                            <li class="page-item @(!_pagedCustomers.HasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedCustomers.PageNumber - 1)">上一页</a>
                             </li>
 
                             @{
-                                int startPage = Math.Max(1, pagedCustomers.PageNumber - 2);
-                                int endPage = Math.Min(pagedCustomers.TotalPages, startPage + 4);
+                                int startPage = Math.Max(1, _pagedCustomers.PageNumber - 2);
+                                int endPage = Math.Min(_pagedCustomers.TotalPages, startPage + 4);
 
                                 if (endPage - startPage < 4 && startPage > 1)
                                 {
@@ -140,16 +140,16 @@
                             @for (int i = startPage; i <= endPage; i++)
                             {
                                 int pageNumber = i;
-                                <li class="page-item @(pageNumber == pagedCustomers.PageNumber ? "active" : "")">
+                                <li class="page-item @(pageNumber == _pagedCustomers.PageNumber ? "active" : "")">
                                     <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
                                 </li>
                             }
 
-                            <li class="page-item @(!pagedCustomers.HasNextPage ? "disabled" : "")">
-                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCustomers.PageNumber + 1)">下一页</a>
+                            <li class="page-item @(!_pagedCustomers.HasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedCustomers.PageNumber + 1)">下一页</a>
                             </li>
-                            <li class="page-item @(pagedCustomers.PageNumber == pagedCustomers.TotalPages ? "disabled" : "")">
-                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pagedCustomers.TotalPages)">末页</a>
+                            <li class="page-item @(_pagedCustomers.PageNumber == _pagedCustomers.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedCustomers.TotalPages)">末页</a>
                             </li>
                         </ul>
                     }
@@ -159,10 +159,10 @@
     </div>
 </div>
 
-<DeleteConfirmationModal ShowModal="@showDeleteModal" ItemName="@selectedCustomerName" OnConfirm="@HandleDeleteConfirmation" />
+<DeleteConfirmationModal ShowModal="@_showDeleteModal" ItemName="@_selectedCustomerName" OnConfirm="@HandleDeleteConfirmation" />
 
 <!-- 客户详情模态框 -->
-@if (showViewModal)
+@if (_showViewModal)
 {
     <div class="modal fade show" style="display: block; padding-right: 17px;" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -172,40 +172,40 @@
                     <button type="button" class="btn-close" @onclick="CloseViewModal"></button>
                 </div>
                 <div class="modal-body">
-                    @if (selectedCustomer != null)
+                    @if (_selectedCustomer != null)
                     {
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">客户名称</label>
-                                <p>@selectedCustomer.Name</p>
+                                <p>@_selectedCustomer.Name</p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">联系人</label>
-                                <p>@selectedCustomer.ContactPerson</p>
+                                <p>@_selectedCustomer.ContactPerson</p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">联系电话</label>
-                                <p>@selectedCustomer.Phone</p>
+                                <p>@_selectedCustomer.Phone</p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">邮箱</label>
-                                <p>@selectedCustomer.Email</p>
+                                <p>@_selectedCustomer.Email</p>
                             </div>
                             <div class="col-12 mb-3">
                                 <label class="form-label fw-bold">地址</label>
-                                <p>@selectedCustomer.Address</p>
+                                <p>@_selectedCustomer.Address</p>
                             </div>
                             <div class="col-12 mb-3">
                                 <label class="form-label fw-bold">备注</label>
-                                <p>@(string.IsNullOrEmpty(selectedCustomer.Description) ? "无" : selectedCustomer.Description)</p>
+                                <p>@(string.IsNullOrEmpty(_selectedCustomer.Description) ? "无" : _selectedCustomer.Description)</p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">创建时间</label>
-                                <p>@selectedCustomer.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                                <p>@_selectedCustomer.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">更新时间</label>
-                                <p>@selectedCustomer.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                                <p>@_selectedCustomer.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
                             </div>
                         </div>
                     }
@@ -221,28 +221,28 @@
 }
 
 <!-- 编辑客户模态框 -->
-<CustomerEditForm ModalId="editModal" ModalTitle="@($"编辑客户 - {editCustomer?.Name ?? "未知"}")" Customer="@editCustomer"
-                OnCancel="CloseEditModal" OnValidSubmit="UpdateCustomer" ShowModal="@(editCustomer != null)" />
+<CustomerEditForm ModalId="editModal" ModalTitle="@($"编辑客户 - {_editCustomer?.Name ?? "未知"}")" Customer="@_editCustomer"
+                OnCancel="CloseEditModal" OnValidSubmit="UpdateCustomer" ShowModal="@(_editCustomer != null)" />
 
 <!-- 添加客户模态框 -->
-<CustomerEditForm ModalId="addModal" ModalTitle="添加客户" Customer="@newCustomer"
-                OnCancel="CloseAddModal" OnValidSubmit="AddCustomer" ShowModal="@(newCustomer != null)" />
+<CustomerEditForm ModalId="addModal" ModalTitle="添加客户" Customer="@_newCustomer"
+                OnCancel="CloseAddModal" OnValidSubmit="AddCustomer" ShowModal="@(_newCustomer != null)" />
 
 @code {
-    private PagedResult<Customer>? pagedCustomers;
-    private string? errorMessage;
-    private int currentPage = 1;
-    private int pageSize = 10;
-    private string searchTerm = "";
-    private bool isSearchMode = false;
-    private bool showDeleteModal;
-    private bool showViewModal;
-    private string? selectedCustomerName;
-    private int? customerIdToDelete;
-    private Customer? selectedCustomer;
-    private bool showEditModal;
-    private Customer? editCustomer;
-    private Customer? newCustomer;
+    private PagedResult<Customer>? _pagedCustomers;
+    private string? _errorMessage;
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private string _searchTerm = "";
+    private bool _isSearchMode = false;
+    private bool _showDeleteModal;
+    private bool _showViewModal;
+    private string? _selectedCustomerName;
+    private int? _customerIdToDelete;
+    private Customer? _selectedCustomer;
+    private bool _showEditModal;
+    private Customer? _editCustomer;
+    private Customer? _newCustomer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -253,27 +253,27 @@
     {
         try
         {
-            if (isSearchMode && !string.IsNullOrWhiteSpace(searchTerm))
+            if (_isSearchMode && !string.IsNullOrWhiteSpace(_searchTerm))
             {
-                Console.WriteLine($"开始搜索：{searchTerm}。");
-                pagedCustomers = await CustomerService.FindCustomersAsync(searchTerm, currentPage, pageSize);
+                Console.WriteLine($"开始搜索：{_searchTerm}。");
+                _pagedCustomers = await CustomerService.FindCustomersAsync(_searchTerm, _currentPage, _pageSize);
             }
             else
             {
                 Console.WriteLine($"开始加载列表数据。");
-                pagedCustomers = await CustomerService.GetCustomersAsync(currentPage, pageSize);
+                _pagedCustomers = await CustomerService.GetCustomersAsync(_currentPage, _pageSize);
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"加载客户数据时发生错误: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            _errorMessage = $"加载客户数据时发生错误: {ex.Message}";
+            Console.WriteLine(_errorMessage);
         }
     }
 
     private async Task NavigateToPage(int page)
     {
-        currentPage = page;
+        _currentPage = page;
         await LoadCustomersAsync();
     }
 
@@ -281,88 +281,88 @@
     {
         if (int.TryParse(e.Value?.ToString(), out int newPageSize))
         {
-            pageSize = newPageSize;
-            currentPage = 1; // 切换每页显示数量时重置到第一页
+            _pageSize = newPageSize;
+            _currentPage = 1; // 切换每页显示数量时重置到第一页
             await LoadCustomersAsync();
         }
     }
 
     private async Task SearchCustomers()
     {
-        if (string.IsNullOrWhiteSpace(searchTerm))
+        if (string.IsNullOrWhiteSpace(_searchTerm))
         {
             await ClearSearch();
             return;
         }
 
-        isSearchMode = true;
-        currentPage = 1; // 搜索时重置到第一页
+        _isSearchMode = true;
+        _currentPage = 1; // 搜索时重置到第一页
         await LoadCustomersAsync();
     }
 
     private async Task ClearSearch()
     {
-        searchTerm = "";
-        isSearchMode = false;
-        currentPage = 1;
+        _searchTerm = "";
+        _isSearchMode = false;
+        _currentPage = 1;
         await LoadCustomersAsync();
     }
 
     private async Task HandleDeleteConfirmation(bool confirmed)
     {
-        if (confirmed && customerIdToDelete.HasValue)
+        if (confirmed && _customerIdToDelete.HasValue)
         {
             try
             {
-                await CustomerService.DeleteCustomerAsync(customerIdToDelete.Value);
+                await CustomerService.DeleteCustomerAsync(_customerIdToDelete.Value);
                 await LoadCustomersAsync();
             }
             catch (Exception ex)
             {
-                errorMessage = $"删除客户时发生错误: {ex.Message}";
-                Console.WriteLine(errorMessage);
+                _errorMessage = $"删除客户时发生错误: {ex.Message}";
+                Console.WriteLine(_errorMessage);
             }
         }
-        showDeleteModal = false;
-        customerIdToDelete = null;
-        selectedCustomerName = null;
+        _showDeleteModal = false;
+        _customerIdToDelete = null;
+        _selectedCustomerName = null;
     }
 
     private void ShowDeleteModal(Customer customer)
     {
-        customerIdToDelete = customer.Id;
-        selectedCustomerName = customer.Name;
-        showDeleteModal = true;
+        _customerIdToDelete = customer.Id;
+        _selectedCustomerName = customer.Name;
+        _showDeleteModal = true;
     }
 
     private void ClearErrorMessage()
     {
-        errorMessage = null;
+        _errorMessage = null;
     }
 
     private void ShowCustomerDetails(Customer customer)
     {
-        selectedCustomer = customer;
-        showViewModal = true;
+        _selectedCustomer = customer;
+        _showViewModal = true;
         StateHasChanged();
     }
 
     private void CloseViewModal()
     {
-        showViewModal = false;
-        selectedCustomer = null;
+        _showViewModal = false;
+        _selectedCustomer = null;
         StateHasChanged();
     }
 
     private void OpenAddModal()
     {
-        newCustomer = new Customer();
+        _newCustomer = new Customer();
         StateHasChanged();
     }
 
     private void CloseAddModal()
     {
-        newCustomer = null;
+        _newCustomer = null;
         StateHasChanged();
     }
 
@@ -370,20 +370,20 @@
     {
         try
         {
-            await CustomerService.CreateCustomerAsync(newCustomer);
+            await CustomerService.CreateCustomerAsync(_newCustomer);
             await LoadCustomersAsync();
             CloseAddModal();
         }
         catch (Exception ex)
         {
-            errorMessage = $"添加客户时发生错误: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            _errorMessage = $"添加客户时发生错误: {ex.Message}";
+            Console.WriteLine(_errorMessage);
         }
     }
 
     private void ShowEditModal(Customer customer)
     {
-        editCustomer = new Customer
+        _editCustomer = new Customer
         {
             Id = customer.Id,
             Name = customer.Name,
@@ -393,51 +393,51 @@
             Address = customer.Address,
             Description = customer.Description
         };
-        showEditModal = true;
+        _showEditModal = true;
         StateHasChanged();
     }
 
     private void CloseEditModal()
     {
-        showEditModal = false;
-        editCustomer = null;
+        _showEditModal = false;
+        _editCustomer = null;
         StateHasChanged();
     }
 
     private async Task UpdateCustomer()
     {
-        if (editCustomer != null)
+        if (_editCustomer != null)
         {
             try
             {
-                await CustomerService.UpdateCustomerAsync(editCustomer);
+                await CustomerService.UpdateCustomerAsync(_editCustomer);
                 await LoadCustomersAsync();
                 CloseEditModal();
             }
             catch (Exception ex)
             {
-                errorMessage = $"更新客户信息时发生错误: {ex.Message}";
-                Console.WriteLine(errorMessage);
+                _errorMessage = $"更新客户信息时发生错误: {ex.Message}";
+                Console.WriteLine(_errorMessage);
             }
         }
     }
 
     private void SwitchToEditMode()
     {
-        if (selectedCustomer != null)
+        if (_selectedCustomer != null)
         {
-            editCustomer = new Customer
+            _editCustomer = new Customer
             {
-                Id = selectedCustomer.Id,
-                Name = selectedCustomer.Name,
-                ContactPerson = selectedCustomer.ContactPerson,
-                Phone = selectedCustomer.Phone,
-                Email = selectedCustomer.Email,
-                Address = selectedCustomer.Address,
-                Description = selectedCustomer.Description
+                Id = _selectedCustomer.Id,
+                Name = _selectedCustomer.Name,
+                ContactPerson = _selectedCustomer.ContactPerson,
+                Phone = _selectedCustomer.Phone,
+                Email = _selectedCustomer.Email,
+                Address = _selectedCustomer.Address,
+                Description = _selectedCustomer.Description
             };
-            showViewModal = false;
-            showEditModal = true;
+            _showViewModal = false;
+            _showEditModal = true;
             StateHasChanged();
         }
     }

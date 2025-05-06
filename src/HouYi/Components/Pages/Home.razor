@@ -17,53 +17,53 @@
             <h2 class="text-center mb-4">HouYi</h2>
             <div class="d-flex flex-column align-items-center mb-4">
                 <a href="/account/manage/" target="_blank" class="text-decoration-none text-white">
-                    <UserAvatar UserName="@currentUserName" Size="md" />
-                    <h5 class="text-center mt-2">@(currentUserName ?? "用户")</h5>
+                    <UserAvatar UserName="@_currentUserName" Size="md" />
+                    <h5 class="text-center mt-2">@(_currentUserName ?? "用户")</h5>
                 </a>
             </div>
             <ul class="nav flex-column">
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Dashboard) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Dashboard), "数据看板")'>
+                    <a class="nav-link @(_currentPage == nameof(Dashboard) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Dashboard), "数据看板")'>
                         <i class="bi bi-speedometer2 me-2"></i> 数据看板
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Resumes) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Resumes), "人才库")'>
+                    <a class="nav-link @(_currentPage == nameof(Resumes) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Resumes), "人才库")'>
                         <i class="bi bi-file-earmark-person me-2"></i> 人才库
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Communications) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Communications), "沟通管理")'>
+                    <a class="nav-link @(_currentPage == nameof(Communications) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Communications), "沟通管理")'>
                         <i class="bi bi-chat-dots me-2"></i> 沟通管理
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Recommendations) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Recommendations), "人才推荐")'>
+                    <a class="nav-link @(_currentPage == nameof(Recommendations) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Recommendations), "人才推荐")'>
                         <i class="bi bi-person-plus me-2"></i> 人才推荐
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Interviews) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Interviews), "面试记录")'>
+                    <a class="nav-link @(_currentPage == nameof(Interviews) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Interviews), "面试记录")'>
                         <i class="bi bi-calendar-event me-2"></i> 面试记录
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Position) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Positions), "职位管理")'>
+                    <a class="nav-link @(_currentPage == nameof(Position) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Positions), "职位管理")'>
                         <i class="bi bi-briefcase me-2"></i> 职位管理
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Statistics) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Statistics), "统计分析")'>
+                    <a class="nav-link @(_currentPage == nameof(Statistics) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Statistics), "统计分析")'>
                         <i class="bi bi-graph-up me-2"></i> 统计分析
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Customers) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Customers), "客户管理")'>
+                    <a class="nav-link @(_currentPage == nameof(Customers) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Customers), "客户管理")'>
                         <i class="bi bi-building me-2"></i> 客户管理
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(currentPage == nameof(Users) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Users), "用户管理")'>
+                    <a class="nav-link @(_currentPage == nameof(Users) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Users), "用户管理")'>
                         <i class="bi bi-people me-2"></i> 用户管理
                     </a>
                 </li>
@@ -74,15 +74,15 @@
         <div class="col p-4">
             <!-- 标签页导航 -->
             <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-                @foreach (var tab in openTabs)
+                @foreach (var tab in _openTabs)
                 {
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link @(tab.Name == activeTabId ? "active" : "")"
+                        <button class="nav-link @(tab.Name == _activeTabId ? "active" : "")"
                         id="@tab.Name-tab"
                         @onclick="() => ActivateTab(tab.Name)"
                         type="button" role="tab">
                             @tab.Title
-                            <span class="close-tab @(openTabs.Count > 1 ? "" : "d-none")"
+                            <span class="close-tab @(_openTabs.Count > 1 ? "" : "d-none")"
                             @onclick="() => CloseTab(tab.Name)"
                             @onclick:stopPropagation="true">✕</span>
                         </button>
@@ -92,9 +92,9 @@
 
             <!-- 标签页内容 -->
             <div class="tab-content" id="mainTabContent">
-                @foreach (var tab in openTabs)
+                @foreach (var tab in _openTabs)
                 {
-                    <div class="tab-pane fade @(tab.Name == activeTabId ? "show active" : "")"
+                    <div class="tab-pane fade @(tab.Name == _activeTabId ? "show active" : "")"
                     id="@tab.Name-content" role="tabpanel">
                         @switch (tab.Name)
                         {
@@ -138,10 +138,10 @@
 </div>
 
 @code {
-    private string currentPage = "dashboard";
-    private string activeTabId = "dashboard";
-    private List<TabItem> openTabs = new List<TabItem>();
-    private string? currentUserName;
+    private string _currentPage = nameof(Dashboard);
+    private string _activeTabId = nameof(Dashboard);
+    private List<TabItem> _openTabs = new List<TabItem>();
+    private string? _currentUserName;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
@@ -154,26 +154,26 @@
 
         if (user.Identity?.IsAuthenticated == true)
         {
-            currentUserName = user.Identity.Name;
+            _currentUserName = user.Identity.Name;
         }
         else
         {
-            currentUserName = "未登录用户";
+            _currentUserName = "未登录用户";
         }
 
         ChangePage(nameof(Dashboard), "数据看板");
     }
 
-    public void ChangePage(string pageName, string pageTitle, object eneityId = null)
+    public void ChangePage(string pageName, string pageTitle, object? eneityId = null)
     {
-        currentPage = pageName;
+        _currentPage = pageName;
 
         // 检查标签页是否已经打开
-        var existingTab = openTabs.FirstOrDefault(t => t.Name == pageName);
+        var existingTab = _openTabs.FirstOrDefault(t => t.Name == pageName);
         if (existingTab == null)
         {
             // 如果标签页不存在，添加新标签页
-            openTabs.Add(new TabItem { Name = pageName, Title = pageTitle, EntityId = eneityId });
+            _openTabs.Add(new TabItem { Name = pageName, Title = pageTitle, EntityId = eneityId });
         }
         else
         {
@@ -188,23 +188,23 @@
 
     private void ActivateTab(string tabName)
     {
-        activeTabId = tabName;
+        _activeTabId = tabName;
     }
 
     private void CloseTab(string tabName)
     {
         // 使用@onclick:stopPropagation="true"已经处理了事件冒泡问题
 
-        if (openTabs.Count > 1)
+        if (_openTabs.Count > 1)
         {
-            int index = openTabs.FindIndex(t => t.Name == tabName);
-            openTabs.RemoveAt(index);
+            int index = _openTabs.FindIndex(t => t.Name == tabName);
+            _openTabs.RemoveAt(index);
 
             // 如果关闭的是当前激活的标签页，则激活其他标签页
-            if (tabName == activeTabId)
+            if (tabName == _activeTabId)
             {
-                int newIndex = Math.Min(index, openTabs.Count - 1);
-                activeTabId = openTabs[newIndex].Name;
+                int newIndex = Math.Min(index, _openTabs.Count - 1);
+                _activeTabId = _openTabs[newIndex].Name;
             }
         }
     }
