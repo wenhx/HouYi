@@ -60,7 +60,11 @@
                                             <td>@interview.InterviewTime.ToString("yyyy-MM-dd HH:mm")</td>
                                             <td>@interview.Location</td>
                                             <td>第 @interview.Round 轮</td>
-                                            <td>@GetStatusString(interview.Status)</td>
+                                            <td>
+                                                <span class="badge @GetStatusBadgeClass(interview.Status)" style="font-size: inherit; font-weight: normal;">
+                                                    @GetStatusString(interview.Status)
+                                                </span>
+                                            </td>
                                             <td>@interview.CreatedAt.ToString("yyyy-MM-dd")</td>
                                             <td>
                                                 <div class="btn-group">
@@ -69,6 +73,9 @@
                                                     </button>
                                                     <button type="button" title="编辑" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview)">
                                                         <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button type="button" title="面试反馈" class="btn btn-sm btn-outline-info" @onclick="() => EditFeedback(interview)">
+                                                        <i class="bi bi-chat-square-text"></i>
                                                     </button>
                                                     <button type="button" title="删除" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview)">
                                                         <i class="bi bi-trash"></i>
@@ -144,7 +151,11 @@
                                             <td>@interview.Location</td>
                                             <td>@interview.Interviewer</td>
                                             <td>第 @interview.Round 轮</td>
-                                            <td>@GetStatusString(interview.Status)</td>
+                                            <td>
+                                                <span class="badge @GetStatusBadgeClass(interview.Status)" style="font-size: inherit; font-weight: normal;">
+                                                    @GetStatusString(interview.Status)
+                                                </span>
+                                            </td>
                                             <td>@interview.CreatedAt.ToString("yyyy-MM-dd")</td>
                                             <td>
                                                 <div class="btn-group">
@@ -153,6 +164,9 @@
                                                     </button>
                                                     <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => EditInterview(interview)">
                                                         <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button type="button" title="面试反馈" class="btn btn-sm btn-outline-info" @onclick="() => EditFeedback(interview)">
+                                                        <i class="bi bi-chat-square-text"></i>
                                                     </button>
                                                     <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview)">
                                                         <i class="bi bi-trash"></i>
@@ -236,6 +250,11 @@ ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingIntervi
     <InterviewEditForm Title="编辑面试" Interview="@_selectedInterview" OnSave="HandleSaveInterview" OnClose="CloseEditModal" />
 }
 
+@if (_showFeedbackModal)
+{
+    <InterviewFeedbackForm Interview="@_feedbackInterview" OnSave="HandleSaveFeedback" OnClose="CloseFeedbackModal" />
+}
+
 @code {
     private List<Interview>? _todayInterviews;
     private PagedResult<Interview>? _pagedInterviews;
@@ -245,9 +264,11 @@ ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingIntervi
     private string _searchTerm = "";
     private bool _isSearchMode = false;
     private Interview? _selectedInterview;
+    private Interview? _feedbackInterview;
     private bool _showInterviewDetail;
     private bool _showDeleteConfirmation;
     private bool _showEditModal;
+    private bool _showFeedbackModal;
     private Interview? _deletingInterview;
 
     private string GetStatusString(InterviewStatus status)
@@ -261,6 +282,20 @@ ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingIntervi
             InterviewStatus.Failed => "未通过",
             InterviewStatus.Cancelled => "已取消",
             _ => "未知"
+        };
+    }
+
+    private string GetStatusBadgeClass(InterviewStatus status)
+    {
+        return status switch
+        {
+            InterviewStatus.Scheduled => "bg-primary",    // 蓝色 - 已安排
+            InterviewStatus.Completed => "bg-info",       // 浅蓝色 - 已完成
+            InterviewStatus.Postponed => "bg-warning",    // 黄色 - 已延期
+            InterviewStatus.Passed => "bg-success",       // 绿色 - 已通过
+            InterviewStatus.Failed => "bg-danger",        // 红色 - 未通过
+            InterviewStatus.Cancelled => "bg-secondary",  // 灰色 - 已取消
+            _ => "bg-secondary"                          // 默认灰色
         };
     }
 
@@ -340,6 +375,7 @@ ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingIntervi
     {
         _selectedInterview = interview;
         _showEditModal = true;
+        _showInterviewDetail = false;
     }
 
     private void EditInterviewFromDetail(Interview interview)
@@ -348,12 +384,21 @@ ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingIntervi
         _showEditModal = true;
     }
 
+    private void EditFeedback(Interview interview)
+    {
+        _feedbackInterview = interview;
+        _showFeedbackModal = true;
+        _showInterviewDetail = false;
+    }
+
     private async Task HandleSaveInterview(Interview interview)
     {
         try
         {
             await InterviewService.UpdateInterviewAsync(interview);
             await LoadInterviewsAsync();
+            _showEditModal = false;
+            _selectedInterview = null;
         }
         catch (Exception ex)
         {
@@ -362,10 +407,32 @@ ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingIntervi
         }
     }
 
+    private async Task HandleSaveFeedback(Interview interview)
+    {
+        try
+        {
+            await InterviewService.UpdateInterviewAsync(interview);
+            await LoadInterviewsAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"保存面试反馈时发生错误: {ex.Message}";
+            Console.WriteLine(_errorMessage);
+        }
+    }
+
     private void CloseEditModal()
     {
         _showEditModal = false;
         _selectedInterview = null;
+        _showInterviewDetail = false;
+    }
+
+    private void CloseFeedbackModal()
+    {
+        _showFeedbackModal = false;
+        _feedbackInterview = null;
+        _showInterviewDetail = false;
     }
 
     private void DeleteInterview(Interview interview)

@@ -737,7 +737,7 @@ public partial class ExampleDataInitializer
                 Interviewer = interviewers[random.Next(interviewers.Length)],
                 Status = InterviewStatus.Scheduled,
                 Feedback = string.Empty,
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.Now.AddHours(random.Next(-120, 0)),
                 UpdatedAt = DateTime.Now
             };
             interviews.Add(interview);
@@ -774,7 +774,7 @@ public partial class ExampleDataInitializer
                 Status = daysOffset < 0 ? historicalInterviewStatuses[random.Next(historicalInterviewStatuses.Length)] :
                                             InterviewStatus.Scheduled,
                 Feedback = daysOffset < 0 ? feedbacks[random.Next(feedbacks.Length)] : string.Empty,
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.Now.AddHours(random.Next(-120, 0)),
                 UpdatedAt = DateTime.Now
             };
             interviews.Add(interview);

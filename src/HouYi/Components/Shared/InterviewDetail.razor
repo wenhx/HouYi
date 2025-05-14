@@ -71,15 +71,19 @@
                                     </div>
                                 </div>
 
-                                @if (!string.IsNullOrWhiteSpace(Interview.Remarks))
-                                {
-                                    <h4 class="mt-3">备注</h4>
-                                    <div class="card">
-                                        <div class="card-body">
+                                <h4 class="mt-3">备注</h4>
+                                <div class="card">
+                                    <div class="card-body">
+                                        @if (string.IsNullOrWhiteSpace(Interview.Remarks))
+                                        {
+                                            <p class="text-muted">暂无备注</p>
+                                        }
+                                        else
+                                        {
                                             <p>@Interview.Remarks</p>
-                                        </div>
+                                        }
                                     </div>
-                                }
+                                </div>
                             </div>
                         </div>
                     }

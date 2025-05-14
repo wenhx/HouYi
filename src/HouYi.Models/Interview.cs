@@ -23,7 +23,7 @@ public class Interview
     public required int RecommendationId { get; set; }
 
     [Required(ErrorMessage = "面试时间不能为空")]
-    [FutureDate(AfterHours = 1, ErrorMessage = "面试时间必须在{1}小时之后。")]
+    [FutureDate(AfterHours = 1)]
     public required DateTime InterviewTime { get; set; }
 
     [Required(ErrorMessage = "面试地点不能为空")]
