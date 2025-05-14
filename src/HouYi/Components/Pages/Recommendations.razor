@@ -111,8 +111,8 @@
                 {
                     @foreach (var recommendation in _pagedRecommendations.Items)
                     {
-                        <div class="card mb-3">
-                            <div class="card-body">
+                        <div class="card border-0 mb-0">
+                            <div class="card-body py-2">
                                 <div class="row">
                                     <div class="col-md-1 d-flex align-items-center justify-content-center">
                                         <div class="match-score @GetMatchLevelClass(recommendation.MatchLevel)">
@@ -120,7 +120,7 @@
                                         </div>
                                     </div>
                                     <div class="col-md-8">
-                                        <h5 class="card-title">
+                                        <h5 class="card-title mb-1">
                                             @recommendation.Resume.Name
                                             <small class="text-muted">（@DisplayHelper.GetGenderText(recommendation.Resume.Gender)，@recommendation.Resume.Age 岁）</small>
                                         </h5>
@@ -130,28 +130,47 @@
                                             <i class="bi bi-clock-history me-1"></i> @DisplayHelper.GetResumeExperienceText(recommendation.Resume.YearsOfExperience) |
                                             <i class="bi bi-geo-alt me-1"></i> @recommendation.Resume.Place.Name
                                         </p>
-                                        <p class="card-text mt-2">
+                                        <p class="card-text mb-1">
                                             <strong>推荐理由：</strong> @recommendation.Reason
                                         </p>
+                                        <p class="card-text mb-1">
+                                            <strong>当前状态：</strong>
+                                            <span class="badge @GetRecommendationStatusBadgeClass(recommendation.Status)" style="padding: 0.5rem 1rem;">
+                                                @GetRecommendationStatusText(recommendation.Status)
+                                            </span>
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(recommendation.Feedback))
+                                        {
+                                            <p class="card-text mb-1">
+                                                <strong>反馈：</strong> @recommendation.Feedback
+                                            </p>
+                                        }
                                     </div>
                                     <div class="col-md-3 text-end d-flex align-items-center justify-content-end">
-                                        <div>
-                                            <button type="button" class="btn btn-sm btn-outline-primary me-1" @onclick="() => ViewResume(recommendation.Resume.Id)">
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-info text-white" style="min-width: 120px;" @onclick="() => OpenFeedbackModal(recommendation)">
+                                                <i class="bi bi-chat-dots"></i> 反馈
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary" style="min-width: 120px;" @onclick="() => ViewResume(recommendation.Resume.Id)">
                                                 <i class="bi bi-eye"></i> 查看简历
                                             </button>
                                             @if (_position != null)
                                             {
-                                                <button type="button" class="btn btn-sm btn-outline-success me-1" @onclick="() => ArrangeInterview(recommendation.Resume.Id)">
+                                                <button type="button" class="btn btn-outline-success" style="min-width: 120px;" @onclick="() => ArrangeInterview(recommendation.Resume.Id)">
                                                     <i class="bi bi-calendar-plus"></i> 安排面试
                                                 </button>
                                             }
-                                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveRecommendation(recommendation.Id)">
+                                            <button type="button" class="btn btn-outline-danger" style="min-width: 120px;" @onclick="() => RemoveRecommendation(recommendation.Id)">
                                                 <i class="bi bi-x-circle"></i> 删除
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            @if (recommendation != _pagedRecommendations.Items.Last())
+                            {
+                                <hr class="my-0" />
+                            }
                         </div>
                     }
                 }
@@ -258,6 +277,41 @@
 <!-- 简历查看模态框 -->
 <ResumeViewModal Resume="@_viewingResume" ShowModal="@_showResumeModal" ShowEditButton="false" CloseModal="CloseResumeModal" />
 
+<!-- 反馈模态框 -->
+@if (_showFeedbackModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedbackModalLabel">推荐反馈</h5>
+                    <button type="button" class="btn-close" @onclick="CloseFeedbackModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">推荐状态</label>
+                        <select class="form-select" @bind="_editingRecommendation.Status">
+                            <option value="@RecommendationStatus.Recommended">已推荐</option>
+                            <option value="@RecommendationStatus.Pending">待处理</option>
+                            <option value="@RecommendationStatus.Accepted">已接受</option>
+                            <option value="@RecommendationStatus.Rejected">已拒绝</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">反馈内容</label>
+                        <textarea class="form-control" rows="4" @bind="_editingRecommendation.Feedback"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseFeedbackModal">取消</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveFeedback">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
 
     [Parameter]
@@ -277,6 +331,8 @@
     private Recommendation? deletingRecommendation;
     private bool _showResumeModal;
     private Resume? _viewingResume;
+    private bool _showFeedbackModal;
+    private Recommendation? _editingRecommendation;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -502,5 +558,68 @@
     {
         _errorMessage = null;
         StateHasChanged();
+    }
+
+    private void OpenFeedbackModal(Recommendation recommendation)
+    {
+        _editingRecommendation = new Recommendation
+        {
+            Id = recommendation.Id,
+            ResumeId = recommendation.ResumeId,
+            PositionId = recommendation.PositionId,
+            Reason = recommendation.Reason,
+            Status = recommendation.Status,
+            Feedback = recommendation.Feedback
+        };
+        _showFeedbackModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseFeedbackModal()
+    {
+        _showFeedbackModal = false;
+        _editingRecommendation = null;
+        StateHasChanged();
+    }
+
+    private async Task SaveFeedback()
+    {
+        if (_editingRecommendation == null) return;
+
+        try
+        {
+            await RecommendationService.UpdateRecommendationAsync(_editingRecommendation.Id, _editingRecommendation.Status, _editingRecommendation.Feedback);
+            await LoadRecommendationsAsync();
+            CloseFeedbackModal();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"保存反馈时发生错误: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private string GetRecommendationStatusBadgeClass(RecommendationStatus status)
+    {
+        return status switch
+        {
+            RecommendationStatus.Recommended => "bg-info",
+            RecommendationStatus.Pending => "bg-warning",
+            RecommendationStatus.Accepted => "bg-success",
+            RecommendationStatus.Rejected => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetRecommendationStatusText(RecommendationStatus status)
+    {
+        return status switch
+        {
+            RecommendationStatus.Recommended => "已推荐",
+            RecommendationStatus.Pending => "待处理",
+            RecommendationStatus.Accepted => "已接受",
+            RecommendationStatus.Rejected => "已拒绝",
+            _ => "未知"
+        };
     }
 }

@@ -58,4 +58,19 @@ public class RecommendationService : IRecommendationService
         _dbContext.Recommendations.Remove(recommendation);
         await _dbContext.SaveChangesAsync();
     }
+
+    public async Task UpdateRecommendationAsync(int recommendationId, RecommendationStatus status, string feedback)
+    {
+        var recommendation = await _dbContext.Recommendations
+            .FirstOrDefaultAsync(r => r.Id == recommendationId);
+
+        if (recommendation == null)
+            throw new ArgumentException($"未找到ID为 {recommendationId} 的推荐记录");
+
+        recommendation.Status = status;
+        recommendation.Feedback = feedback;
+        recommendation.UpdatedAt = DateTime.Now;
+
+        await _dbContext.SaveChangesAsync();
+    }
 } 
