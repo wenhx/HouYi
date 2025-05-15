@@ -1,0 +1,16 @@
+﻿@page "/Account/Logout"
+
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+
+@inject NavigationManager Navigation
+@inject IHttpContextAccessor HttpContextAccessor
+@inject SignInManager<HouYiUser> SignInManager
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await SignInManager.SignOutAsync();
+        Navigation.NavigateTo("/Account/Login", forceLoad: true);
+    }
+}

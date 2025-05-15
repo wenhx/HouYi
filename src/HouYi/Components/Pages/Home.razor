@@ -4,9 +4,12 @@
 @using System.Linq
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components
 @using HouYi.Data
 @attribute [Authorize]
 @inject UserManager<HouYiUser> UserManager
+@inject SignInManager<HouYiUser> SignInManager
+@inject NavigationManager NavigationManager
 
 <PageTitle>Home</PageTitle>
 
@@ -65,6 +68,11 @@
                 <li class="nav-item mb-2">
                     <a class="nav-link @(_currentPage == nameof(Users) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Users), "用户管理")'>
                         <i class="bi bi-people me-2"></i> 用户管理
+                    </a>
+                </li>
+                <li class="nav-item mt-auto">
+                    <a class="nav-link text-white" href="#" @onclick="Logout">
+                        <i class="bi bi-box-arrow-right me-2"></i> 退出登录
                     </a>
                 </li>
             </ul>
@@ -213,6 +221,11 @@
     {
         Console.WriteLine("OnViewRecommendation: {0}", positionId);
         ChangePage(nameof(Recommendations), "人才推荐", positionId);
+    }
+
+    private void Logout()
+    {
+        NavigationManager.NavigateTo("/Account/Logout", forceLoad: true);
     }
 
     private class TabItem
