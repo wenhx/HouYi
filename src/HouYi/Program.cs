@@ -1,12 +1,12 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using HouYi.Components;
+﻿using HouYi.Components;
 using HouYi.Components.Account;
 using HouYi.Data;
 using HouYi.Data.Utils;
-using HouYi.Services;
 using HouYi.Models;
+using HouYi.Services;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace HouYi;
 
@@ -33,6 +33,8 @@ public class Program
                 options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
             })
             .AddIdentityCookies();
+
+        builder.Services.AddLocalization();
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         //builder.Services.AddDbContext<HouYiDbContext>(options => options.UseSqlServer(connectionString));
@@ -87,6 +89,7 @@ public class Program
 
         // Add additional endpoints required by the Identity /Account Razor components.
         app.MapAdditionalIdentityEndpoints();
+        app.UseRequestLocalization("zh-CN");
 
         app.Run();
     }
