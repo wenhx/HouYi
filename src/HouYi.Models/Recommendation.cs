@@ -13,7 +13,7 @@ public class Recommendation
     public virtual Position Position { get; set; }
 
     [StringLength(Constants.StringLengths.Text)]
-    public required string Reason { get; init; }
+    public required string Reason { get; set; }
     public RecommendationStatus Status { get; set; } = RecommendationStatus.Recommended;
     public RatingLevel MatchLevel { get; set; } = RatingLevel.NotRated;
 

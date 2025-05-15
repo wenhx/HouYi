@@ -97,7 +97,7 @@ public class RecommendationService : IRecommendationService
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task UpdateRecommendationAsync(int recommendationId, RecommendationStatus status, string feedback)
+    public async Task FeedBackAsync(int recommendationId, RecommendationStatus status, string feedback)
     {
         var recommendation = await _dbContext.Recommendations
             .FirstOrDefaultAsync(r => r.Id == recommendationId);
@@ -148,5 +148,20 @@ public class RecommendationService : IRecommendationService
         _dbContext.Recommendations.Add(recommendation);
         await _dbContext.SaveChangesAsync();
         return recommendation;
+    }
+
+    public async Task UpdateRecommendationAsync(int recommendationId, RecommendationStatus status, string reason)
+    {
+        var recommendation = await _dbContext.Recommendations
+            .FirstOrDefaultAsync(r => r.Id == recommendationId);
+
+        if (recommendation == null)
+            throw new ArgumentException($"未找到ID为 {recommendationId} 的推荐记录");
+
+        recommendation.Status = status;
+        recommendation.Reason = reason;
+        recommendation.UpdatedAt = DateTime.Now;
+
+        await _dbContext.SaveChangesAsync();
     }
 } 

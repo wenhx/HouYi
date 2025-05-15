@@ -200,6 +200,9 @@
                                                             <button type="button" class="btn btn-sm btn-outline-info" @onclick="() => OpenFeedbackModal(recommendation)">
                                                                 <i class="bi bi-chat-dots"></i>
                                                             </button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEditModal(recommendation)">
+                                                                <i class="bi bi-pencil"></i>
+                                                            </button>
                                                             <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => ViewResume(recommendation.Resume.Id)">
                                                                 <i class="bi bi-eye"></i>
                                                             </button>
@@ -361,8 +364,42 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-@code {
+<!-- 编辑模态框 -->
+@if (_showEditModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">编辑推荐</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">推荐状态</label>
+                        <select class="form-select" @bind="_editingRecommendation.Status">
+                            <option value="@RecommendationStatus.Recommended">已推荐</option>
+                            <option value="@RecommendationStatus.Pending">待处理</option>
+                            <option value="@RecommendationStatus.Accepted">已接受</option>
+                            <option value="@RecommendationStatus.Rejected">已拒绝</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">推荐原因</label>
+                        <textarea class="form-control" rows="4" @bind="_editingRecommendation.Reason"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">取消</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveEdit">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
 
+@code {
     [Parameter]
     public int? PositionId { get; set; }
 
@@ -381,9 +418,10 @@
     private bool _showResumeModal;
     private Resume? _viewingResume;
     private bool _showFeedbackModal;
-    private Recommendation? _editingRecommendation;
     private RecommendationStatus? _selectedRecommendationStatus;
     private HiringStatus? _selectedHiringStatus;
+    private bool _showEditModal;
+    private EditingRecommendation _editingRecommendation;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -640,15 +678,7 @@
 
     private void OpenFeedbackModal(Recommendation recommendation)
     {
-        _editingRecommendation = new Recommendation
-            {
-                Id = recommendation.Id,
-                ResumeId = recommendation.ResumeId,
-                PositionId = recommendation.PositionId,
-                Reason = recommendation.Reason,
-                Status = recommendation.Status,
-                Feedback = recommendation.Feedback
-            };
+        _editingRecommendation = new EditingRecommendation { Id = recommendation.Id, Status = recommendation.Status, Feedback = recommendation.Feedback };
         _showFeedbackModal = true;
         StateHasChanged();
     }
@@ -656,17 +686,19 @@
     private void CloseFeedbackModal()
     {
         _showFeedbackModal = false;
+
         _editingRecommendation = null;
         StateHasChanged();
     }
 
     private async Task SaveFeedback()
     {
-        if (_editingRecommendation == null) return;
+        if (_editingRecommendation == null)
+            return;
 
         try
         {
-            await RecommendationService.UpdateRecommendationAsync(_editingRecommendation.Id, _editingRecommendation.Status, _editingRecommendation.Feedback);
+            await RecommendationService.FeedBackAsync(_editingRecommendation.Id, _editingRecommendation.Status, _editingRecommendation.Feedback);
             await LoadRecommendationsAsync();
             CloseFeedbackModal();
         }
@@ -743,5 +775,42 @@
         _selectedHiringStatus = status;
         _currentPage = 1;
         await LoadRecommendationsAsync();
+    }
+
+    private void OpenEditModal(Recommendation recommendation)
+    {
+        _editingRecommendation = new EditingRecommendation
+            {
+                Id = recommendation.Id,
+                Status = recommendation.Status,
+                Reason = recommendation.Reason
+            };
+        _showEditModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseEditModal()
+    {
+        _showEditModal = false;
+        _editingRecommendation = null;
+        StateHasChanged();
+    }
+
+    private async Task SaveEdit()
+    {
+        try
+        {
+            await RecommendationService.UpdateRecommendationAsync(
+                _editingRecommendation.Id,
+                _editingRecommendation.Status,
+                _editingRecommendation.Reason);
+            await LoadRecommendationsAsync();
+            CloseEditModal();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"保存编辑时发生错误: {ex.Message}";
+            StateHasChanged();
+        }
     }
 }
