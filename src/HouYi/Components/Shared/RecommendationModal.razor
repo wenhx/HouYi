@@ -1,0 +1,132 @@
+﻿@using HouYi.Models
+@using HouYi.Services
+
+<div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-labelledby="recommendationModalLabel" aria-hidden="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recommendationModalLabel">推荐候选人</h5>
+                <button type="button" class="btn-close" @onclick="OnCancel"></button>
+            </div>
+            <div class="modal-body">
+                @if (Resume != null)
+                {
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>候选人信息</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>姓名：</th>
+                                    <td>@Resume.Name</td>
+                                </tr>
+                                <tr>
+                                    <th>性别：</th>
+                                    <td>@DisplayHelper.GetGenderText(Resume.Gender)</td>
+                                </tr>
+                                <tr>
+                                    <th>年龄：</th>
+                                    <td>@Resume.Age</td>
+                                </tr>
+                                <tr>
+                                    <th>当前职位：</th>
+                                    <td>@Resume.Position</td>
+                                </tr>
+                                <tr>
+                                    <th>工作经验：</th>
+                                    <td>@DisplayHelper.GetResumeExperienceText(Resume.YearsOfExperience)</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>联系方式</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>电话：</th>
+                                    <td>@Resume.Phone</td>
+                                </tr>
+                                <tr>
+                                    <th>邮箱：</th>
+                                    <td>@Resume.Email</td>
+                                </tr>
+                                <tr>
+                                    <th>所在地：</th>
+                                    <td>@Resume.Place?.Name</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">选择推荐职位</label>
+                        <select class="form-select" @bind="_selectedPositionId">
+                            <option value="">-- 请选择职位 --</option>
+                            @if (OpenPositions != null)
+                            {
+                                @foreach (var position in OpenPositions)
+                                {
+                                    <option value="@position.Id">@($"{position.Id}-{position.Name}-{position.Customer?.Name}")</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">匹配度</label>
+                        <select class="form-select" @bind="_matchLevel">
+                            <option value="@RatingLevel.NotRated">未评级</option>
+                            <option value="@RatingLevel.OneStar">一星</option>
+                            <option value="@RatingLevel.TwoStars">二星</option>
+                            <option value="@RatingLevel.ThreeStars">三星</option>
+                            <option value="@RatingLevel.FourStars">四星</option>
+                            <option value="@RatingLevel.FiveStars">五星</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">推荐理由</label>
+                        <textarea class="form-control" rows="4" @bind="_reason"></textarea>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="OnCancel">取消</button>
+                <button type="button" class="btn btn-primary" @onclick="HandleRecommend" disabled="@(string.IsNullOrEmpty(_selectedPositionId))">推荐</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop fade show"></div>
+
+@code {
+    [Parameter]
+    public Resume? Resume { get; set; }
+
+    [Parameter]
+    public List<Position>? OpenPositions { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback<Recommendation> OnRecommend { get; set; }
+
+    private string _selectedPositionId = "";
+    private string _reason = "";
+    private RatingLevel _matchLevel = RatingLevel.NotRated;
+
+    private async Task HandleRecommend()
+    {
+        if (!string.IsNullOrEmpty(_selectedPositionId) && Resume != null)
+        {
+            var recommendation = new Recommendation
+            {
+                ResumeId = Resume.Id,
+                PositionId = int.Parse(_selectedPositionId),
+                Reason = _reason,
+                MatchLevel = _matchLevel
+            };
+
+            await OnRecommend.InvokeAsync(recommendation);
+        }
+    }
+}

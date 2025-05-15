@@ -111,4 +111,42 @@ public class RecommendationService : IRecommendationService
 
         await _dbContext.SaveChangesAsync();
     }
+
+    public async Task<Recommendation> CreateRecommendationAsync(Recommendation recommendation)
+    {
+        if (recommendation == null)
+            throw new ArgumentNullException(nameof(recommendation), "推荐记录不能为空");
+
+        if (string.IsNullOrEmpty(recommendation.ResumeId))
+            throw new ArgumentException("简历ID不能为空", nameof(recommendation));
+
+        if (recommendation.PositionId <= 0)
+            throw new ArgumentException("职位ID必须大于0", nameof(recommendation));
+
+        if (string.IsNullOrEmpty(recommendation.Reason))
+            throw new ArgumentException("推荐理由不能为空", nameof(recommendation));
+
+        // 验证简历是否存在
+        var resumeExists = await _dbContext.Resumes.AnyAsync(r => r.Id == recommendation.ResumeId);
+        if (!resumeExists)
+            throw new ArgumentException($"未找到ID为 {recommendation.ResumeId} 的简历", nameof(recommendation));
+
+        // 验证职位是否存在且处于开放状态
+        var position = await _dbContext.Positions
+            .FirstOrDefaultAsync(p => p.Id == recommendation.PositionId);
+        if (position == null)
+            throw new ArgumentException($"未找到ID为 {recommendation.PositionId} 的职位", nameof(recommendation));
+        if (position.Status != PositionStatus.Open)
+            throw new ArgumentException($"职位 {position.Name} 当前不处于开放状态", nameof(recommendation));
+
+        // 验证是否已经推荐过
+        var existingRecommendation = await _dbContext.Recommendations
+            .AnyAsync(r => r.ResumeId == recommendation.ResumeId && r.PositionId == recommendation.PositionId);
+        if (existingRecommendation)
+            throw new InvalidOperationException($"该候选人已经被推荐过此职位");
+
+        _dbContext.Recommendations.Add(recommendation);
+        await _dbContext.SaveChangesAsync();
+        return recommendation;
+    }
 } 

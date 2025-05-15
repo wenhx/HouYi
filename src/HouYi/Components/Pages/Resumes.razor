@@ -5,6 +5,7 @@
 @inject ICommunicationService CommunicationService
 @inject IPositionService PositionService
 @inject IPlaceService PlaceService
+@inject IRecommendationService RecommendationService
 
 
 <div class="container-fluid p-0">
@@ -47,7 +48,17 @@
         <div class="card-body">
             @if (!string.IsNullOrEmpty(_errorMessage))
             {
-                <div class="alert alert-danger">@_errorMessage</div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle me-2"></i>@_errorMessage
+                    <button type="button" class="btn-close" @onclick="ClearErrorMessage"></button>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(_successMessage))
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>@_successMessage
+                    <button type="button" class="btn-close" @onclick="ClearSuccessMessage"></button>
+                </div>
             }
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -140,6 +151,9 @@
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-info btn-communication" @onclick="() => OpenAddCommunicationModal(resume.Id)" title="添加沟通记录" style="padding: 0.25rem 0.4rem;">
                                                 <i class="bi bi-telephone"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning btn-recommend" @onclick="() => OpenRecommendModal(resume.Id)" title="推荐候选人">
+                                                <i class="bi bi-person-plus"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-success btn-edit btn-operation" @onclick="() => OpenEditModal(resume.Id)" title="编辑简历">
                                                 <i class="bi bi-pencil"></i>
@@ -298,7 +312,7 @@
 <ResumeViewModal Resume="@_viewingResume" ShowModal="@_showViewModal" CloseModal="CloseViewModal" OnEdit="EditFromViewModal" />
 
 <!-- 添加简历模态框 -->
-<ResumeEditForm ModalId="addModal" ModalTitle="添加简历" Resume="@_newResume" 
+<ResumeEditForm ModalId="addModal" ModalTitle="添加简历" Resume="@_newResume"
                 OnCancel="CloseAddModal" OnValidSubmit="AddResume" ShowModal="@(_newResume != null)" />
 
 <!-- 编辑简历模态框 -->
@@ -307,9 +321,19 @@
 
 <DeleteConfirmationModal @ref="_deleteConfirmationModal" ShowModal="_showDeleteConfirmation" ItemName="@($" {_deletingResume?.Name} 的简历")" OnConfirm="HandleDeleteConfirmation" />
 
+<!-- 推荐模态框 -->
+@if (_showRecommendModal)
+{
+    <RecommendationModal Resume="@_recommendingResume"
+                         OpenPositions="@_openPositions"
+                         OnCancel="CloseRecommendModal"
+                         OnRecommend="HandleRecommend" />
+}
+
 @code {
     private PagedResult<Resume>? _pagedResumes;
     private string? _errorMessage;
+    private string? _successMessage;
     private int _currentPage = 1;
     private int _pageSize = 10;
     private string _searchField = "Name";
@@ -328,6 +352,8 @@
     private Resume? _deletingResume;
     private DeleteConfirmationModal? _deleteConfirmationModal;
     private ResumeWithIntValue? _newResume;
+    private bool _showRecommendModal;
+    private Resume? _recommendingResume;
 
     protected override async Task OnInitializedAsync()
     {
@@ -611,5 +637,75 @@
             _errorMessage = $"添加简历时发生错误: {ex.Message}";
             Console.WriteLine(_errorMessage);
         }
+    }
+
+    private async Task OpenRecommendModal(string resumeId)
+    {
+        try
+        {
+            var resume = _pagedResumes?.Items.FirstOrDefault(r => r.Id == resumeId);
+            if (resume != null)
+            {
+                _recommendingResume = resume;
+                await LoadOpenPositionsAsync();
+                _showRecommendModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"打开推荐模态框时发生错误: {ex.Message}";
+            Console.WriteLine(_errorMessage);
+        }
+    }
+
+    private void CloseRecommendModal()
+    {
+        _showRecommendModal = false;
+        _recommendingResume = null;
+        StateHasChanged();
+    }
+
+    private async Task HandleRecommend(Recommendation data)
+    {
+        try
+        {
+            if (_recommendingResume != null)
+            {
+                var recommendation = new Recommendation
+                    {
+                        ResumeId = _recommendingResume.Id,
+                        PositionId = data.PositionId,
+                        Reason = data.Reason,
+                        MatchLevel = data.MatchLevel
+                    };
+
+                await RecommendationService.CreateRecommendationAsync(recommendation);
+                var position = _openPositions?.FirstOrDefault(p => p.Id == data.PositionId);
+                _successMessage = $"{_recommendingResume.Name} 已成功推荐给职位：{position?.Name}-{position?.Customer?.Name}";
+                await LoadResumesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"创建推荐记录时发生错误: {ex.Message}";
+            Console.WriteLine(_errorMessage);
+        }
+        finally
+        {
+            CloseRecommendModal();
+        }
+    }
+
+    private void ClearErrorMessage()
+    {
+        _errorMessage = null;
+        StateHasChanged();
+    }
+
+    private void ClearSuccessMessage()
+    {
+        _successMessage = null;
+        StateHasChanged();
     }
 }
