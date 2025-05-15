@@ -13,6 +13,14 @@
         </button> *@
     </div>
 
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i> @_errorMessage
+            <button type="button" class="btn-close" @onclick="() => _errorMessage = null"></button>
+        </div>
+    }
+
     <!-- 面试日历和列表 -->
     <div class="row">
         <div class="col-md-12 mb-4">
@@ -168,7 +176,7 @@
                                                     <button type="button" title="面试反馈" class="btn btn-sm btn-outline-info" @onclick="() => EditFeedback(interview)">
                                                         <i class="bi bi-chat-square-text"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview)">
+                                                    <button type="button" title="删除" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteInterview(interview)">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </div>
@@ -243,7 +251,7 @@
 <InterviewDetail Interview="_selectedInterview" ShowModal="_showInterviewDetail" OnEditButtonClick="EditInterviewFromDetail" />
 
 <DeleteConfirmationModal ShowModal="_showDeleteConfirmation" OnConfirm="HandleDeleteConfirmation"
-ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingInterview?.Position.Name}")" />
+                         ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingInterview?.Position.Name}")" />
 
 @if (_showEditModal)
 {
@@ -437,6 +445,12 @@ ItemName="@($"面试记录 - {_deletingInterview?.Resume.Name}-{_deletingIntervi
 
     private void DeleteInterview(Interview interview)
     {
+        if (interview.Recommendation?.HiringStatus == HiringStatus.Hired)
+        {
+            _errorMessage = "已录用的面试记录不能删除";
+            return;
+        }
+
         _deletingInterview = interview;
         _showDeleteConfirmation = true;
         StateHasChanged();

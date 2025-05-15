@@ -19,6 +19,8 @@ public class Recommendation
 
     [StringLength(Constants.StringLengths.Text)]
     public string Feedback { get; set; } = string.Empty;
+    public HiringStatus HiringStatus { get; set; } = HiringStatus.NotHired;
+    public DateTime HiringStatusChangedAt { get; set; } = DateTime.Now;
     public DateTime CreatedAt { get; init; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }

@@ -21,6 +21,7 @@ public class InterviewService : IInterviewService
 
         return await _dbContext.Interviews
             .Include(i => i.Resume)
+            .Include(i => i.Recommendation)
             .Include(i => i.Position)
                 .ThenInclude(p => p.Customer)
             .Where(i => i.InterviewTime >= today && i.InterviewTime < tomorrow)
@@ -32,6 +33,7 @@ public class InterviewService : IInterviewService
     {
         var query = _dbContext.Interviews
             .Include(i => i.Resume)
+            .Include(i => i.Recommendation)
             .Include(i => i.Position)
                 .ThenInclude(p => p.Customer)
             .OrderByDescending(i => i.InterviewTime);
@@ -151,6 +153,7 @@ public class InterviewService : IInterviewService
 
         var existingInterview = await _dbContext.Interviews
             .Include(i => i.Resume)
+            .Include(i => i.Recommendation)
             .FirstOrDefaultAsync(i => i.Id == interview.Id);
 
         if (existingInterview == null)
@@ -176,6 +179,11 @@ public class InterviewService : IInterviewService
         existingInterview.Feedback = interview.Feedback;
         existingInterview.Status = interview.Status;
         existingInterview.Remarks = interview.Remarks;
+        if (interview?.Recommendation.HiringStatus == HiringStatus.Hired)
+        {
+            existingInterview.Recommendation.Status = interview.Recommendation.Status;
+            existingInterview.Recommendation.HiringStatusChangedAt = DateTime.Now;
+        }
 
         await _dbContext.SaveChangesAsync();
         return existingInterview;

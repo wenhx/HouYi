@@ -13,7 +13,13 @@ public class RecommendationService : IRecommendationService
         _dbContext = dbContext;
     }
 
-    public async Task<PagedResult<Recommendation>> GetRecommendationsAsync(int? positionId, int pageNumber = 1, int pageSize = 10, string? candiateName = null)
+    protected async Task<PagedResult<Recommendation>> GetRecommendationsCoreAsync(
+        Func<IQueryable<Recommendation>, IQueryable<Recommendation>>? filter,
+        int? positionId = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        RecommendationStatus? status = null,
+        HiringStatus? hiringStatus = null)
     {
         Utils.NormalizePaginationInputs(ref pageNumber, ref pageSize);
 
@@ -27,11 +33,17 @@ public class RecommendationService : IRecommendationService
             query = query.Where(r => r.PositionId == positionId);
         }
 
-        if (!string.IsNullOrWhiteSpace(candiateName))
+        if (status.HasValue)
         {
-            candiateName = candiateName.Trim();
-            query = query.Where(r => r.Resume.Name.Contains(candiateName));
+            query = query.Where(r => r.Status == status.Value);
         }
+
+        if (hiringStatus.HasValue)
+        {
+            query = query.Where(r => r.HiringStatus == hiringStatus.Value);
+        }
+
+        query = filter != null ? filter(query) : query;
 
         var totalCount = await query.CountAsync();
         var items = await query
@@ -40,6 +52,32 @@ public class RecommendationService : IRecommendationService
             .ToListAsync();
 
         return new PagedResult<Recommendation>(items, pageNumber, pageSize, totalCount);
+    }
+
+    public async Task<PagedResult<Recommendation>> GetRecommendationsAsync(
+        int? positionId = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        string? searchTerm = null,
+        RecommendationStatus? status = null,
+        HiringStatus? hiringStatus = null)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return await GetRecommendationsCoreAsync(filter: null, positionId, pageNumber, pageSize, status, hiringStatus);
+        }
+
+        return await GetRecommendationsCoreAsync(filter, positionId, pageNumber, pageSize, status, hiringStatus);
+
+        IQueryable<Recommendation> filter(IQueryable<Recommendation> query)
+        {
+            searchTerm = searchTerm.Trim();
+            return query.Where(r =>
+                r.Resume.Name.Contains(searchTerm) ||
+                r.Resume.Position.Contains(searchTerm) ||
+                r.Reason.Contains(searchTerm) ||
+                (r.Feedback != null && r.Feedback.Contains(searchTerm)));
+        }
     }
 
     public async Task DeleteRecommendationAsync(int recommendationId)

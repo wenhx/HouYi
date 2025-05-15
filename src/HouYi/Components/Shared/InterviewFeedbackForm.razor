@@ -32,7 +32,7 @@
 
                     <div class="mb-3">
                         <label class="form-label">面试结果</label>
-                        <InputSelect @bind-Value="_interviewWrapper.Status" class="form-select">
+                        <InputSelect @bind-Value="_interviewWrapper.Status" class="form-select" @onchange="HandleStatusChange">
                             <option value="@InterviewStatus.Scheduled">已安排</option>
                             <option value="@InterviewStatus.Completed">已完成</option>
                             <option value="@InterviewStatus.Postponed">已延期</option>
@@ -42,6 +42,18 @@
                         </InputSelect>
                         <ValidationMessage For="@(() => _interviewWrapper.Status)" />
                     </div>
+
+                    @if (_interviewWrapper.Status == InterviewStatus.Passed)
+                    {
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="hiringCheckbox" @bind="_isHired">
+                                <label class="form-check-label" for="hiringCheckbox">
+                                    录用
+                                </label>
+                            </div>
+                        </div>
+                    }
 
                     <div class="mb-3">
                         <label class="form-label">面试反馈</label>
@@ -73,10 +85,20 @@
     public string ErrorMessage { get; set; } = string.Empty;
 
     private InterviewWithIntValue _interviewWrapper = null!;
+    private bool _isHired;
 
     protected override void OnParametersSet()
     {
         _interviewWrapper = new InterviewWithIntValue(Interview);
+        _isHired = Interview.Recommendation?.HiringStatus == HiringStatus.Hired;
+    }
+
+    private void HandleStatusChange(ChangeEventArgs e)
+    {
+        if (_interviewWrapper.Status != InterviewStatus.Passed)
+        {
+            _isHired = false;
+        }
     }
 
     private async Task HandleValidSubmit()
@@ -86,6 +108,13 @@
             // 将 wrapper 中的数据同步回 Interview
             Interview.Status = _interviewWrapper.Status;
             Interview.Feedback = _interviewWrapper.Feedback;
+
+            // 如果勾选了录用，更新推荐记录的录用状态
+            if (_isHired && Interview.Recommendation != null)
+            {
+                Interview.Recommendation.HiringStatus = HiringStatus.Hired;
+                Interview.Recommendation.HiringStatusChangedAt = DateTime.Now;
+            }
 
             await OnSave.InvokeAsync(Interview);
             await CloseModal();

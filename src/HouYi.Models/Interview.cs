@@ -21,6 +21,7 @@ public class Interview
     [Required(ErrorMessage = "推荐ID不能为空")]
     [Range(1, int.MaxValue, ErrorMessage = "推荐ID必须大于0")]
     public required int RecommendationId { get; set; }
+    public virtual Recommendation? Recommendation { get; set; }
 
     [Required(ErrorMessage = "面试时间不能为空")]
     [FutureDate(AfterHours = 1)]

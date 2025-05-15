@@ -45,5 +45,9 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
             .UseIdentityColumn(10000, 1); // 起始值为 10000，增量为 1
 
         modelBuilder.Entity<ReferenceData>().UseTpcMappingStrategy();
+        modelBuilder.Entity<Interview>()
+            .HasOne(i => i.Recommendation)
+            .WithMany().HasForeignKey(i => i.RecommendationId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

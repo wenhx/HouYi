@@ -101,78 +101,127 @@
                         </div>
                     </div>
                 }
-                else if (!_pagedRecommendations.Items.Any())
-                {
-                    <div class="alert alert-info" role="alert">
-                        <i class="bi bi-info-circle me-2"></i> 暂无推荐记录
-                    </div>
-                }
                 else
                 {
-                    @foreach (var recommendation in _pagedRecommendations.Items)
-                    {
-                        <div class="card border-0 mb-0">
-                            <div class="card-body py-2">
-                                <div class="row">
-                                    <div class="col-md-1 d-flex align-items-center justify-content-center">
-                                        <div class="match-score @GetMatchLevelClass(recommendation.MatchLevel)">
-                                            <span class="stars">@GetMatchLevelText(recommendation.MatchLevel)</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-8">
-                                        <h5 class="card-title mb-1">
-                                            @recommendation.Resume.Name
-                                            <small class="text-muted">（@DisplayHelper.GetGenderText(recommendation.Resume.Gender)，@recommendation.Resume.Age 岁）</small>
-                                        </h5>
-                                        <p class="card-text mb-1">
-                                            <i class="bi bi-briefcase me-1"></i> @recommendation.Resume.Position |
-                                            <i class="bi bi-book me-1"></i> @DisplayHelper.GetEducationText(recommendation.Resume.HighestEducation) |
-                                            <i class="bi bi-clock-history me-1"></i> @DisplayHelper.GetResumeExperienceText(recommendation.Resume.YearsOfExperience) |
-                                            <i class="bi bi-geo-alt me-1"></i> @recommendation.Resume.Place.Name
-                                        </p>
-                                        <p class="card-text mb-1">
-                                            <strong>推荐理由：</strong> @recommendation.Reason
-                                        </p>
-                                        <p class="card-text mb-1">
-                                            <strong>当前状态：</strong>
-                                            <span class="badge @GetRecommendationStatusBadgeClass(recommendation.Status)" style="padding: 0.5rem 1rem;">
-                                                @GetRecommendationStatusText(recommendation.Status)
-                                            </span>
-                                        </p>
-                                        @if (!string.IsNullOrEmpty(recommendation.Feedback))
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 80px;">匹配度</th>
+                                            <th style="width: 100px;">姓名</th>
+                                            <th>个人信息</th>
+                                            <th style="width: 120px;">
+                                                <span>推荐状态</span>
+                                                <div class="dropdown d-inline-block ms-1">
+                                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                                        <i class="bi bi-filter"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item @(_selectedRecommendationStatus == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByRecommendationStatus(null)">所有状态</a></li>
+                                                        <li><a class="dropdown-item @(_selectedRecommendationStatus == RecommendationStatus.Recommended ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByRecommendationStatus(RecommendationStatus.Recommended)">已推荐</a></li>
+                                                        <li><a class="dropdown-item @(_selectedRecommendationStatus == RecommendationStatus.Pending ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByRecommendationStatus(RecommendationStatus.Pending)">待处理</a></li>
+                                                        <li><a class="dropdown-item @(_selectedRecommendationStatus == RecommendationStatus.Accepted ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByRecommendationStatus(RecommendationStatus.Accepted)">已接受</a></li>
+                                                        <li><a class="dropdown-item @(_selectedRecommendationStatus == RecommendationStatus.Rejected ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByRecommendationStatus(RecommendationStatus.Rejected)">已拒绝</a></li>
+                                                    </ul>
+                                                </div>
+                                            </th>
+                                            <th style="width: 250px;">推荐理由</th>
+                                            <th style="width: 250px;">推荐反馈</th>
+                                            <th style="width: 120px;">
+                                                <span>录用状态</span>
+                                                <div class="dropdown d-inline-block ms-1">
+                                                    <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                                        <i class="bi bi-filter"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item @(_selectedHiringStatus == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByHiringStatus(null)">所有状态</a></li>
+                                                        <li><a class="dropdown-item @(_selectedHiringStatus == HiringStatus.NotHired ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByHiringStatus(HiringStatus.NotHired)">未录用</a></li>
+                                                        <li><a class="dropdown-item @(_selectedHiringStatus == HiringStatus.Hired ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByHiringStatus(HiringStatus.Hired)">已录用</a></li>
+                                                        <li><a class="dropdown-item @(_selectedHiringStatus == HiringStatus.OfferSent ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByHiringStatus(HiringStatus.OfferSent)">Offer已发</a></li>
+                                                        <li><a class="dropdown-item @(_selectedHiringStatus == HiringStatus.OfferAccepted ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByHiringStatus(HiringStatus.OfferAccepted)">Offer已接受</a></li>
+                                                        <li><a class="dropdown-item @(_selectedHiringStatus == HiringStatus.OfferRejected ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByHiringStatus(HiringStatus.OfferRejected)">Offer被拒绝</a></li>
+                                                        <li><a class="dropdown-item @(_selectedHiringStatus == HiringStatus.Onboarded ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByHiringStatus(HiringStatus.Onboarded)">已入职</a></li>
+                                                        <li><a class="dropdown-item @(_selectedHiringStatus == HiringStatus.LeftBeforeGuarantee ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByHiringStatus(HiringStatus.LeftBeforeGuarantee)">未满保护期离职</a></li>
+                                                    </ul>
+                                                </div>
+                                            </th>
+                                            <th style="width: 160px;">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (!_pagedRecommendations.Items.Any())
                                         {
-                                            <p class="card-text mb-1">
-                                                <strong>反馈：</strong> @recommendation.Feedback
-                                            </p>
+                                            <tr>
+                                                <td colspan="8" class="text-center">没有推荐记录</td>
+                                            </tr>
                                         }
-                                    </div>
-                                    <div class="col-md-3 text-end d-flex align-items-center justify-content-end">
-                                        <div class="d-flex gap-2">
-                                            <button type="button" class="btn btn-info text-white" style="min-width: 120px;" @onclick="() => OpenFeedbackModal(recommendation)">
-                                                <i class="bi bi-chat-dots"></i> 反馈
-                                            </button>
-                                            <button type="button" class="btn btn-outline-primary" style="min-width: 120px;" @onclick="() => ViewResume(recommendation.Resume.Id)">
-                                                <i class="bi bi-eye"></i> 查看简历
-                                            </button>
-                                            @if (_position != null)
+                                        else
+                                        {
+                                            @foreach (var recommendation in _pagedRecommendations.Items)
                                             {
-                                                <button type="button" class="btn btn-outline-success" style="min-width: 120px;" @onclick="() => ArrangeInterview(recommendation.Resume.Id)">
-                                                    <i class="bi bi-calendar-plus"></i> 安排面试
-                                                </button>
+                                                <tr>
+                                                    <td>
+                                                        <div class="match-score @GetMatchLevelClass(recommendation.MatchLevel)">
+                                                            <span class="stars">@GetMatchLevelText(recommendation.MatchLevel)</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>@recommendation.Resume.Name</td>
+                                                    <td>
+                                                        <p class="mb-1">
+                                                            <i class="bi bi-person me-1"></i> @DisplayHelper.GetGenderText(recommendation.Resume.Gender)，@recommendation.Resume.Age 岁
+                                                        </p>
+                                                        <p class="mb-0">
+                                                            <i class="bi bi-briefcase me-1"></i> @recommendation.Resume.Position |
+                                                            <i class="bi bi-book me-1"></i> @DisplayHelper.GetEducationText(recommendation.Resume.HighestEducation) |
+                                                            <i class="bi bi-clock-history me-1"></i> @DisplayHelper.GetResumeExperienceText(recommendation.Resume.YearsOfExperience) |
+                                                            <i class="bi bi-geo-alt me-1"></i> @recommendation.Resume.Place.Name
+                                                        </p>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge @GetRecommendationStatusBadgeClass(recommendation.Status)" style="padding: 0.5rem 1rem;">
+                                                            @GetRecommendationStatusText(recommendation.Status)
+                                                        </span>
+                                                    </td>
+                                                    <td style="white-space: normal; word-break: break-word;">
+                                                        @recommendation.Reason
+                                                    </td>
+                                                    <td style="white-space: normal; word-break: break-word;">
+                                                        @(string.IsNullOrEmpty(recommendation.Feedback) ? "--" : recommendation.Feedback)
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge @GetHiringStatusBadgeClass(recommendation.HiringStatus)" style="padding: 0.5rem 1rem;">
+                                                            @GetHiringStatusText(recommendation.HiringStatus)
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group">
+                                                            <button type="button" class="btn btn-sm btn-outline-info" @onclick="() => OpenFeedbackModal(recommendation)">
+                                                                <i class="bi bi-chat-dots"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => ViewResume(recommendation.Resume.Id)">
+                                                                <i class="bi bi-eye"></i>
+                                                            </button>
+                                                            @if (_position != null)
+                                                            {
+                                                                <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => ArrangeInterview(recommendation.Resume.Id)">
+                                                                    <i class="bi bi-calendar-plus"></i>
+                                                                </button>
+                                                            }
+                                                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveRecommendation(recommendation.Id)">
+                                                                <i class="bi bi-x-circle"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
                                             }
-                                            <button type="button" class="btn btn-outline-danger" style="min-width: 120px;" @onclick="() => RemoveRecommendation(recommendation.Id)">
-                                                <i class="bi bi-x-circle"></i> 删除
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                        }
+                                    </tbody>
+                                </table>
                             </div>
-                            @if (recommendation != _pagedRecommendations.Items.Last())
-                            {
-                                <hr class="my-0" />
-                            }
                         </div>
-                    }
+                    </div>
                 }
             </div>
 
@@ -333,6 +382,8 @@
     private Resume? _viewingResume;
     private bool _showFeedbackModal;
     private Recommendation? _editingRecommendation;
+    private RecommendationStatus? _selectedRecommendationStatus;
+    private HiringStatus? _selectedHiringStatus;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -358,7 +409,34 @@
 
     private async Task LoadRecommendationsAsync()
     {
-        _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(PositionId, _currentPage, _pageSize);
+        try
+        {
+            if (_isSearchMode && !string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(
+                    PositionId,
+                    _currentPage,
+                    _pageSize,
+                    _searchTerm,
+                    _selectedRecommendationStatus,
+                    _selectedHiringStatus);
+            }
+            else
+            {
+                _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(
+                    PositionId,
+                    _currentPage,
+                    _pageSize,
+                    null,
+                    _selectedRecommendationStatus,
+                    _selectedHiringStatus);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"加载推荐记录时发生错误: {ex.Message}";
+            Console.WriteLine(_errorMessage);
+        }
     }
 
     private async Task NavigateToPage(int page)
@@ -439,11 +517,11 @@
     {
         return level switch
         {
-            RatingLevel.FiveStars => "★★★★★",
-            RatingLevel.FourStars => "★★★★☆",
-            RatingLevel.ThreeStars => "★★★☆☆",
-            RatingLevel.TwoStars => "★★☆☆☆",
-            RatingLevel.OneStar => "★☆☆☆☆",
+            RatingLevel.FiveStars => "5",
+            RatingLevel.FourStars => "4",
+            RatingLevel.ThreeStars => "3",
+            RatingLevel.TwoStars => "2",
+            RatingLevel.OneStar => "1",
             _ => "未评分"
         };
     }
@@ -563,14 +641,14 @@
     private void OpenFeedbackModal(Recommendation recommendation)
     {
         _editingRecommendation = new Recommendation
-        {
-            Id = recommendation.Id,
-            ResumeId = recommendation.ResumeId,
-            PositionId = recommendation.PositionId,
-            Reason = recommendation.Reason,
-            Status = recommendation.Status,
-            Feedback = recommendation.Feedback
-        };
+            {
+                Id = recommendation.Id,
+                ResumeId = recommendation.ResumeId,
+                PositionId = recommendation.PositionId,
+                Reason = recommendation.Reason,
+                Status = recommendation.Status,
+                Feedback = recommendation.Feedback
+            };
         _showFeedbackModal = true;
         StateHasChanged();
     }
@@ -621,5 +699,49 @@
             RecommendationStatus.Rejected => "已拒绝",
             _ => "未知"
         };
+    }
+
+    private string GetHiringStatusBadgeClass(HiringStatus status)
+    {
+        return status switch
+        {
+            HiringStatus.NotHired => "bg-info",
+            HiringStatus.Hired => "bg-success",
+            HiringStatus.OfferSent => "bg-primary",
+            HiringStatus.OfferAccepted => "bg-success",
+            HiringStatus.OfferRejected => "bg-danger",
+            HiringStatus.Onboarded => "bg-success",
+            HiringStatus.LeftBeforeGuarantee => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetHiringStatusText(HiringStatus status)
+    {
+        return status switch
+        {
+            HiringStatus.NotHired => "未录用",
+            HiringStatus.Hired => "已录用",
+            HiringStatus.OfferSent => "Offer已发",
+            HiringStatus.OfferAccepted => "Offer已接受",
+            HiringStatus.OfferRejected => "Offer被拒绝",
+            HiringStatus.Onboarded => "已入职",
+            HiringStatus.LeftBeforeGuarantee => "未满保护期离职",
+            _ => "未知"
+        };
+    }
+
+    private async Task FilterByRecommendationStatus(RecommendationStatus? status)
+    {
+        _selectedRecommendationStatus = status;
+        _currentPage = 1;
+        await LoadRecommendationsAsync();
+    }
+
+    private async Task FilterByHiringStatus(HiringStatus? status)
+    {
+        _selectedHiringStatus = status;
+        _currentPage = 1;
+        await LoadRecommendationsAsync();
     }
 }
