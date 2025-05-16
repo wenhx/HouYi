@@ -288,7 +288,7 @@
 
 <!-- 编辑用户模态框 -->
 <UserEditForm ModalId="editModal" ModalTitle="@($"编辑用户 - {_editUser?.UserName ?? "未知"}")" User="@_editUser"
-OnCancel="CloseEditModal" OnValidSubmit="UpdateUser" ShowModal="@(_editUser != null)" />
+              OnCancel="CloseEditModal" OnValidSubmit="UpdateUser" ShowModal="@(_editUser != null)" />
 
 @code {
     private PagedResult<HouYiUser>? _pagedUsers;
@@ -308,6 +308,7 @@ OnCancel="CloseEditModal" OnValidSubmit="UpdateUser" ShowModal="@(_editUser != n
     protected override async Task OnInitializedAsync()
     {
         await LoadUsersAsync();
+        await LoadUserRolesAsync();
     }
 
     private async Task LoadUsersAsync()
@@ -324,7 +325,6 @@ OnCancel="CloseEditModal" OnValidSubmit="UpdateUser" ShowModal="@(_editUser != n
                 Console.WriteLine($"开始加载列表数据。");
                 _pagedUsers = await UserService.GetUsersAsync(_currentPage, _pageSize);
             }
-            await LoadUserRolesAsync();
         }
         catch (Exception ex)
         {
@@ -417,13 +417,13 @@ OnCancel="CloseEditModal" OnValidSubmit="UpdateUser" ShowModal="@(_editUser != n
     private void ShowEditModal(HouYiUser user)
     {
         _editUser = new HouYiUser
-        {
-            Id = user.Id,
-            UserName = user.UserName,
-            Email = user.Email,
-            PhoneNumber = user.PhoneNumber,
-            LockoutEnabled = user.LockoutEnabled
-        };
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                LockoutEnabled = user.LockoutEnabled
+            };
         StateHasChanged();
     }
 
@@ -456,13 +456,13 @@ OnCancel="CloseEditModal" OnValidSubmit="UpdateUser" ShowModal="@(_editUser != n
         if (_selectedUser != null)
         {
             _editUser = new HouYiUser
-            {
-                Id = _selectedUser.Id,
-                UserName = _selectedUser.UserName,
-                Email = _selectedUser.Email,
-                PhoneNumber = _selectedUser.PhoneNumber,
-                LockoutEnabled = _selectedUser.LockoutEnabled
-            };
+                {
+                    Id = _selectedUser.Id,
+                    UserName = _selectedUser.UserName,
+                    Email = _selectedUser.Email,
+                    PhoneNumber = _selectedUser.PhoneNumber,
+                    LockoutEnabled = _selectedUser.LockoutEnabled
+                };
             _showViewModal = false;
             StateHasChanged();
         }
