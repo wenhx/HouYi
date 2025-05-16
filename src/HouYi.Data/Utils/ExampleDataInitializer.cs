@@ -26,9 +26,9 @@ public partial class ExampleDataInitializer
         SeedPositionData(dbContext, logger);
         SeedPlaceData(dbContext, logger);
         SeedResumeData(dbContext, logger);
+        SeedCommunicationData(dbContext, logger);
         SeedRecommendationData(dbContext, logger);
         SeedInterviewsData(dbContext, logger);
-        SeedCommunicationData(dbContext, logger);
     }
 
     private static void SeedPositionData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
@@ -462,7 +462,7 @@ public partial class ExampleDataInitializer
 
     private static DateTime GenerateDateTime(Random random)
     {
-        var rangeDays = 365;
+        var rangeDays = 30 * 3; //最近3个月。
         var randomDays = random.Next(rangeDays) * -1;
         var randomTime = random.Next(24 * 60 * 60) * -1; // seconds in a day
 
@@ -595,7 +595,7 @@ public partial class ExampleDataInitializer
                     Status = status,
                     MatchLevel = matchLevels[random.Next(matchLevels.Length)],
                     Feedback = GenerateFeedback(position, resume, status, random),
-                    CreatedAt = DateTime.Now.AddDays(-random.Next(1, 30)),
+                    CreatedAt = DateTime.Now.AddDays(-random.Next(1, 30 * 3)), //最近3个月。
                     UpdatedAt = DateTime.Now
                 };
 
@@ -698,7 +698,7 @@ public partial class ExampleDataInitializer
 
         var random = new Random();
         var interviews = new List<Interview>();
-        var todayInterviewCount = random.Next(1, 6); // 确保1-5条今天的面试
+        var todayInterviewCount = random.Next(2, 6); // 今天的面试数量
 
         // 生成面试地点
         var locations = new[]
@@ -757,26 +757,34 @@ public partial class ExampleDataInitializer
             "候选人学习能力强，潜力大，建议给予机会。",
             "候选人表现一般，建议寻找更合适的候选人。"
         ];
-        int otherInterviewCount = random.Next(10, 21); // 生成10-20条其他时间的面试
+        HiringStatus[] hiringStatuses = [HiringStatus.NotHired, HiringStatus.Hired, HiringStatus.Onboarded, HiringStatus.OfferRejected, HiringStatus.OfferSent];
+        int otherInterviewCount = acceptedRecommendations.Count - interviewers.Length; // 面试数量等于已接受推荐数量。
         for (int i = 0; i < otherInterviewCount; i++)
         {
-            var recommendation = acceptedRecommendations[random.Next(acceptedRecommendations.Count)];
-            var daysOffset = random.Next(-30, 31); // 最近一个月到未来一个月
-            var interview = new Interview
+            Recommendation recommendation = acceptedRecommendations[random.Next(acceptedRecommendations.Count)];
+            DateTime interviewTime = recommendation.CreatedAt.AddDays(random.Next(31)) // 推荐接受后的一个月内安排面试。
+                                    .AddHours(9 + random.Next(8)) // 9-17点
+                                    .AddMinutes(random.Next(60));
+            bool interviewEnded = interviewTime < DateTime.Now;
+            Interview interview = new()
             {
                 ResumeId = recommendation.ResumeId,
                 PositionId = recommendation.PositionId,
                 RecommendationId = recommendation.Id,
-                InterviewTime = DateTime.Today.AddDays(daysOffset).AddHours(9 + random.Next(8)).AddMinutes(random.Next(60)),
+                InterviewTime = interviewTime,
                 Location = locations[random.Next(locations.Length)],
                 Round = (byte)(1 + random.Next(3)), // 1-3轮面试
                 Interviewer = interviewers[random.Next(interviewers.Length)],
-                Status = daysOffset < 0 ? historicalInterviewStatuses[random.Next(historicalInterviewStatuses.Length)] :
+                Status = interviewEnded ? historicalInterviewStatuses[random.Next(historicalInterviewStatuses.Length)] :
                                             InterviewStatus.Scheduled,
-                Feedback = daysOffset < 0 ? feedbacks[random.Next(feedbacks.Length)] : string.Empty,
+                Feedback = interviewEnded ? feedbacks[random.Next(feedbacks.Length)] : string.Empty,
                 CreatedAt = DateTime.Now.AddHours(random.Next(-120, 0)),
                 UpdatedAt = DateTime.Now
             };
+            if (interview.Status == InterviewStatus.Passed)
+            {
+                recommendation.HiringStatus = hiringStatuses[random.Next(hiringStatuses.Length)];
+            }
             interviews.Add(interview);
         }
 
@@ -802,8 +810,8 @@ public partial class ExampleDataInitializer
         // 生成沟通结果数组
         var results = Enum.GetValues<CommunicatedResult>();
 
-        // 生成20条没有PositionId的记录
-        for (int i = 0; i < 20; i++)
+        // 生成没有PositionId的记录
+        for (int i = 0; i < 50; i++)
         {
             var resume = resumes[random.Next(resumes.Count)];
             var method = methods[random.Next(methods.Length)];
@@ -815,7 +823,7 @@ public partial class ExampleDataInitializer
             }
 
             var (content, result) = GenerateCommunicationContent(method, reason, null, resume, random);
-            var daysAgo = random.Next(1, 365); // 过去一年内的随机天数
+            var daysAgo = random.Next(1, 30 * 3); // 过去3个月
 
             communications.Add(new Communication
             {
@@ -831,8 +839,8 @@ public partial class ExampleDataInitializer
             });
         }
 
-        // 生成40条有PositionId的记录
-        for (int i = 0; i < 40; i++)
+        // 生成有PositionId的记录
+        for (int i = 0; i < 100; i++)
         {
             var position = positions[random.Next(positions.Count)];
             var resume = resumes[random.Next(resumes.Count)];
@@ -845,7 +853,7 @@ public partial class ExampleDataInitializer
             }
 
             var (content, result) = GenerateCommunicationContent(method, reason, position, resume, random);
-            var daysAgo = random.Next(1, 365); // 过去一年内的随机天数
+            var daysAgo = random.Next(1, 30 * 3); // 过去3个月内的随机天数
 
             communications.Add(new Communication
             {

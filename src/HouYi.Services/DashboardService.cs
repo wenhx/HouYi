@@ -32,8 +32,8 @@ public class DashboardService : IDashboardService
             TotalInterviews = await _context.Interviews
                 .CountAsync(i => i.CreatedAt >= startOfMonth && i.CreatedAt <= endOfMonth),
 
-            TotalSuccessDeals = await _context.Positions
-                .CountAsync(p => p.Status == PositionStatus.Completed && p.UpdatedAt >= startOfMonth && p.UpdatedAt <= endOfMonth)
+            TotalSuccessDeals = await _context.Recommendations
+                .CountAsync(r => r.HiringStatus ==  HiringStatus.OfferAccepted && r.HiringStatusChangedAt >= startOfMonth && r.HiringStatusChangedAt <= endOfMonth)
         };
     }
 
