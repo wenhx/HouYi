@@ -97,7 +97,7 @@ public partial class ExampleDataInitializer
                 Customer = customer,
                 CustomerId = customer.Id,
                 Status = status,
-                Number = (byte)random.Next(5),
+                Number = (byte)random.Next(1,5),
                 Consultant = consultant,
                 ConsultantId = consultant.Id,
                 ContactPerson = customer.ContactPerson,
