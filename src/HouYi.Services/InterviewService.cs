@@ -103,13 +103,24 @@ public class InterviewService : IInterviewService
 
         // 检查同一简历在同一时间是否已有面试安排
         var hasConflict = await _dbContext.Interviews
-            .AnyAsync(i => i.ResumeId == interview.ResumeId && 
+            .AnyAsync(i => i.ResumeId == interview.ResumeId &&
                           i.InterviewTime.Date == interview.InterviewTime.Date &&
                           i.Status == InterviewStatus.Scheduled);
         if (hasConflict)
             throw new InvalidOperationException("该候选人当天已有其他面试安排");
 
-        _dbContext.Interviews.Add(interview);
+        Interview newInstance = new()
+        {
+            ResumeId = interview.ResumeId,
+            PositionId = interview.PositionId,
+            RecommendationId = interview.RecommendationId,
+            InterviewTime = interview.InterviewTime,
+            Round = interview.Round,
+            Location = interview.Location,
+            Interviewer = interview.Interviewer,
+            Remarks = interview.Remarks
+        };
+        _dbContext.Interviews.Add(newInstance);
         await _dbContext.SaveChangesAsync();
         return interview;
     }

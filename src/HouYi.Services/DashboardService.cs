@@ -33,7 +33,7 @@ public class DashboardService : IDashboardService
                 .CountAsync(i => i.CreatedAt >= startOfMonth && i.CreatedAt <= endOfMonth),
 
             TotalSuccessDeals = await _context.Recommendations
-                .CountAsync(r => r.HiringStatus ==  HiringStatus.OfferAccepted && r.HiringStatusChangedAt >= startOfMonth && r.HiringStatusChangedAt <= endOfMonth)
+                .CountAsync(r => r.HiringStatus > 0 && r.HiringStatusChangedAt >= startOfMonth && r.HiringStatusChangedAt <= endOfMonth)
         };
     }
 

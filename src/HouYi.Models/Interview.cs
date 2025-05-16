@@ -4,8 +4,6 @@ namespace HouYi.Models;
 
 public class Interview
 {
-    private string _Feedback = string.Empty;
-
     public int Id { get; set; }
 
     [Required(ErrorMessage = "简历ID不能为空")]
@@ -38,14 +36,10 @@ public class Interview
     [StringLength(Constants.StringLengths.Name, ErrorMessage = "面试官姓名长度不能超过{1}个字符")]
     public required string Interviewer { get; set; }
 
-    public InterviewStatus Status { get; set; }
+    public InterviewStatus Status { get; set; } = InterviewStatus.Scheduled;
 
     [StringLength(Constants.StringLengths.Text, ErrorMessage = "反馈内容长度不能超过{1}个字符")]
-    public string Feedback
-    {
-        get => _Feedback;
-        set => _Feedback = value ?? string.Empty;
-    }
+    public string Feedback { get; set; } = string.Empty;
 
     [StringLength(Constants.StringLengths.Text, ErrorMessage = "备注内容长度不能超过{1}个字符")]
     public string Remarks { get; set; } = string.Empty;
