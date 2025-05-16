@@ -67,8 +67,11 @@ public class Program
         {
             app.UseWebAssemblyDebugging();
             app.UseMigrationsEndPoint();
-            using var scope = app.Services.CreateScope();
-            ExampleDataInitializer.Seed(scope.ServiceProvider).Wait();
+            if (args?.Contains("-Seed") == true)
+            {
+                using var scope = app.Services.CreateScope();
+                ExampleDataInitializer.Seed(scope.ServiceProvider).Wait();
+            }
         }
         else
         {
