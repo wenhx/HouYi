@@ -300,8 +300,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _query.StartDate = DateTime.Today.AddMonths(-1);
-        _query.EndDate = DateTime.Today;
+        DateTime today = DateTime.Today;
+        _query.StartDate = new DateTime(today.Year, today.Month, 1);
+        _query.EndDate = _query.StartDate.AddMonths(1).AddSeconds(-1);
         await LoadConsultantsAsync();
         await LoadDataAsync();
     }

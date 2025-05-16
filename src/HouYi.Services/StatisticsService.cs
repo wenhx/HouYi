@@ -1,6 +1,7 @@
 ﻿using HouYi.Data;
 using HouYi.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 
 namespace HouYi.Services;
@@ -8,10 +9,12 @@ namespace HouYi.Services;
 public class StatisticsService : IStatisticsService
 {
     private readonly HouYiDbContext _context;
+    private readonly ILogger<StatisticsService> _logger;
 
-    public StatisticsService(HouYiDbContext context)
+    public StatisticsService(HouYiDbContext context, ILogger<StatisticsService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyCollection<Statistics>> GetStatisticsAsync(StatisticsQuery query)
@@ -38,6 +41,10 @@ public class StatisticsService : IStatisticsService
 
     public async Task<StatisticsSummary> GetStatisticsSummaryAsync(StatisticsQuery query)
     {
+        if (query == null)
+            throw new ArgumentNullException(nameof(query));
+
+        _logger.LogInformation("Getting statistics summary for query: {0}, {1}, {2}", query.StartDate, query.EndDate, query.ConsultantId);
         var statistics = await GetStatisticsAsync(query);
         StatisticsSummary summary = new()
         {
@@ -86,6 +93,7 @@ public class StatisticsService : IStatisticsService
         communicationQuery = communicationQuery.Where(c => c.CreatedAt >= startDate && c.CreatedAt <= endDate);
         recommendationQuery = recommendationQuery.Where(r => r.CreatedAt >= startDate && r.CreatedAt <= endDate);
         interviewQuery = interviewQuery.Where(i => i.InterviewTime >= startDate && i.InterviewTime <= endDate);
+        IQueryable<Recommendation> dealQuery = _context.Recommendations.Where(r => r.HiringStatusChangedAt >= startDate && r.HiringStatusChangedAt <= endDate);
 
         // 应用顾问过滤
         if (query.ConsultantId != 0)
@@ -96,6 +104,7 @@ public class StatisticsService : IStatisticsService
             communicationQuery = communicationQuery.Where(c => c.Position.ConsultantId == query.ConsultantId);
             recommendationQuery = recommendationQuery.Where(r => r.Position.ConsultantId == query.ConsultantId);
             interviewQuery = interviewQuery.Where(i => i.Position.ConsultantId == query.ConsultantId);
+            dealQuery = dealQuery.Where(r => r.Position.ConsultantId == query.ConsultantId);
         }
 
         int resumeCount = await resumeQuery.CountAsync();
@@ -103,7 +112,7 @@ public class StatisticsService : IStatisticsService
         int communicationCount = await communicationQuery.CountAsync();
         int recommendationCount = await recommendationQuery.CountAsync();
         int recommendationAcceptedCount = await recommendationQuery.CountAsync(r => r.Status == RecommendationStatus.Accepted);
-        int dealCount = await positionQuery.CountAsync(p => p.Status == PositionStatus.Completed);
+        int dealCount = await dealQuery.CountAsync(r => r.HiringStatus > 0); //关于成单的定义可能需要调整。
         //decimal recommendationAcceptedRate = recommendationCount > 0 ? Math.Round((decimal)recommendationAcceptedCount / recommendationCount * 100, 2) : 0;
 
         //var interviewStatus = await interviewQuery.Select(i => new { Status = i.Status }).ToListAsync();
