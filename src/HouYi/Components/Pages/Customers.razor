@@ -368,6 +368,12 @@
 
     private async Task AddCustomer()
     {
+        if (_newCustomer == null)
+        {
+            _errorMessage = "客户数据为空，无法添加。";
+            return;
+        }
+
         try
         {
             await CustomerService.CreateCustomerAsync(_newCustomer);

@@ -70,7 +70,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-2">
                                 <label class="form-label fw-bold">所在地</label>
-                                <p>@Resume.Place.Name</p>
+                                <p>@(Resume.Place?.Name ?? "未知")</p>
                             </div>
                             <div class="col-md-6 mb-2">
                                 <label class="form-label fw-bold">简历来源</label>

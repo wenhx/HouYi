@@ -10,7 +10,7 @@ namespace HouYi.Data.Utils;
 
 public partial class ExampleDataInitializer
 {
-    private static readonly string s_AdminRoleName = "管理员";
+    private static readonly string s_AdminRoleName = Constants.Users.AdminRoleName;
 
     public static async Task Seed(IServiceProvider sp)
     {
@@ -25,6 +25,7 @@ public partial class ExampleDataInitializer
         SeedCustomersData(dbContext);
         SeedPositionData(dbContext, logger);
         SeedPlaceData(dbContext, logger);
+        SeedReferenceData(dbContext);
         SeedResumeData(dbContext, logger);
         SeedCommunicationData(dbContext, logger);
         SeedRecommendationData(dbContext, logger);
@@ -356,6 +357,31 @@ public partial class ExampleDataInitializer
         };
 
         dbContext.Customers.AddRange(customers);
+        dbContext.SaveChanges();
+    }
+    #endregion
+
+    #region ReferenceData
+    private static void SeedReferenceData(HouYiDbContext dbContext)
+    {
+        if (dbContext.ReferenceData.Any()) return;
+
+        var now = DateTime.Now;
+        var referenceData = new List<ReferenceData>
+        {
+            new() { Id = 1001, Category = "行业", Code = "internet", Name = "互联网", SortOrder = 1, Description = "互联网与软件服务", CreatedAt = now, UpdatedAt = now },
+            new() { Id = 1002, Category = "行业", Code = "manufacturing", Name = "制造业", SortOrder = 2, Description = "制造与工业生产", CreatedAt = now, UpdatedAt = now },
+            new() { Id = 1003, Category = "行业", Code = "finance", Name = "金融", SortOrder = 3, Description = "金融与投资", CreatedAt = now, UpdatedAt = now },
+            new() { Id = 1004, Category = "行业", Code = "education", Name = "教育", SortOrder = 4, Description = "教育与培训", CreatedAt = now, UpdatedAt = now },
+            new() { Id = 1005, Category = "行业", Code = "healthcare", Name = "医疗", SortOrder = 5, Description = "医疗与健康服务", CreatedAt = now, UpdatedAt = now },
+
+            new() { Id = 1201, Category = "候选人来源", Code = "referral", Name = "内推", SortOrder = 1, Description = "员工内推", CreatedAt = now, UpdatedAt = now },
+            new() { Id = 1202, Category = "候选人来源", Code = "jobboard", Name = "招聘网站", SortOrder = 2, Description = "主流招聘平台", CreatedAt = now, UpdatedAt = now },
+            new() { Id = 1203, Category = "候选人来源", Code = "campus", Name = "校招", SortOrder = 3, Description = "校园招聘", CreatedAt = now, UpdatedAt = now },
+            new() { Id = 1204, Category = "候选人来源", Code = "headhunt", Name = "猎头", SortOrder = 4, Description = "外部猎头合作", CreatedAt = now, UpdatedAt = now }
+        };
+
+        dbContext.ReferenceData.AddRange(referenceData);
         dbContext.SaveChanges();
     }
     #endregion

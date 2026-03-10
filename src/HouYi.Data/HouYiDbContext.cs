@@ -18,6 +18,7 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
         Recommendations = Set<Recommendation>();
         Interviews = Set<Interview>();
         Communications = Set<Communication>();
+        OperationLogs = Set<OperationLog>();
     }
 
     public DbSet<Customer> Customers { get; init; }
@@ -29,6 +30,7 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
     public DbSet<Recommendation> Recommendations { get; init; }
     public DbSet<Interview> Interviews { get; init; }
     public DbSet<Communication> Communications { get; init; }
+    public DbSet<OperationLog> OperationLogs { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -477,13 +477,13 @@
         }
     }
 
-    private void EditFromViewModal()
+    private async Task EditFromViewModal()
     {
         if (_viewingPosition != null)
         {
             int positionId = _viewingPosition.Id;
             CloseViewModal();
-            OpenEditModal(positionId);
+            await OpenEditModal(positionId);
         }
     }
 

@@ -11,4 +11,8 @@
     <ProjectReference Include="..\HouYi.Models\HouYi.Models.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>
