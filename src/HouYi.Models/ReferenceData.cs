@@ -9,10 +9,10 @@ public class ReferenceData
     public int Id { get; init; }
 
     [StringLength(Constants.StringLengths.Name)]
-    public string Code { get; init; } = string.Empty;
+    public required string Code { get; set; }
 
     [StringLength(Constants.StringLengths.Name)]
-    public required string Name { get; init; }
+    public required string Name { get; set; }
 
     [StringLength(Constants.StringLengths.Name)]
     public string Category { get; set; } = string.Empty;
@@ -22,7 +22,7 @@ public class ReferenceData
     public bool IsDeleted { get; set; } = false;
 
     [StringLength(Constants.StringLengths.Description)]
-    public string Description { get; init; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; init; } = DateTime.Now;
 

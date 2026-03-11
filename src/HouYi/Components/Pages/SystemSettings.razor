@@ -1,0 +1,747 @@
+@using System.ComponentModel.DataAnnotations
+@using HouYi.Models
+@attribute [Authorize(Roles = Constants.Users.AdminRoleName)]
+@inject IReferenceDataService ReferenceDataService
+@inject IOperationLogService OperationLogService
+
+<PageTitle>系统设置</PageTitle>
+
+<div class="container-fluid">
+    <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>系统设置</h1>
+        </div>
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link @(_activeTab == "dictionary" ? "active" : "")" type="button" @onclick='() => SwitchTab("dictionary")'>数据字典</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(_activeTab == "logs" ? "active" : "")" type="button" @onclick='() => SwitchTab("logs")'>操作日志</button>
+            </li>
+        </ul>
+
+        @if (_activeTab == "dictionary")
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">数据字典</h5>
+                        <button class="btn btn-primary" @onclick="ShowCreateModal">
+                            <i class="bi bi-plus-lg me-1"></i>新增
+                        </button>
+                    </div>
+
+                    <form class="row g-2 align-items-end mb-3" @onsubmit="SearchReferenceData" @onsubmit:preventDefault>
+                        <div class="col-md-3">
+                            <label class="form-label">分类</label>
+                            <select class="form-select" @bind="_categoryFilter">
+                                <option value="">全部</option>
+                                @foreach (var category in _categories)
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">关键字</label>
+                            <input class="form-control" placeholder="名称/编码/描述" @bind="_dictionaryKeyword" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-4 d-flex">
+                            <button class="btn btn-primary me-2" type="submit">
+                                <i class="bi bi-search me-1"></i>查询
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" @onclick="ClearReferenceDataFilters">
+                                <i class="bi bi-x-circle me-1"></i>清除
+                            </button>
+                        </div>
+                    </form>
+
+                    @if (!string.IsNullOrWhiteSpace(_dictionaryError))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @_dictionaryError
+                            <button type="button" class="btn-close" @onclick="() => _dictionaryError = string.Empty"></button>
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>分类</th>
+                                    <th>名称</th>
+                                    <th>编码</th>
+                                    <th>排序</th>
+                                    <th>描述</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_pagedReferenceData == null)
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center">加载中...</td>
+                                    </tr>
+                                }
+                                else if (!_pagedReferenceData.Items.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center">暂无数据</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var item in _pagedReferenceData.Items)
+                                    {
+                                        <tr>
+                                            <td>@item.Category</td>
+                                            <td>@item.Name</td>
+                                            <td>@item.Code</td>
+                                            <td>@item.SortOrder</td>
+                                            <td>@item.Description</td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-outline-success btn-operation" title="编辑" @onclick="() => ShowEditModal(item)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger btn-operation" title="删除" @onclick="() => ShowDeleteModal(item)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">每页显示：</span>
+                            <select class="form-select me-2" style="width: 70px;" @onchange="DictionaryPageSizeChanged">
+                                <option value="10" selected="@(_dictionaryPageSize == 10)">10</option>
+                                <option value="20" selected="@(_dictionaryPageSize == 20)">20</option>
+                                <option value="50" selected="@(_dictionaryPageSize == 50)">50</option>
+                            </select>
+                            @if (_pagedReferenceData != null)
+                            {
+                                <span class="pagination-info">
+                                    显示 @((_pagedReferenceData.PageNumber - 1) * _pagedReferenceData.PageSize + 1)-@(Math.Min(_pagedReferenceData.PageNumber * _pagedReferenceData.PageSize, _pagedReferenceData.TotalCount)) 条，
+                                    共 @_pagedReferenceData.TotalCount 条记录
+                                </span>
+                            }
+                        </div>
+                        @if (_pagedReferenceData != null && _pagedReferenceData.TotalPages > 0)
+                        {
+                            <ul class="pagination mb-0">
+                                <li class="page-item @(_pagedReferenceData.PageNumber == 1 ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateDictionaryPage(1)">首页</a>
+                                </li>
+                                <li class="page-item @(!_pagedReferenceData.HasPreviousPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateDictionaryPage(_pagedReferenceData.PageNumber - 1)">上一页</a>
+                                </li>
+
+                                @{
+                                    int startPage = Math.Max(1, _pagedReferenceData.PageNumber - 2);
+                                    int endPage = Math.Min(_pagedReferenceData.TotalPages, startPage + 4);
+                                    if (endPage - startPage < 4 && startPage > 1)
+                                    {
+                                        startPage = Math.Max(1, endPage - 4);
+                                    }
+                                }
+
+                                @for (int i = startPage; i <= endPage; i++)
+                                {
+                                    int pageNumber = i;
+                                    <li class="page-item @(pageNumber == _pagedReferenceData.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateDictionaryPage(pageNumber)">@pageNumber</a>
+                                    </li>
+                                }
+
+                                <li class="page-item @(!_pagedReferenceData.HasNextPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateDictionaryPage(_pagedReferenceData.PageNumber + 1)">下一页</a>
+                                </li>
+                                <li class="page-item @(_pagedReferenceData.PageNumber == _pagedReferenceData.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateDictionaryPage(_pagedReferenceData.TotalPages)">末页</a>
+                                </li>
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">操作日志</h5>
+                    </div>
+
+                    <form class="row g-2 align-items-end mb-3" @onsubmit="SearchLogs" @onsubmit:preventDefault>
+                        <div class="col-md-3">
+                            <label class="form-label">模块</label>
+                            <input class="form-control" placeholder="模块名称" @bind="_logModule" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">动作</label>
+                            <input class="form-control" placeholder="动作名称" @bind="_logAction" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">结果</label>
+                            <select class="form-select" @bind="_logResultFilter">
+                                <option value="">全部</option>
+                                <option value="true">成功</option>
+                                <option value="false">失败</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">关键字</label>
+                            <input class="form-control" placeholder="内容/实体/用户" @bind="_logKeyword" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">开始时间</label>
+                            <InputDate class="form-control" @bind-Value="_logStartDate" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">结束时间</label>
+                            <InputDate class="form-control" @bind-Value="_logEndDate" />
+                        </div>
+                        <div class="col-md-6 d-flex">
+                            <button class="btn btn-primary me-2" type="submit">
+                                <i class="bi bi-search me-1"></i>查询
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" @onclick="ClearLogFilters">
+                                <i class="bi bi-x-circle me-1"></i>清除
+                            </button>
+                        </div>
+                    </form>
+
+                    @if (!string.IsNullOrWhiteSpace(_logError))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @_logError
+                            <button type="button" class="btn-close" @onclick="() => _logError = string.Empty"></button>
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>模块</th>
+                                    <th>动作</th>
+                                    <th>实体</th>
+                                    <th>结果</th>
+                                    <th>用户</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_pagedLogs == null)
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center">加载中...</td>
+                                    </tr>
+                                }
+                                else if (!_pagedLogs.Items.Any())
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center">暂无日志</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var log in _pagedLogs.Items)
+                                    {
+                                        <tr>
+                                            <td>@log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                            <td>@log.Module</td>
+                                            <td>@log.Action</td>
+                                            <td>@log.EntityType:@log.EntityId</td>
+                                            <td>
+                                                @if (log.Result)
+                                                {
+                                                    <span class="badge bg-success">成功</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">失败</span>
+                                                }
+                                            </td>
+                                            <td>@log.UserName</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary btn-operation" title="详情" @onclick="() => ShowLogDetail(log)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">每页显示：</span>
+                            <select class="form-select me-2" style="width: 70px;" @onchange="LogPageSizeChanged">
+                                <option value="10" selected="@(_logPageSize == 10)">10</option>
+                                <option value="20" selected="@(_logPageSize == 20)">20</option>
+                                <option value="50" selected="@(_logPageSize == 50)">50</option>
+                            </select>
+                            @if (_pagedLogs != null)
+                            {
+                                <span class="pagination-info">
+                                    显示 @((_pagedLogs.PageNumber - 1) * _pagedLogs.PageSize + 1)-@(Math.Min(_pagedLogs.PageNumber * _pagedLogs.PageSize, _pagedLogs.TotalCount)) 条，
+                                    共 @_pagedLogs.TotalCount 条记录
+                                </span>
+                            }
+                        </div>
+                        @if (_pagedLogs != null && _pagedLogs.TotalPages > 0)
+                        {
+                            <ul class="pagination mb-0">
+                                <li class="page-item @(_pagedLogs.PageNumber == 1 ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateLogPage(1)">首页</a>
+                                </li>
+                                <li class="page-item @(!_pagedLogs.HasPreviousPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateLogPage(_pagedLogs.PageNumber - 1)">上一页</a>
+                                </li>
+
+                                @{
+                                    int startPage = Math.Max(1, _pagedLogs.PageNumber - 2);
+                                    int endPage = Math.Min(_pagedLogs.TotalPages, startPage + 4);
+                                    if (endPage - startPage < 4 && startPage > 1)
+                                    {
+                                        startPage = Math.Max(1, endPage - 4);
+                                    }
+                                }
+
+                                @for (int i = startPage; i <= endPage; i++)
+                                {
+                                    int pageNumber = i;
+                                    <li class="page-item @(pageNumber == _pagedLogs.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateLogPage(pageNumber)">@pageNumber</a>
+                                    </li>
+                                }
+
+                                <li class="page-item @(!_pagedLogs.HasNextPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateLogPage(_pagedLogs.PageNumber + 1)">下一页</a>
+                                </li>
+                                <li class="page-item @(_pagedLogs.PageNumber == _pagedLogs.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateLogPage(_pagedLogs.TotalPages)">末页</a>
+                                </li>
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (_showEditModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(_isEditMode ? "编辑字典项" : "新增字典项")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
+                </div>
+                <EditForm Model="_editModel" OnValidSubmit="SaveReferenceData">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        <ValidationSummary />
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">编号</label>
+                                <InputNumber class="form-control" @bind-Value="_editModel.Id" disabled="@_isEditMode" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">编码</label>
+                                <InputText class="form-control" @bind-Value="_editModel.Code" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">分类</label>
+                                <InputText class="form-control" @bind-Value="_editModel.Category" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">名称</label>
+                                <InputText class="form-control" @bind-Value="_editModel.Name" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">排序</label>
+                                <InputNumber class="form-control" @bind-Value="_editModel.SortOrder" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">描述</label>
+                                <InputTextArea class="form-control" rows="3" @bind-Value="_editModel.Description" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<DeleteConfirmationModal ShowModal="@_showDeleteModal" ItemName="@_deleteItemName" OnConfirm="HandleDeleteConfirmation" />
+
+@if (_showLogModal && _selectedLog != null)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">日志详情</h5>
+                    <button type="button" class="btn-close" @onclick="CloseLogDetail"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">模块</label>
+                            <p>@_selectedLog.Module</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">动作</label>
+                            <p>@_selectedLog.Action</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">实体</label>
+                            <p>@_selectedLog.EntityType:@_selectedLog.EntityId</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">结果</label>
+                            <p>@(_selectedLog.Result ? "成功" : "失败")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">用户</label>
+                            <p>@_selectedLog.UserName</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">时间</label>
+                            <p>@_selectedLog.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold">描述</label>
+                            <p>@_selectedLog.Message</p>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold">变更前</label>
+                            <pre class="bg-light p-2 rounded">@_selectedLog.BeforeData</pre>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold">变更后</label>
+                            <pre class="bg-light p-2 rounded">@_selectedLog.AfterData</pre>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">附加数据</label>
+                            <pre class="bg-light p-2 rounded">@_selectedLog.ExtraData</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseLogDetail">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private string _activeTab = "dictionary";
+
+    private PagedResult<ReferenceData>? _pagedReferenceData;
+    private List<string> _categories = new();
+    private string _categoryFilter = "";
+    private string _dictionaryKeyword = "";
+    private int _dictionaryPage = 1;
+    private int _dictionaryPageSize = 10;
+    private string _dictionaryError = string.Empty;
+
+    private bool _showEditModal;
+    private bool _isEditMode;
+    private ReferenceDataEditModel _editModel = new();
+    private bool _showDeleteModal;
+    private int? _deleteItemId;
+    private string? _deleteItemName;
+
+    private PagedResult<OperationLog>? _pagedLogs;
+    private string _logModule = "";
+    private string _logAction = "";
+    private string _logKeyword = "";
+    private string _logResultFilter = "";
+    private DateTime? _logStartDate;
+    private DateTime? _logEndDate;
+    private int _logPage = 1;
+    private int _logPageSize = 10;
+    private string _logError = string.Empty;
+    private bool _showLogModal;
+    private OperationLog? _selectedLog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReferenceDataAsync();
+        await LoadCategoriesAsync();
+        await LoadLogsAsync();
+    }
+
+    private async Task LoadReferenceDataAsync()
+    {
+        try
+        {
+            _pagedReferenceData = await ReferenceDataService.GetReferenceDataAsync(
+                _categoryFilter,
+                _dictionaryKeyword,
+                _dictionaryPage,
+                _dictionaryPageSize);
+        }
+        catch (Exception ex)
+        {
+            _dictionaryError = $"加载数据字典失败：{ex.Message}";
+        }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        try
+        {
+            var categories = await ReferenceDataService.GetCategoriesAsync();
+            _categories = categories.ToList();
+        }
+        catch (Exception ex)
+        {
+            _dictionaryError = $"加载分类失败：{ex.Message}";
+        }
+    }
+
+    private async Task SearchReferenceData()
+    {
+        _dictionaryPage = 1;
+        await LoadReferenceDataAsync();
+    }
+
+    private async Task ClearReferenceDataFilters()
+    {
+        _categoryFilter = "";
+        _dictionaryKeyword = "";
+        _dictionaryPage = 1;
+        await LoadReferenceDataAsync();
+    }
+
+    private async Task NavigateDictionaryPage(int pageNumber)
+    {
+        _dictionaryPage = pageNumber;
+        await LoadReferenceDataAsync();
+    }
+
+    private async Task DictionaryPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var pageSize))
+        {
+            _dictionaryPageSize = pageSize;
+            _dictionaryPage = 1;
+            await LoadReferenceDataAsync();
+        }
+    }
+
+    private void ShowCreateModal()
+    {
+        _isEditMode = false;
+        _editModel = new ReferenceDataEditModel();
+        _showEditModal = true;
+    }
+
+    private void ShowEditModal(ReferenceData item)
+    {
+        _isEditMode = true;
+        _editModel = new ReferenceDataEditModel
+        {
+            Id = item.Id,
+            Code = item.Code,
+            Name = item.Name,
+            Category = item.Category,
+            SortOrder = item.SortOrder,
+            Description = item.Description
+        };
+        _showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        _showEditModal = false;
+    }
+
+    private void ShowDeleteModal(ReferenceData item)
+    {
+        _deleteItemId = item.Id;
+        _deleteItemName = item.Name;
+        _showDeleteModal = true;
+    }
+
+    private async Task HandleDeleteConfirmation(bool confirmed)
+    {
+        if (confirmed && _deleteItemId.HasValue)
+        {
+            try
+            {
+                await ReferenceDataService.SoftDeleteAsync(_deleteItemId.Value);
+                await LoadReferenceDataAsync();
+                await LoadCategoriesAsync();
+            }
+            catch (Exception ex)
+            {
+                _dictionaryError = $"删除失败：{ex.Message}";
+            }
+        }
+
+        _showDeleteModal = false;
+        _deleteItemId = null;
+        _deleteItemName = null;
+    }
+
+    private async Task SaveReferenceData()
+    {
+        var data = new ReferenceData
+        {
+            Id = _editModel.Id,
+            Code = _editModel.Code,
+            Name = _editModel.Name,
+            Category = _editModel.Category,
+            SortOrder = _editModel.SortOrder,
+            Description = _editModel.Description
+        };
+
+        try
+        {
+            if (_isEditMode)
+            {
+                await ReferenceDataService.UpdateAsync(data);
+            }
+            else
+            {
+                await ReferenceDataService.CreateAsync(data);
+            }
+
+            _showEditModal = false;
+            await LoadReferenceDataAsync();
+            await LoadCategoriesAsync();
+        }
+        catch (Exception ex)
+        {
+            _dictionaryError = $"保存失败：{ex.Message}";
+        }
+    }
+
+    private void SwitchTab(string tab)
+    {
+        _activeTab = tab;
+    }
+
+    private async Task LoadLogsAsync()
+    {
+        try
+        {
+            var query = BuildLogQuery();
+            _pagedLogs = await OperationLogService.GetLogsAsync(query, _logPage, _logPageSize);
+        }
+        catch (Exception ex)
+        {
+            _logError = $"加载日志失败：{ex.Message}";
+        }
+    }
+
+    private OperationLogQuery BuildLogQuery()
+    {
+        bool? result = null;
+        if (_logResultFilter == "true") result = true;
+        if (_logResultFilter == "false") result = false;
+
+        return new OperationLogQuery
+        {
+            Module = _logModule,
+            Action = _logAction,
+            Keyword = _logKeyword,
+            Result = result,
+            StartDate = _logStartDate,
+            EndDate = _logEndDate
+        };
+    }
+
+    private async Task SearchLogs()
+    {
+        _logPage = 1;
+        await LoadLogsAsync();
+    }
+
+    private async Task ClearLogFilters()
+    {
+        _logModule = "";
+        _logAction = "";
+        _logKeyword = "";
+        _logResultFilter = "";
+        _logStartDate = null;
+        _logEndDate = null;
+        _logPage = 1;
+        await LoadLogsAsync();
+    }
+
+    private async Task NavigateLogPage(int pageNumber)
+    {
+        _logPage = pageNumber;
+        await LoadLogsAsync();
+    }
+
+    private async Task LogPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var pageSize))
+        {
+            _logPageSize = pageSize;
+            _logPage = 1;
+            await LoadLogsAsync();
+        }
+    }
+
+    private void ShowLogDetail(OperationLog log)
+    {
+        _selectedLog = log;
+        _showLogModal = true;
+    }
+
+    private void CloseLogDetail()
+    {
+        _showLogModal = false;
+        _selectedLog = null;
+    }
+
+    private class ReferenceDataEditModel
+    {
+        [Required]
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(Constants.StringLengths.Name)]
+        public string Code { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(Constants.StringLengths.Name)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(Constants.StringLengths.Name)]
+        public string Category { get; set; } = string.Empty;
+
+        public int SortOrder { get; set; }
+
+        [StringLength(Constants.StringLengths.Description)]
+        public string Description { get; set; } = string.Empty;
+    }
+}

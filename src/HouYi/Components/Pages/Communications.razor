@@ -119,12 +119,12 @@
                                 {
                                     <tr>
                                         <td>@communication.Id</td>
-                                        <td>@communication.Resume.Name</td>
-                                        <td>@communication.Resume.Position</td>
+                                        <td>@(communication.Resume?.Name ?? "未知")</td>
+                                        <td>@(communication.Resume?.Position ?? "未知")</td>
                                         <td>
                                             @if (communication.Position != null)
                                             {
-                                                @($"{communication.Position.Name}-{communication.Position.Customer.Name}")
+                                                @($"{communication.Position.Name}-{communication.Position.Customer?.Name}")
                                             }
                                             else
                                             {
@@ -233,13 +233,13 @@
                     {
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <p><strong>候选人：</strong>@_selectedCommunication.Resume.Name</p>
-                                <p><strong>当前职位：</strong>@_selectedCommunication.Resume.Position</p>
+                                <p><strong>候选人：</strong>@(_selectedCommunication.Resume?.Name ?? "未知")</p>
+                                <p><strong>当前职位：</strong>@(_selectedCommunication.Resume?.Position ?? "未知")</p>
                                 <p>
                                     <strong>意向职位：</strong>
                                     @if (_selectedCommunication.Position != null)
                                     {
-                                        @($"{_selectedCommunication.Position.Name}-{_selectedCommunication.Position.Customer.Name}")
+                                        @($"{_selectedCommunication.Position.Name}-{_selectedCommunication.Position.Customer?.Name}")
                                     }
                                     else
                                     {
@@ -629,8 +629,8 @@
 
     private string GetDeletingItemName()
     {
-        if (!string.IsNullOrEmpty(_selectedCommunication?.Resume.Name))
-            return $" {_selectedCommunication?.Resume.Name} 的沟通记录";
+        if (!string.IsNullOrEmpty(_selectedCommunication?.Resume?.Name))
+            return $" {_selectedCommunication?.Resume?.Name} 的沟通记录";
 
         return "沟通记录";
     }

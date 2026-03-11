@@ -167,16 +167,16 @@
                                                             <span class="stars">@GetMatchLevelText(recommendation.MatchLevel)</span>
                                                         </div>
                                                     </td>
-                                                    <td>@recommendation.Resume.Name</td>
+                                                    <td>@(recommendation.Resume?.Name ?? "未知")</td>
                                                     <td>
                                                         <p class="mb-1">
-                                                            <i class="bi bi-person me-1"></i> @DisplayHelper.GetGenderText(recommendation.Resume.Gender)，@recommendation.Resume.Age 岁
+                                                            <i class="bi bi-person me-1"></i> @DisplayHelper.GetGenderText(recommendation.Resume?.Gender ?? Gender.PreferNotToSay)，@(recommendation.Resume?.Age ?? 0) 岁
                                                         </p>
                                                         <p class="mb-0">
-                                                            <i class="bi bi-briefcase me-1"></i> @recommendation.Resume.Position |
-                                                            <i class="bi bi-book me-1"></i> @DisplayHelper.GetEducationText(recommendation.Resume.HighestEducation) |
-                                                            <i class="bi bi-clock-history me-1"></i> @DisplayHelper.GetResumeExperienceText(recommendation.Resume.YearsOfExperience) |
-                                                            <i class="bi bi-geo-alt me-1"></i> @recommendation.Resume.Place.Name
+                                                            <i class="bi bi-briefcase me-1"></i> @(recommendation.Resume?.Position ?? "未知") |
+                                                            <i class="bi bi-book me-1"></i> @DisplayHelper.GetEducationText(recommendation.Resume?.HighestEducation ?? EducationLevel.Unknown) |
+                                                            <i class="bi bi-clock-history me-1"></i> @DisplayHelper.GetResumeExperienceText(recommendation.Resume?.YearsOfExperience ?? 0) |
+                                                            <i class="bi bi-geo-alt me-1"></i> @(recommendation.Resume?.Place?.Name ?? "未知")
                                                         </p>
                                                     </td>
                                                     <td>
@@ -324,7 +324,7 @@
 }
 
 <!-- 删除确认模态框 -->
-<DeleteConfirmationModal ShowModal="showDeleteConfirmation" ItemName="@($" {deletingRecommendation?.Resume.Name}的推荐记录 ")" OnConfirm="HandleDeleteConfirmation" />
+<DeleteConfirmationModal ShowModal="showDeleteConfirmation" ItemName="@($" {deletingRecommendation?.Resume?.Name}的推荐记录 ")" OnConfirm="HandleDeleteConfirmation" />
 
 <!-- 简历查看模态框 -->
 <ResumeViewModal Resume="@_viewingResume" ShowModal="@_showResumeModal" ShowEditButton="false" CloseModal="CloseResumeModal" />
@@ -434,13 +434,17 @@
 
     private async Task LoadPositionAsync()
     {
+        if (!PositionId.HasValue)
+        {
+            return;
+        }
+
         try
         {
             _position = await PositionService.GetPositionByIdAsync(PositionId.Value);
         }
         catch (Exception ex)
         {
-
             _errorMessage = "加载职位数据时发生错误： " + ex.Message;
         }
     }

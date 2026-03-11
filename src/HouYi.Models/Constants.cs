@@ -33,5 +33,6 @@ public sealed class Constants
     public static class Users
     {
         public const string DefaultAdminName = "admin";
+        public const string AdminRoleName = "管理员";
     }
 }

@@ -141,7 +141,7 @@
                                             @DisplayHelper.GetResumeExperienceText(resume.YearsOfExperience)
                                         </span>
                                     </td>
-                                    <td>@resume.Place.Name</td>
+                                    <td>@(resume.Place?.Name ?? "未知")</td>
                                     <td>@DisplayHelper.GetResumeSourceText(resume.Source)</td>
                                     <td>@resume.UpdatedAt.ToString("yyyy-MM-dd")</td>
                                     <td>
@@ -626,6 +626,12 @@
 
     private async Task AddResume()
     {
+        if (_newResume == null)
+        {
+            _errorMessage = "简历数据为空，无法添加。";
+            return;
+        }
+
         try
         {
             await ResumeService.CreateResumeAsync(_newResume);

@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Components
 @using HouYi.Data
+@using HouYi.Models
 @attribute [Authorize]
 @inject UserManager<HouYiUser> UserManager
 @inject SignInManager<HouYiUser> SignInManager
@@ -70,6 +71,14 @@
                         <i class="bi bi-people me-2"></i> 用户管理
                     </a>
                 </li>
+                @if (_isAdmin)
+                {
+                    <li class="nav-item mb-2">
+                        <a class="nav-link @(_currentPage == nameof(SystemSettings) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(SystemSettings), "系统设置")'>
+                            <i class="bi bi-gear me-2"></i> 系统设置
+                        </a>
+                    </li>
+                }
                 <li class="nav-item mt-auto">
                     <a class="nav-link text-white" href="#" @onclick="Logout">
                         <i class="bi bi-box-arrow-right me-2"></i> 退出登录
@@ -133,6 +142,9 @@
                             case nameof(Users):
                                 <Users />
                                 break;
+                            case nameof(SystemSettings):
+                                <SystemSettings />
+                                break;
                             default:
                                 <h1 class="mb-4">@tab.Title</h1>
                                 <p>@tab.Title 内容待开发...</p>
@@ -150,6 +162,7 @@
     private string _activeTabId = nameof(Dashboard);
     private List<TabItem> _openTabs = new List<TabItem>();
     private string? _currentUserName;
+    private bool _isAdmin;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
@@ -163,10 +176,12 @@
         if (user.Identity?.IsAuthenticated == true)
         {
             _currentUserName = user.Identity.Name;
+            _isAdmin = user.IsInRole(Constants.Users.AdminRoleName);
         }
         else
         {
             _currentUserName = "未登录用户";
+            _isAdmin = false;
         }
 
         ChangePage(nameof(Dashboard), "数据看板");
