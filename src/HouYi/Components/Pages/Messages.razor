@@ -1,0 +1,394 @@
+@attribute [Authorize]
+@inject IMessageService MessageService
+
+<div class="container-fluid">
+    <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>通知提醒</h1>
+            <button class="btn btn-outline-primary" @onclick="MarkAllAsRead" disabled="@(_pagedMessages == null || !_pagedMessages.Items.Any(m => m.ReadStatus == MessageReadStatus.Unread))">
+                <i class="bi bi-check2-circle me-1"></i>全部标记已读
+            </button>
+        </div>
+
+        <form class="row g-2 align-items-end mb-3" @onsubmit="SearchMessages" @onsubmit:preventDefault>
+            <div class="col-md-3">
+                <label class="form-label">类型</label>
+                <select class="form-select" @bind="_typeFilter">
+                    <option value="">全部</option>
+                    @foreach (var type in Enum.GetValues<MessageType>())
+                    {
+                        <option value="@type">@DisplayHelper.GetMessageTypeText(type)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">已读状态</label>
+                <select class="form-select" @bind="_readStatusFilter">
+                    <option value="">全部</option>
+                    <option value="Unread">未读</option>
+                    <option value="Read">已读</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">关键字</label>
+                <input class="form-control" placeholder="标题/内容" @bind="_keyword" @bind:event="oninput" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">开始时间</label>
+                <InputDate class="form-control" @bind-Value="_startDate" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">结束时间</label>
+                <InputDate class="form-control" @bind-Value="_endDate" />
+            </div>
+            <div class="col-md-6 d-flex">
+                <button class="btn btn-primary me-2" type="submit">
+                    <i class="bi bi-search me-1"></i>查询
+                </button>
+                <button class="btn btn-outline-secondary" type="button" @onclick="ClearFilters">
+                    <i class="bi bi-x-circle me-1"></i>清除
+                </button>
+            </div>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @_errorMessage
+                <button type="button" class="btn-close" @onclick="ClearErrorMessage"></button>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>标题</th>
+                                <th>类型</th>
+                                <th>发送人</th>
+                                <th>发送时间</th>
+                                <th>状态</th>
+                                <th>阅读时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (_pagedMessages == null)
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center">加载中...</td>
+                                </tr>
+                            }
+                            else if (!_pagedMessages.Items.Any())
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center">暂无消息</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var message in _pagedMessages.Items)
+                                {
+                                    <tr>
+                                        <td>@message.Title</td>
+                                        <td>@DisplayHelper.GetMessageTypeText(message.ContentType)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(message.SenderName) ? "系统" : message.SenderName)</td>
+                                        <td>@message.SentAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>
+                                            <span class="badge @DisplayHelper.GetMessageReadStatusBadgeClass(message.ReadStatus)">
+                                                @DisplayHelper.GetMessageReadStatusText(message.ReadStatus)
+                                            </span>
+                                        </td>
+                                        <td>@(message.ReadAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" title="查看详情" class="btn btn-sm btn-outline-primary btn-operation" @onclick="() => ShowMessageDetail(message)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                @if (message.ReadStatus == MessageReadStatus.Unread)
+                                                {
+                                                    <button type="button" title="标记已读" class="btn btn-sm btn-outline-success btn-operation" @onclick="() => MarkAsRead(message)">
+                                                        <i class="bi bi-check2"></i>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">每页显示：</span>
+                        <select class="form-select me-2" style="width: 70px;" @onchange="PageSizeChanged">
+                            <option value="10" selected="@(_pageSize == 10)">10</option>
+                            <option value="20" selected="@(_pageSize == 20)">20</option>
+                            <option value="50" selected="@(_pageSize == 50)">50</option>
+                        </select>
+                        @if (_pagedMessages != null)
+                        {
+                            <span class="pagination-info">
+                                显示 @((_pagedMessages.PageNumber - 1) * _pagedMessages.PageSize + 1)-@(Math.Min(_pagedMessages.PageNumber * _pagedMessages.PageSize, _pagedMessages.TotalCount)) 条，
+                                共 @_pagedMessages.TotalCount 条记录
+                            </span>
+                        }
+                    </div>
+                    @if (_pagedMessages != null && _pagedMessages.TotalPages > 0)
+                    {
+                        <ul class="pagination mb-0">
+                            <li class="page-item @(_pagedMessages.PageNumber == 1 ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(1)">首页</a>
+                            </li>
+                            <li class="page-item @(!_pagedMessages.HasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedMessages.PageNumber - 1)">上一页</a>
+                            </li>
+
+                            @{
+                                int startPage = Math.Max(1, _pagedMessages.PageNumber - 2);
+                                int endPage = Math.Min(_pagedMessages.TotalPages, startPage + 4);
+                                if (endPage - startPage < 4 && startPage > 1)
+                                {
+                                    startPage = Math.Max(1, endPage - 4);
+                                }
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                int pageNumber = i;
+                                <li class="page-item @(pageNumber == _pagedMessages.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(pageNumber)">@pageNumber</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(!_pagedMessages.HasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedMessages.PageNumber + 1)">下一页</a>
+                            </li>
+                            <li class="page-item @(_pagedMessages.PageNumber == _pagedMessages.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateToPage(_pagedMessages.TotalPages)">末页</a>
+                            </li>
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_showDetailModal && _selectedMessage != null)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">消息详情</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDetailModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">标题</label>
+                            <p>@_selectedMessage.Title</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">类型</label>
+                            <p>@DisplayHelper.GetMessageTypeText(_selectedMessage.ContentType)</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">发送人</label>
+                            <p>@(string.IsNullOrWhiteSpace(_selectedMessage.SenderName) ? "系统" : _selectedMessage.SenderName)</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">发送时间</label>
+                            <p>@_selectedMessage.SentAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">阅读状态</label>
+                            <p>@DisplayHelper.GetMessageReadStatusText(_selectedMessage.ReadStatus)</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">阅读时间</label>
+                            <p>@(_selectedMessage.ReadAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</p>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold">内容</label>
+                            <p>@_selectedMessage.Content</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDetailModal">关闭</button>
+                    @if (_selectedMessage.ReadStatus == MessageReadStatus.Unread)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="() => MarkSelectedAsRead()">标记已读</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<int> OnUnreadCountChanged { get; set; }
+
+    private PagedResult<UserMessageDto>? _pagedMessages;
+    private string _typeFilter = string.Empty;
+    private string _readStatusFilter = string.Empty;
+    private string _keyword = string.Empty;
+    private DateTime? _startDate;
+    private DateTime? _endDate;
+    private int _page = 1;
+    private int _pageSize = 10;
+    private string _errorMessage = string.Empty;
+    private bool _showDetailModal;
+    private UserMessageDto? _selectedMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMessagesAsync();
+        await RefreshUnreadCountAsync();
+    }
+
+    private async Task LoadMessagesAsync()
+    {
+        try
+        {
+            var query = BuildQuery();
+            _pagedMessages = await MessageService.GetMyMessagesAsync(query, _page, _pageSize);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"加载消息失败：{ex.Message}";
+        }
+    }
+
+    private MessageQuery BuildQuery()
+    {
+        MessageType? type = null;
+        if (Enum.TryParse<MessageType>(_typeFilter, out var parsedType))
+        {
+            type = parsedType;
+        }
+
+        MessageReadStatus? readStatus = null;
+        if (Enum.TryParse<MessageReadStatus>(_readStatusFilter, out var parsedStatus))
+        {
+            readStatus = parsedStatus;
+        }
+
+        return new MessageQuery
+        {
+            Type = type,
+            ReadStatus = readStatus,
+            Keyword = _keyword,
+            StartDate = _startDate,
+            EndDate = _endDate
+        };
+    }
+
+    private async Task SearchMessages()
+    {
+        _page = 1;
+        await LoadMessagesAsync();
+    }
+
+    private async Task ClearFilters()
+    {
+        _typeFilter = string.Empty;
+        _readStatusFilter = string.Empty;
+        _keyword = string.Empty;
+        _startDate = null;
+        _endDate = null;
+        _page = 1;
+        await LoadMessagesAsync();
+    }
+
+    private async Task NavigateToPage(int pageNumber)
+    {
+        _page = pageNumber;
+        await LoadMessagesAsync();
+    }
+
+    private async Task PageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var pageSize))
+        {
+            _pageSize = pageSize;
+            _page = 1;
+            await LoadMessagesAsync();
+        }
+    }
+
+    private void ClearErrorMessage()
+    {
+        _errorMessage = string.Empty;
+    }
+
+    private void ShowMessageDetail(UserMessageDto message)
+    {
+        _selectedMessage = message;
+        _showDetailModal = true;
+    }
+
+    private void CloseDetailModal()
+    {
+        _showDetailModal = false;
+        _selectedMessage = null;
+    }
+
+    private async Task MarkAsRead(UserMessageDto message)
+    {
+        try
+        {
+            await MessageService.MarkAsReadAsync(message.Id);
+            await LoadMessagesAsync();
+            await RefreshUnreadCountAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"标记已读失败：{ex.Message}";
+        }
+    }
+
+    private async Task MarkSelectedAsRead()
+    {
+        if (_selectedMessage == null)
+            return;
+
+        await MarkAsRead(_selectedMessage);
+        _showDetailModal = false;
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        try
+        {
+            await MessageService.MarkAllAsReadAsync();
+            await LoadMessagesAsync();
+            await RefreshUnreadCountAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"全部标记已读失败：{ex.Message}";
+        }
+    }
+
+    private async Task RefreshUnreadCountAsync()
+    {
+        try
+        {
+            var count = await MessageService.GetUnreadCountAsync();
+            await OnUnreadCountChanged.InvokeAsync(count);
+        }
+        catch
+        {
+            await OnUnreadCountChanged.InvokeAsync(0);
+        }
+    }
+}

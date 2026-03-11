@@ -3,14 +3,20 @@
 
 @inject UserManager<HouYiUser> UserManager
 
-<div class="user-avatar rounded-circle d-flex align-items-center justify-content-center @SizeClass" style="background-color: @GetRandomColor();">
-    @if (UserName != null)
+<div class="user-avatar-container">
+    <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center @SizeClass" style="background-color: @GetRandomColor();">
+        @if (UserName != null)
+        {
+            @GetInitials()
+        }
+        else
+        {
+            <i class="bi bi-person"></i>
+        }
+    </div>
+    @if (UnreadCount > 0)
     {
-        @GetInitials()
-    }
-    else
-    {
-        <i class="bi bi-person"></i>
+        <span class="avatar-badge">@GetUnreadDisplay()</span>
     }
 </div>
 
@@ -20,6 +26,9 @@
 
     [Parameter]
     public string Size { get; set; } = "md";
+
+    [Parameter]
+    public int UnreadCount { get; set; }
 
     private string SizeClass => Size switch
     {
@@ -47,4 +56,9 @@
         var index = Math.Abs(UserName?.GetHashCode() ?? 0) % colors.Length;
         return colors[index];
     }
-} 
+
+    private string GetUnreadDisplay()
+    {
+        return UnreadCount > 99 ? "99+" : UnreadCount.ToString();
+    }
+}

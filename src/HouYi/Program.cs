@@ -61,6 +61,7 @@ public class Program
         builder.Services.AddScoped<IStatisticsService, StatisticsService>();
         builder.Services.AddScoped<IReferenceDataService, ReferenceDataService>();
         builder.Services.AddScoped<IOperationLogService, OperationLogService>();
+        builder.Services.AddScoped<IMessageService, MessageService>();
 
         var app = builder.Build();
 

@@ -11,6 +11,7 @@
 @inject UserManager<HouYiUser> UserManager
 @inject SignInManager<HouYiUser> SignInManager
 @inject NavigationManager NavigationManager
+@inject IMessageService MessageService
 
 <PageTitle>Home</PageTitle>
 
@@ -21,7 +22,7 @@
             <h2 class="text-center mb-4">HouYi</h2>
             <div class="d-flex flex-column align-items-center mb-4">
                 <a href="/account/manage/" target="_blank" class="text-decoration-none text-white">
-                    <UserAvatar UserName="@_currentUserName" Size="md" />
+                    <UserAvatar UserName="@_currentUserName" Size="md" UnreadCount="@_unreadMessageCount" />
                     <h5 class="text-center mt-2">@(_currentUserName ?? "用户")</h5>
                 </a>
             </div>
@@ -69,6 +70,11 @@
                 <li class="nav-item mb-2">
                     <a class="nav-link @(_currentPage == nameof(Users) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Users), "用户管理")'>
                         <i class="bi bi-people me-2"></i> 用户管理
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(_currentPage == nameof(Messages) ? "active" : "") text-white" href="#" @onclick='() => ChangePage(nameof(Messages), "通知提醒")'>
+                        <i class="bi bi-bell me-2"></i> 通知提醒
                     </a>
                 </li>
                 @if (_isAdmin)
@@ -142,6 +148,9 @@
                             case nameof(Users):
                                 <Users />
                                 break;
+                            case nameof(Messages):
+                                <Messages OnUnreadCountChanged="UpdateUnreadCount" />
+                                break;
                             case nameof(SystemSettings):
                                 <SystemSettings />
                                 break;
@@ -163,6 +172,7 @@
     private List<TabItem> _openTabs = new List<TabItem>();
     private string? _currentUserName;
     private bool _isAdmin;
+    private int _unreadMessageCount;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
@@ -177,6 +187,7 @@
         {
             _currentUserName = user.Identity.Name;
             _isAdmin = user.IsInRole(Constants.Users.AdminRoleName);
+            await LoadUnreadCountAsync();
         }
         else
         {
@@ -241,6 +252,25 @@
     private void Logout()
     {
         NavigationManager.NavigateTo("/Account/Logout", forceLoad: true);
+    }
+
+    private async Task LoadUnreadCountAsync()
+    {
+        try
+        {
+            _unreadMessageCount = await MessageService.GetUnreadCountAsync();
+        }
+        catch
+        {
+            _unreadMessageCount = 0;
+        }
+    }
+
+    private Task UpdateUnreadCount(int count)
+    {
+        _unreadMessageCount = count;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private class TabItem

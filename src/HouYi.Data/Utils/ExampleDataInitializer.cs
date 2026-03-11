@@ -30,6 +30,7 @@ public partial class ExampleDataInitializer
         SeedCommunicationData(dbContext, logger);
         SeedRecommendationData(dbContext, logger);
         SeedInterviewsData(dbContext, logger);
+        SeedMessageData(dbContext, logger);
     }
 
     private static void SeedPositionData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
@@ -1010,6 +1011,61 @@ public partial class ExampleDataInitializer
         }
 
         return (content, result);
+    }
+    #endregion
+
+    #region Messages
+    private static void SeedMessageData(HouYiDbContext dbContext, ILogger<ExampleDataInitializer> logger)
+    {
+        if (dbContext.MessageContents.Any() || dbContext.Messages.Any()) return;
+
+        var adminUser = (from u in dbContext.Users
+                         join ur in dbContext.UserRoles on u.Id equals ur.UserId
+                         join r in dbContext.Roles on ur.RoleId equals r.Id
+                         where r.Name == s_AdminRoleName
+                         select u).FirstOrDefault();
+
+        var senderId = adminUser?.Id ?? dbContext.Users.Select(u => u.Id).FirstOrDefault();
+        if (senderId == 0)
+            return;
+
+        var now = DateTime.Now;
+        var contents = new List<MessageContent>
+        {
+            new() { Title = "系统维护通知", ContentType = MessageType.System, Content = "系统将在今晚 23:00-24:00 进行维护，请提前保存数据。", CreatedAt = now.AddHours(-6) },
+            new() { Title = "职位提醒", ContentType = MessageType.Position, Content = "有新的职位需要跟进，请及时处理。", CreatedAt = now.AddDays(-2) },
+            new() { Title = "面试安排提醒", ContentType = MessageType.Interview, Content = "今天有候选人面试安排，请确认时间地点。", CreatedAt = now.AddDays(-1) }
+        };
+
+        dbContext.MessageContents.AddRange(contents);
+        dbContext.SaveChanges();
+
+        var users = dbContext.Users.ToList();
+        var random = new Random();
+        var messages = new List<Message>();
+
+        foreach (var content in contents)
+        {
+            foreach (var user in users)
+            {
+                var sentAt = content.CreatedAt.AddMinutes(random.Next(5, 300));
+                var read = random.NextDouble() > 0.5;
+                messages.Add(new Message
+                {
+                    ReceiverId = user.Id,
+                    SenderId = senderId,
+                    ContentId = content.Id,
+                    SendStatus = MessageSendStatus.Sent,
+                    ReadStatus = read ? MessageReadStatus.Read : MessageReadStatus.Unread,
+                    SentAt = sentAt,
+                    ReadAt = read ? sentAt.AddHours(random.Next(1, 6)) : null
+                });
+            }
+        }
+
+        dbContext.Messages.AddRange(messages);
+        dbContext.SaveChanges();
+        logger.LogInformation("Message data seeded successfully. [{0}]", messages.Count);
     }
     #endregion
 }

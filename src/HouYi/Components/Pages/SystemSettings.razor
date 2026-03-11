@@ -1,8 +1,12 @@
 @using System.ComponentModel.DataAnnotations
 @using HouYi.Models
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @attribute [Authorize(Roles = Constants.Users.AdminRoleName)]
 @inject IReferenceDataService ReferenceDataService
 @inject IOperationLogService OperationLogService
+@inject IMessageService MessageService
+@inject RoleManager<IdentityRole<int>> RoleManager
 
 <PageTitle>系统设置</PageTitle>
 
@@ -18,6 +22,9 @@
             </li>
             <li class="nav-item">
                 <button class="nav-link @(_activeTab == "logs" ? "active" : "")" type="button" @onclick='() => SwitchTab("logs")'>操作日志</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(_activeTab == "messages" ? "active" : "")" type="button" @onclick='() => SwitchTab("messages")'>站内消息</button>
             </li>
         </ul>
 
@@ -171,7 +178,7 @@
                 </div>
             </div>
         }
-        else
+        else if (_activeTab == "logs")
         {
             <div class="card">
                 <div class="card-body">
@@ -338,6 +345,173 @@
                 </div>
             </div>
         }
+        else
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">站内消息</h5>
+                        <button class="btn btn-primary" @onclick="ShowSendModal">
+                            <i class="bi bi-send me-1"></i>发消息
+                        </button>
+                    </div>
+
+                    <form class="row g-2 align-items-end mb-3" @onsubmit="SearchMessages" @onsubmit:preventDefault>
+                        <div class="col-md-3">
+                            <label class="form-label">接收人</label>
+                            <input class="form-control" placeholder="用户名" @bind="_messageReceiverKeyword" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">类型</label>
+                            <select class="form-select" @bind="_messageTypeFilter">
+                                <option value="">全部</option>
+                                @foreach (var type in Enum.GetValues<MessageType>())
+                                {
+                                    <option value="@type">@DisplayHelper.GetMessageTypeText(type)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">已读状态</label>
+                            <select class="form-select" @bind="_messageReadStatusFilter">
+                                <option value="">全部</option>
+                                <option value="Unread">未读</option>
+                                <option value="Read">已读</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">关键字</label>
+                            <input class="form-control" placeholder="标题/内容" @bind="_messageKeyword" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">开始时间</label>
+                            <InputDate class="form-control" @bind-Value="_messageStartDate" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">结束时间</label>
+                            <InputDate class="form-control" @bind-Value="_messageEndDate" />
+                        </div>
+                        <div class="col-md-6 d-flex">
+                            <button class="btn btn-primary me-2" type="submit">
+                                <i class="bi bi-search me-1"></i>查询
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" @onclick="ClearMessageFilters">
+                                <i class="bi bi-x-circle me-1"></i>清除
+                            </button>
+                        </div>
+                    </form>
+
+                    @if (!string.IsNullOrWhiteSpace(_messageError))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @_messageError
+                            <button type="button" class="btn-close" @onclick="() => _messageError = string.Empty"></button>
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>用户</th>
+                                    <th>标题</th>
+                                    <th>内容摘要</th>
+                                    <th>类型</th>
+                                    <th>发送人</th>
+                                    <th>发送时间</th>
+                                    <th>已读状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_pagedMessages == null)
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center">加载中...</td>
+                                    </tr>
+                                }
+                                else if (!_pagedMessages.Items.Any())
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center">暂无消息</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var message in _pagedMessages.Items)
+                                    {
+                                        <tr>
+                                            <td>@message.ReceiverName</td>
+                                            <td>@message.Title</td>
+                                            <td>@GetMessagePreview(message.Content)</td>
+                                            <td>@DisplayHelper.GetMessageTypeText(message.ContentType)</td>
+                                            <td>@(string.IsNullOrWhiteSpace(message.SenderName) ? "系统" : message.SenderName)</td>
+                                            <td>@message.SentAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                            <td>
+                                                <span class="badge @DisplayHelper.GetMessageReadStatusBadgeClass(message.ReadStatus)">
+                                                    @DisplayHelper.GetMessageReadStatusText(message.ReadStatus)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">每页显示：</span>
+                            <select class="form-select me-2" style="width: 70px;" @onchange="MessagePageSizeChanged">
+                                <option value="10" selected="@(_messagePageSize == 10)">10</option>
+                                <option value="20" selected="@(_messagePageSize == 20)">20</option>
+                                <option value="50" selected="@(_messagePageSize == 50)">50</option>
+                            </select>
+                            @if (_pagedMessages != null)
+                            {
+                                <span class="pagination-info">
+                                    显示 @((_pagedMessages.PageNumber - 1) * _pagedMessages.PageSize + 1)-@(Math.Min(_pagedMessages.PageNumber * _pagedMessages.PageSize, _pagedMessages.TotalCount)) 条，
+                                    共 @_pagedMessages.TotalCount 条记录
+                                </span>
+                            }
+                        </div>
+                        @if (_pagedMessages != null && _pagedMessages.TotalPages > 0)
+                        {
+                            <ul class="pagination mb-0">
+                                <li class="page-item @(_pagedMessages.PageNumber == 1 ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateMessagePage(1)">首页</a>
+                                </li>
+                                <li class="page-item @(!_pagedMessages.HasPreviousPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateMessagePage(_pagedMessages.PageNumber - 1)">上一页</a>
+                                </li>
+
+                                @{
+                                    int startPage = Math.Max(1, _pagedMessages.PageNumber - 2);
+                                    int endPage = Math.Min(_pagedMessages.TotalPages, startPage + 4);
+                                    if (endPage - startPage < 4 && startPage > 1)
+                                    {
+                                        startPage = Math.Max(1, endPage - 4);
+                                    }
+                                }
+
+                                @for (int i = startPage; i <= endPage; i++)
+                                {
+                                    int pageNumber = i;
+                                    <li class="page-item @(pageNumber == _pagedMessages.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateMessagePage(pageNumber)">@pageNumber</a>
+                                    </li>
+                                }
+
+                                <li class="page-item @(!_pagedMessages.HasNextPage ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateMessagePage(_pagedMessages.PageNumber + 1)">下一页</a>
+                                </li>
+                                <li class="page-item @(_pagedMessages.PageNumber == _pagedMessages.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" href="javascript:void(0)" @onclick="() => NavigateMessagePage(_pagedMessages.TotalPages)">末页</a>
+                                </li>
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
@@ -456,6 +630,84 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+@if (_showSendModal)
+{
+    <div class="modal fade show" style="display: block; padding-right: 17px;" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">发送站内消息</h5>
+                    <button type="button" class="btn-close" @onclick="CloseSendModal"></button>
+                </div>
+                <EditForm Model="_sendModel" OnValidSubmit="SendMessageAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="modal-body">
+                        @if (!string.IsNullOrWhiteSpace(_sendError))
+                        {
+                            <div class="alert alert-danger">@_sendError</div>
+                        }
+                        @if (_sendResult != null)
+                        {
+                            <div class="alert alert-success">
+                                已发送 @_sendResult.Success / @_sendResult.Total 条消息。
+                                @if (!string.IsNullOrWhiteSpace(_sendResult.Message))
+                                {
+                                    <span>@_sendResult.Message</span>
+                                }
+                            </div>
+                        }
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">发送范围</label>
+                                <select class="form-select" @bind="_sendScope">
+                                    <option value="all">全体用户</option>
+                                    <option value="role">按角色</option>
+                                </select>
+                            </div>
+                            @if (_sendScope == "role")
+                            {
+                                <div class="col-md-6">
+                                    <label class="form-label">角色</label>
+                                    <select class="form-select" @bind="_sendRole">
+                                        <option value="">请选择角色</option>
+                                        @foreach (var role in _roles)
+                                        {
+                                            <option value="@role.Name">@role.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                            <div class="col-md-6">
+                                <label class="form-label">类型</label>
+                                <InputSelect class="form-select" @bind-Value="_sendModel.Type">
+                                    @foreach (var type in Enum.GetValues<MessageType>())
+                                    {
+                                        <option value="@type">@DisplayHelper.GetMessageTypeText(type)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">标题</label>
+                                <InputText class="form-control" @bind-Value="_sendModel.Title" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">内容</label>
+                                <InputTextArea class="form-control" rows="4" @bind-Value="_sendModel.Content" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseSendModal">取消</button>
+                        <button type="submit" class="btn btn-primary">发送</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     private string _activeTab = "dictionary";
 
@@ -487,11 +739,32 @@
     private bool _showLogModal;
     private OperationLog? _selectedLog;
 
+    private PagedResult<AdminMessageDto>? _pagedMessages;
+    private string _messageReceiverKeyword = "";
+    private string _messageTypeFilter = "";
+    private string _messageReadStatusFilter = "";
+    private string _messageKeyword = "";
+    private DateTime? _messageStartDate;
+    private DateTime? _messageEndDate;
+    private int _messagePage = 1;
+    private int _messagePageSize = 10;
+    private string _messageError = string.Empty;
+
+    private bool _showSendModal;
+    private SendMessageModel _sendModel = new();
+    private string _sendScope = "all";
+    private string _sendRole = "";
+    private List<IdentityRole<int>> _roles = new();
+    private MessageSendResult? _sendResult;
+    private string _sendError = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadReferenceDataAsync();
         await LoadCategoriesAsync();
         await LoadLogsAsync();
+        await LoadMessagesAsync();
+        _roles = await RoleManager.Roles.ToListAsync();
     }
 
     private async Task LoadReferenceDataAsync()
@@ -722,6 +995,142 @@
         _selectedLog = null;
     }
 
+    private async Task LoadMessagesAsync()
+    {
+        try
+        {
+            var query = BuildMessageQuery();
+            _pagedMessages = await MessageService.GetAllMessagesAsync(query, _messagePage, _messagePageSize);
+        }
+        catch (Exception ex)
+        {
+            _messageError = $"加载站内消息失败：{ex.Message}";
+        }
+    }
+
+    private MessageAdminQuery BuildMessageQuery()
+    {
+        MessageType? type = null;
+        if (Enum.TryParse<MessageType>(_messageTypeFilter, out var parsedType))
+        {
+            type = parsedType;
+        }
+
+        MessageReadStatus? readStatus = null;
+        if (Enum.TryParse<MessageReadStatus>(_messageReadStatusFilter, out var parsedStatus))
+        {
+            readStatus = parsedStatus;
+        }
+
+        return new MessageAdminQuery
+        {
+            Type = type,
+            ReadStatus = readStatus,
+            Keyword = _messageKeyword,
+            ReceiverKeyword = _messageReceiverKeyword,
+            StartDate = _messageStartDate,
+            EndDate = _messageEndDate
+        };
+    }
+
+    private async Task SearchMessages()
+    {
+        _messagePage = 1;
+        await LoadMessagesAsync();
+    }
+
+    private async Task ClearMessageFilters()
+    {
+        _messageReceiverKeyword = "";
+        _messageTypeFilter = "";
+        _messageReadStatusFilter = "";
+        _messageKeyword = "";
+        _messageStartDate = null;
+        _messageEndDate = null;
+        _messagePage = 1;
+        await LoadMessagesAsync();
+    }
+
+    private async Task NavigateMessagePage(int pageNumber)
+    {
+        _messagePage = pageNumber;
+        await LoadMessagesAsync();
+    }
+
+    private async Task MessagePageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var pageSize))
+        {
+            _messagePageSize = pageSize;
+            _messagePage = 1;
+            await LoadMessagesAsync();
+        }
+    }
+
+    private void ShowSendModal()
+    {
+        _sendModel = new SendMessageModel();
+        _sendScope = "all";
+        _sendRole = "";
+        _sendResult = null;
+        _sendError = string.Empty;
+        _showSendModal = true;
+    }
+
+    private void CloseSendModal()
+    {
+        _showSendModal = false;
+    }
+
+    private async Task SendMessageAsync()
+    {
+        try
+        {
+            _sendError = string.Empty;
+            _sendResult = null;
+
+            MessageSendResult result;
+            if (_sendScope == "role")
+            {
+                if (string.IsNullOrWhiteSpace(_sendRole))
+                {
+                    _sendError = "请选择角色。";
+                    return;
+                }
+                result = await MessageService.SendToRoleAsync(_sendRole, new MessageSendRequest
+                {
+                    Title = _sendModel.Title,
+                    Content = _sendModel.Content,
+                    Type = _sendModel.Type
+                });
+            }
+            else
+            {
+                result = await MessageService.SendToAllAsync(new MessageSendRequest
+                {
+                    Title = _sendModel.Title,
+                    Content = _sendModel.Content,
+                    Type = _sendModel.Type
+                });
+            }
+
+            _sendResult = result;
+            await LoadMessagesAsync();
+        }
+        catch (Exception ex)
+        {
+            _sendError = $"发送失败：{ex.Message}";
+        }
+    }
+
+    private string GetMessagePreview(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return string.Empty;
+        const int previewLength = 30;
+        return content.Length <= previewLength ? content : $"{content[..previewLength]}...";
+    }
+
     private class ReferenceDataEditModel
     {
         [Required]
@@ -743,5 +1152,18 @@
 
         [StringLength(Constants.StringLengths.Description)]
         public string Description { get; set; } = string.Empty;
+    }
+
+    private class SendMessageModel
+    {
+        [Required]
+        [StringLength(Constants.StringLengths.ShorterText)]
+        public string Title { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(Constants.StringLengths.Text)]
+        public string Content { get; set; } = string.Empty;
+
+        public MessageType Type { get; set; } = MessageType.System;
     }
 }

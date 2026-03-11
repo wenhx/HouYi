@@ -117,4 +117,37 @@ public static class DisplayHelper
             _ => "bg-secondary"
         };
     }
+
+    internal static string GetMessageTypeText(MessageType type)
+    {
+        return type switch
+        {
+            MessageType.System => "系统通知",
+            MessageType.Position => "职位相关",
+            MessageType.Recommendation => "推荐相关",
+            MessageType.Interview => "面试相关",
+            MessageType.Communication => "沟通相关",
+            _ => "未知"
+        };
+    }
+
+    internal static string GetMessageReadStatusText(MessageReadStatus status)
+    {
+        return status switch
+        {
+            MessageReadStatus.Read => "已读",
+            MessageReadStatus.Unread => "未读",
+            _ => "未知"
+        };
+    }
+
+    internal static string GetMessageReadStatusBadgeClass(MessageReadStatus status)
+    {
+        return status switch
+        {
+            MessageReadStatus.Read => "bg-success",
+            MessageReadStatus.Unread => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
 }

@@ -19,6 +19,8 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
         Interviews = Set<Interview>();
         Communications = Set<Communication>();
         OperationLogs = Set<OperationLog>();
+        Messages = Set<Message>();
+        MessageContents = Set<MessageContent>();
     }
 
     public DbSet<Customer> Customers { get; init; }
@@ -31,6 +33,8 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
     public DbSet<Interview> Interviews { get; init; }
     public DbSet<Communication> Communications { get; init; }
     public DbSet<OperationLog> OperationLogs { get; init; }
+    public DbSet<Message> Messages { get; init; }
+    public DbSet<MessageContent> MessageContents { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +54,24 @@ public class HouYiDbContext : IdentityDbContext<HouYiUser, IdentityRole<int>, in
         modelBuilder.Entity<Interview>()
             .HasOne(i => i.Recommendation)
             .WithMany().HasForeignKey(i => i.RecommendationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.Receiver)
+            .WithMany()
+            .HasForeignKey(m => m.ReceiverId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.Sender)
+            .WithMany()
+            .HasForeignKey(m => m.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.Content)
+            .WithMany()
+            .HasForeignKey(m => m.ContentId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
