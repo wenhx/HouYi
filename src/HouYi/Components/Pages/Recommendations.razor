@@ -44,17 +44,6 @@
                     </div>
                 </div>
             }
-            else
-            {
-
-                <div class="alert alert-warning d-flex align-items-center" role="alert">
-                    <i class="bi bi-info-circle-fill me-2" style="font-size: 1.5rem;"></i>
-                    <div>
-                        <h5 class="alert-heading mb-1">提示</h5>
-                        <p class="mb-0">当前正在显示所有职位的推荐。如果想显示指定职位的推荐记录，请从职位列表右侧点击查看推荐。</p>
-                    </div>
-                </div>
-            }
 
             <!-- 搜索和过滤 -->
             <div class="row mb-4">
@@ -112,6 +101,35 @@
                                             <th style="width: 80px;">匹配度</th>
                                             <th style="width: 100px;">姓名</th>
                                             <th>个人信息</th>
+                                            <th style="width: 180px;">
+                                                <span>目标职位</span>
+                                                @if (!PositionId.HasValue)
+                                                {
+                                                    <div class="dropdown d-inline-block ms-1">
+                                                        <button class="btn btn-sm dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                                                            <i class="bi bi-filter"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a class="dropdown-item @(_selectedPositionId == null ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByPosition(null)">所有职位</a></li>
+                                                            @if (_filterPositions.Count == 0)
+                                                            {
+                                                                <li><span class="dropdown-item-text text-muted">暂无职位</span></li>
+                                                            }
+                                                            else
+                                                            {
+                                                                @foreach (var position in _filterPositions)
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item @(_selectedPositionId == position.Id ? "active" : "")" href="javascript:void(0)" @onclick="() => FilterByPosition(position.Id)">
+                                                                            @($"{position.Name} - {position.Customer?.Name ?? "未知"}")
+                                                                        </a>
+                                                                    </li>
+                                                                }
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                }
+                                            </th>
                                             <th style="width: 120px;">
                                                 <span>推荐状态</span>
                                                 <div class="dropdown d-inline-block ms-1">
@@ -154,7 +172,7 @@
                                         @if (!_pagedRecommendations.Items.Any())
                                         {
                                             <tr>
-                                                <td colspan="8" class="text-center">没有推荐记录</td>
+                                                <td colspan="9" class="text-center">没有推荐记录</td>
                                             </tr>
                                         }
                                         else
@@ -178,6 +196,11 @@
                                                             <i class="bi bi-clock-history me-1"></i> @DisplayHelper.GetResumeExperienceText(recommendation.Resume?.YearsOfExperience ?? 0) |
                                                             <i class="bi bi-geo-alt me-1"></i> @(recommendation.Resume?.Place?.Name ?? "未知")
                                                         </p>
+                                                    </td>
+                                                    <td>
+                                                        @(recommendation.Position?.Name != null && recommendation.Position?.Customer?.Name != null
+                                                            ? $"{recommendation.Position.Name} - {recommendation.Position.Customer.Name}"
+                                                            : "--")
                                                     </td>
                                                     <td>
                                                         <span class="badge @GetRecommendationStatusBadgeClass(recommendation.Status)" style="padding: 0.5rem 1rem;">
@@ -422,9 +445,20 @@
     private HiringStatus? _selectedHiringStatus;
     private bool _showEditModal;
     private EditingRecommendation _editingRecommendation;
+    private IReadOnlyList<Position> _filterPositions = new List<Position>();
+    private int? _selectedPositionId;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (PositionId.HasValue)
+        {
+            _selectedPositionId = null;
+        }
+        else if (_filterPositions.Count == 0)
+        {
+            await LoadFilterPositionsAsync();
+        }
+
         if (PositionId.HasValue)
         {
             await LoadPositionAsync();
@@ -453,10 +487,11 @@
     {
         try
         {
+            int? effectivePositionId = PositionId ?? _selectedPositionId;
             if (_isSearchMode && !string.IsNullOrWhiteSpace(_searchTerm))
             {
                 _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(
-                    PositionId,
+                    effectivePositionId,
                     _currentPage,
                     _pageSize,
                     _searchTerm,
@@ -466,7 +501,7 @@
             else
             {
                 _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(
-                    PositionId,
+                    effectivePositionId,
                     _currentPage,
                     _pageSize,
                     null,
@@ -507,7 +542,8 @@
 
         _isSearchMode = true;
         _currentPage = 1;
-        _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(PositionId, _currentPage, _pageSize, _searchTerm);
+        int? effectivePositionId = PositionId ?? _selectedPositionId;
+        _pagedRecommendations = await RecommendationService.GetRecommendationsAsync(effectivePositionId, _currentPage, _pageSize, _searchTerm);
     }
 
     private async Task ClearSearch()
@@ -781,6 +817,13 @@
         await LoadRecommendationsAsync();
     }
 
+    private async Task FilterByPosition(int? positionId)
+    {
+        _selectedPositionId = positionId;
+        _currentPage = 1;
+        await LoadRecommendationsAsync();
+    }
+
     private void OpenEditModal(Recommendation recommendation)
     {
         _editingRecommendation = new EditingRecommendation
@@ -816,5 +859,11 @@
             _errorMessage = $"保存编辑时发生错误: {ex.Message}";
             StateHasChanged();
         }
+    }
+
+    private async Task LoadFilterPositionsAsync()
+    {
+        var result = await PositionService.GetPositionsAsync(pageNumber: 1, pageSize: 1000);
+        _filterPositions = result.Items;
     }
 }

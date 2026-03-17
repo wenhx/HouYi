@@ -26,6 +26,8 @@ public class RecommendationService : IRecommendationService
         IQueryable<Recommendation> query = _dbContext.Recommendations
             .Include(r => r.Resume)
             .ThenInclude(r => r.Place)
+            .Include(r => r.Position)
+            .ThenInclude(p => p.Customer)
             .OrderByDescending(r => r.UpdatedAt);
 
         if (positionId.HasValue && positionId > 0)
